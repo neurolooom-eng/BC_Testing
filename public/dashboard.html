@@ -16,14 +16,31 @@
     --mute: rgba(246,244,238,0.55);
   }
 
+  :root {
+    --content-bg: var(--navy-deep);
+    --content-fg: var(--cream);
+    --content-mute: var(--mute);
+    --card-bg: rgba(246,244,238,0.04);
+    --card-border: rgba(246,244,238,0.12);
+  }
+
+  body.light-theme {
+    --content-bg: #ffffff;
+    --content-fg: #000000;
+    --content-mute: #555555;
+    --card-bg: #f5f5f5;
+    --card-border: #dddddd;
+  }
+
   * { box-sizing: border-box; margin: 0; padding: 0; }
   html, body { height: 100%; }
 
   body {
     font-family: 'Inter', sans-serif;
-    background: var(--navy-deep);
-    color: var(--cream);
+    background: var(--content-bg);
+    color: var(--content-fg);
     min-height: 100vh;
+    transition: background 150ms ease, color 150ms ease;
   }
 
   /* ---------- Top bar ---------- */
@@ -214,6 +231,55 @@
     background: rgba(246,244,238,0.08);
   }
 
+  .nav-item-wrap { position: relative; }
+
+  button.nav-item {
+    background: none;
+    border: none;
+    font: inherit;
+    cursor: pointer;
+  }
+
+  .nav-chevron {
+    width: 14px;
+    height: 14px;
+    stroke: currentColor;
+    stroke-width: 2;
+    fill: none;
+    transition: transform 150ms ease;
+  }
+
+  .nav-item-wrap.open .nav-chevron { transform: rotate(180deg); }
+
+  .nav-dropdown {
+    display: none;
+    position: absolute;
+    top: 62px;
+    left: 0;
+    min-width: 160px;
+    background: #0d0c2a;
+    border: 1px solid rgba(246,244,238,0.14);
+    border-radius: 12px;
+    padding: 6px;
+    box-shadow: 0 20px 40px -15px rgba(0,0,0,0.6);
+    z-index: 20;
+  }
+
+  .nav-dropdown.open { display: block; }
+
+  .nav-dropdown a {
+    display: block;
+    padding: 10px 12px;
+    border-radius: 8px;
+    color: var(--cream);
+    font-size: 13.5px;
+    text-decoration: none;
+  }
+
+  .nav-dropdown a:hover {
+    background: rgba(246,244,238,0.08);
+  }
+
   @media (max-width: 720px) {
     .topbar { padding: 0 16px; gap: 8px; }
     .brand-name { display: none; }
@@ -236,7 +302,7 @@
   }
 
   .content p.subtitle {
-    color: var(--mute);
+    color: var(--content-mute);
     font-size: 14px;
     margin-bottom: 32px;
   }
@@ -248,15 +314,16 @@
   }
 
   .card {
-    background: rgba(246,244,238,0.04);
-    border: 1px solid rgba(246,244,238,0.12);
+    background: var(--card-bg);
+    border: 1px solid var(--card-border);
     border-radius: 14px;
     padding: 20px;
+    transition: background 150ms ease, border-color 150ms ease;
   }
 
   .card h2 {
     font-size: 14px;
-    color: var(--mute);
+    color: var(--content-mute);
     text-transform: uppercase;
     letter-spacing: 0.8px;
     margin-bottom: 8px;
@@ -264,15 +331,41 @@
 
   .card p {
     font-size: 13px;
-    color: var(--mute);
+    color: var(--content-mute);
   }
 
   .build-footer {
     text-align: center;
     font-size: 10.5px;
     letter-spacing: 0.3px;
-    color: var(--mute);
+    color: var(--content-mute);
     padding: 24px;
+  }
+
+  /* ---------- Theme toggle (top bar colors never change) ---------- */
+
+  .theme-toggle {
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    border: 1px solid rgba(246,244,238,0.18);
+    background: rgba(246,244,238,0.06);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: background 150ms ease;
+  }
+
+  .theme-toggle:hover { background: rgba(246,244,238,0.12); }
+
+  .theme-toggle svg {
+    width: 19px;
+    height: 19px;
+    stroke: var(--cream);
+    stroke-width: 1.8;
+    fill: none;
   }
 </style>
 </head>
@@ -290,20 +383,30 @@
         Overview
       </a>
       <a class="nav-item" href="#" title="Coming soon">
-        <svg viewBox="0 0 24 24"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2Z"/></svg>
-        Roster
+        <svg viewBox="0 0 24 24"><path d="M9 3v18"/><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M14 9h4M14 13h4M14 17h4"/></svg>
+        Production Records
       </a>
       <a class="nav-item" href="#" title="Coming soon">
         <svg viewBox="0 0 24 24"><path d="M4 20V10"/><path d="M12 20V4"/><path d="M20 20v-7"/></svg>
         Reports
       </a>
-      <a class="nav-item" href="#" title="Coming soon">
-        <svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.2"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0"/><path d="M16 8.2a3.2 3.2 0 1 1 3.2 3.2"/><path d="M15.5 14.2c2.7.3 4.9 2.4 5.4 5.6"/></svg>
-        Team
-      </a>
+      <div class="nav-item-wrap" id="team-menu-wrap">
+        <button class="nav-item" id="team-menu-trigger" type="button">
+          <svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.2"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0"/><path d="M16 8.2a3.2 3.2 0 1 1 3.2 3.2"/><path d="M15.5 14.2c2.7.3 4.9 2.4 5.4 5.6"/></svg>
+          Team
+          <svg class="nav-chevron" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg>
+        </button>
+        <div class="nav-dropdown" id="team-dropdown">
+          <a href="#" title="Coming soon">Roster</a>
+        </div>
+      </div>
     </nav>
 
     <div class="header-actions">
+      <button class="theme-toggle" id="theme-toggle" type="button" title="Toggle light/dark theme" aria-label="Toggle light and dark theme">
+        <svg id="icon-moon" viewBox="0 0 24 24"><path d="M21 12.5A8.5 8.5 0 1 1 11.5 3a7 7 0 0 0 9.5 9.5Z"/></svg>
+        <svg id="icon-sun" viewBox="0 0 24 24" style="display:none;"><circle cx="12" cy="12" r="4.2"/><path d="M12 2.5v3M12 18.5v3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M2.5 12h3M18.5 12h3M4.9 19.1 7 17M17 7l2.1-2.1"/></svg>
+      </button>
       <div class="user" id="user-menu-trigger">
         <div class="avatar" id="avatar">·</div>
         <span class="user-name" id="user-name">Loading…</span>
@@ -322,7 +425,7 @@
 
     <div class="cards">
       <div class="card">
-        <h2>Roster</h2>
+        <h2>Production Records</h2>
         <p>Coming soon.</p>
       </div>
       <div class="card">
@@ -331,7 +434,7 @@
       </div>
       <div class="card">
         <h2>Team</h2>
-        <p>Coming soon.</p>
+        <p>Coming soon. Includes Roster.</p>
       </div>
     </div>
   </main>
@@ -358,19 +461,62 @@
 
     const userTrigger = document.getElementById("user-menu-trigger");
     const userDropdown = document.getElementById("user-dropdown");
-    userTrigger.addEventListener("click", (e) => {
-      e.stopPropagation();
-      userTrigger.classList.toggle("open");
-      userDropdown.classList.toggle("open");
-    });
-    document.addEventListener("click", () => {
+    const teamWrap = document.getElementById("team-menu-wrap");
+    const teamDropdown = document.getElementById("team-dropdown");
+
+    function closeAllMenus() {
       userTrigger.classList.remove("open");
       userDropdown.classList.remove("open");
+      teamWrap.classList.remove("open");
+      teamDropdown.classList.remove("open");
+    }
+
+    userTrigger.addEventListener("click", (e) => {
+      e.stopPropagation();
+      const willOpen = !userDropdown.classList.contains("open");
+      closeAllMenus();
+      if (willOpen) {
+        userTrigger.classList.add("open");
+        userDropdown.classList.add("open");
+      }
     });
+
+    teamWrap.addEventListener("click", (e) => {
+      e.stopPropagation();
+      const willOpen = !teamDropdown.classList.contains("open");
+      closeAllMenus();
+      if (willOpen) {
+        teamWrap.classList.add("open");
+        teamDropdown.classList.add("open");
+      }
+    });
+
+    document.addEventListener("click", closeAllMenus);
 
     document.getElementById("logout").addEventListener("click", () => {
       tempClearSession();
       window.location.href = "login.html";
+    });
+
+    // Light/dark theme toggle. Default is dark; the top bar's colors never
+    // change, only the page content below it (see body.light-theme rules).
+    const THEME_KEY = "bestcast_theme";
+    const themeToggle = document.getElementById("theme-toggle");
+    const iconMoon = document.getElementById("icon-moon");
+    const iconSun = document.getElementById("icon-sun");
+
+    function applyTheme(theme) {
+      document.body.classList.toggle("light-theme", theme === "light");
+      iconMoon.style.display = theme === "light" ? "none" : "block";
+      iconSun.style.display = theme === "light" ? "block" : "none";
+    }
+
+    applyTheme(localStorage.getItem(THEME_KEY) || "dark");
+
+    themeToggle.addEventListener("click", () => {
+      const next = document.body.classList.contains("light-theme") ? "dark" : "light";
+      localStorage.setItem(THEME_KEY, next);
+      applyTheme(next);
     });
   </script>
 </body>

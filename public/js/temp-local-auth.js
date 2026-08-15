@@ -24,17 +24,17 @@ function tempFindUser(userid, password) {
   return TEMP_USERS.find((u) => u.userid === userid && u.password === password) || null;
 }
 
-// "Remember me" defaults to on and stays on (see login.html) — sessions are
-// kept in localStorage so they survive closing the browser, not just the tab.
+// "Remember me" was removed (see BACKLOG.md history) — sessions live in
+// sessionStorage, so signing in only lasts for the current tab.
 function tempGetSession() {
-  const raw = localStorage.getItem(TEMP_SESSION_KEY);
+  const raw = sessionStorage.getItem(TEMP_SESSION_KEY);
   return raw ? JSON.parse(raw) : null;
 }
 
 function tempSetSession(user) {
-  localStorage.setItem(TEMP_SESSION_KEY, JSON.stringify({ userid: user.userid, fullName: user.fullName }));
+  sessionStorage.setItem(TEMP_SESSION_KEY, JSON.stringify({ userid: user.userid, fullName: user.fullName }));
 }
 
 function tempClearSession() {
-  localStorage.removeItem(TEMP_SESSION_KEY);
+  sessionStorage.removeItem(TEMP_SESSION_KEY);
 }
