@@ -4,6 +4,26 @@ Version numbers follow semver — see `VERSIONING.md` at the repo root.
 Build number and build date shown in the site footer are generated
 automatically per deploy and are not tracked here.
 
+## 1.3.0 — 2026-08-15
+
+- New **Process Check Sheet** module (QC FMT 038) under Production Records,
+  with the parent/child structure from the PCS Update sheet:
+  - **Daily once** data is the parent record (date, line, metal grade,
+    furnace, M/C no., die pre-heat, cooling/pouring/tilting times, die prep
+    checks, in-charge sign)
+  - **Hourly** readings are children — 30-minute slots from 6.30am to
+    6.00am, auto-labelled with their shift
+  - **Shift once (8 hrs)** entries are children — three per day, each with
+    DPT, sets rejected, alloy, BC no., die coat thickness, core pin
+    verification for cavities 1–10, and operator/supervisor sign-off
+- Field types, dropdown options and spec ranges are all driven by the
+  Tolerances sheet (`js/pcs-spec.js` is the single source of truth), and
+  out-of-spec readings are highlighted in red at the field, row and sheet
+  level
+- New `production-records.html` landing page listing shop-floor modules
+- Top bar extracted into shared `css/app.css` + `js/topbar.js` so the
+  dashboard and new pages stay in sync instead of duplicating markup
+
 ## 1.2.0 — 2026-08-15
 
 - Top bar nav: "Roster" removed as a top-level item, replaced by
