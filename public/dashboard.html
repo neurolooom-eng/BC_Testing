@@ -32,13 +32,32 @@
     font-family: inherit;
     cursor: pointer;
   }
+  .dev-link {
+    font-size: 12.5px;
+    color: var(--teal);
+    text-decoration: none;
+    border-bottom: 1px solid var(--teal);
+    padding-bottom: 1px;
+    display: none;
+  }
+  .build-footer {
+    margin-top: 10px;
+    text-align: center;
+    font-size: 10.5px;
+    letter-spacing: 0.3px;
+    color: var(--mute);
+  }
 </style>
 </head>
 <body>
   <h1>You're signed in</h1>
   <p id="welcome">Loading your profile…</p>
+  <a href="dev.html" class="dev-link" id="dev-link">Dev Page (version history)</a>
   <button id="logout">Log out</button>
+  <p class="build-footer"></p>
 
+  <script src="js/build-info.js"></script>
+  <script src="js/footer.js"></script>
   <script src="js/temp-local-auth.js"></script>
   <script>
     // TEMPORARY: gated by the hardcoded local session, not Supabase.
@@ -48,6 +67,9 @@
       window.location.href = "login.html";
     } else {
       document.getElementById("welcome").textContent = `Welcome, ${session.fullName}.`;
+      if (DEV_PAGE_USERS.includes(session.userid)) {
+        document.getElementById("dev-link").style.display = "inline";
+      }
     }
 
     document.getElementById("logout").addEventListener("click", () => {
