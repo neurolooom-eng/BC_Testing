@@ -15,19 +15,26 @@ const TEMP_USERS = [
 
 const TEMP_SESSION_KEY = "bestcast_temp_session";
 
+// User IDs allowed to view dev.html (version history). Checked client-side
+// only — like the rest of temp-local-auth.js, not a real access control
+// boundary, just a UI gate until Supabase (see BACKLOG.md).
+const DEV_PAGE_USERS = ["msv", "pnk"];
+
 function tempFindUser(userid, password) {
   return TEMP_USERS.find((u) => u.userid === userid && u.password === password) || null;
 }
 
+// "Remember me" defaults to on and stays on (see login.html) — sessions are
+// kept in localStorage so they survive closing the browser, not just the tab.
 function tempGetSession() {
-  const raw = sessionStorage.getItem(TEMP_SESSION_KEY);
+  const raw = localStorage.getItem(TEMP_SESSION_KEY);
   return raw ? JSON.parse(raw) : null;
 }
 
 function tempSetSession(user) {
-  sessionStorage.setItem(TEMP_SESSION_KEY, JSON.stringify({ userid: user.userid, fullName: user.fullName }));
+  localStorage.setItem(TEMP_SESSION_KEY, JSON.stringify({ userid: user.userid, fullName: user.fullName }));
 }
 
 function tempClearSession() {
-  sessionStorage.removeItem(TEMP_SESSION_KEY);
+  localStorage.removeItem(TEMP_SESSION_KEY);
 }

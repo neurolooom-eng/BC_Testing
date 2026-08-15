@@ -3,7 +3,7 @@ name: Deploy public/ to GitHub Pages
 on:
   push:
     branches: [main]
-    paths: ["public/**"]
+    paths: ["public/**", "VERSION"]
   workflow_dispatch:
 
 permissions:
@@ -23,6 +23,14 @@ jobs:
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - uses: actions/checkout@v4
+      - name: Generate build info (version, build number, build date)
+        run: |
+          VERSION=$(tr -d '[:space:]' < VERSION)
+          BUILD_NUMBER="${{ github.run_number }}"
+          BUILD_DATE=$(date -u +"%Y-%m-%d %H:%M UTC")
+          cat > public/js/build-info.js <<EOF
+          window.BUILD_INFO = { version: "${VERSION}", buildNumber: ${BUILD_NUMBER}, buildDate: "${BUILD_DATE}" };
+          EOF
       - uses: actions/upload-pages-artifact@v3
         with:
           path: public
