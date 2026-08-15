@@ -39,28 +39,19 @@
   <p id="welcome">Loading your profile…</p>
   <button id="logout">Log out</button>
 
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="js/supabase-client.js"></script>
+  <script src="js/temp-local-auth.js"></script>
   <script>
-    // Placeholder landing page — replace with the real app.
-    (async () => {
-      const { data: { session } } = await supabaseClient.auth.getSession();
-      if (!session) {
-        window.location.href = "login.html";
-        return;
-      }
-      const { data: profile } = await supabaseClient
-        .from("profiles")
-        .select("full_name, role, department")
-        .eq("id", session.user.id)
-        .single();
-      document.getElementById("welcome").textContent = profile
-        ? `Welcome, ${profile.full_name} (${profile.role || "no role set"} — ${profile.department || "no department"}).`
-        : `Welcome, ${session.user.email}.`;
-    })();
+    // TEMPORARY: gated by the hardcoded local session, not Supabase.
+    // See BACKLOG.md for restoring real Supabase-backed auth.
+    const session = tempGetSession();
+    if (!session) {
+      window.location.href = "login.html";
+    } else {
+      document.getElementById("welcome").textContent = `Welcome, ${session.fullName}.`;
+    }
 
-    document.getElementById("logout").addEventListener("click", async () => {
-      await supabaseClient.auth.signOut();
+    document.getElementById("logout").addEventListener("click", () => {
+      tempClearSession();
       window.location.href = "login.html";
     });
   </script>
