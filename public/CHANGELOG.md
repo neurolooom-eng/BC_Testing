@@ -4,6 +4,17 @@ Version numbers follow semver — see `VERSIONING.md` at the repo root.
 Build number and build date shown in the site footer are generated
 automatically per deploy and are not tracked here.
 
+## 1.2.0 — 2026-08-15
+
+- Top bar nav: "Roster" removed as a top-level item, replaced by
+  "Production Records"; Roster now lives under a "Team" dropdown instead
+- Removed the "Remember me" feature entirely (checkbox and the
+  persistent-login behavior it drove) — login sessions are back to
+  lasting only for the current tab (`sessionStorage`)
+- Added a light/dark theme toggle to the dashboard top bar (default:
+  dark). The top bar's own colors never change; toggling switches the
+  rest of the page (content, cards, footer) to a black-and-white palette
+
 ## 1.1.0 — 2026-08-15
 
 - Redesigned `dashboard.html` with a top bar navigation (brand, 4 nav
