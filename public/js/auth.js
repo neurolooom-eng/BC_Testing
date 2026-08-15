@@ -1,4 +1,8 @@
-// Login page behavior. Requires supabase-client.js to be loaded first.
+// Login page behavior.
+//
+// TEMPORARY: real auth (Supabase) is on the backlog (see BACKLOG.md). For
+// now this checks against the hardcoded list in temp-local-auth.js instead
+// of calling Supabase. Swap this back to Supabase per BACKLOG.md when ready.
 
 function showError(message) {
   const el = document.getElementById("form-error");
@@ -14,14 +18,13 @@ function setLoading(isLoading) {
   btn.textContent = isLoading ? "Signing in..." : "Log In";
 }
 
-async function redirectIfAlreadySignedIn() {
-  const { data: { session } } = await supabaseClient.auth.getSession();
-  if (session) {
+function redirectIfAlreadySignedIn() {
+  if (tempGetSession()) {
     window.location.href = "dashboard.html";
   }
 }
 
-async function handleLogin(event) {
+function handleLogin(event) {
   event.preventDefault();
   showError("");
 
@@ -33,55 +36,22 @@ async function handleLogin(event) {
     return;
   }
 
-  // The "User ID" field is the person's email address (see data/users_master.xlsx —
-  // User ID and Email are kept identical for every account).
-  const email = userId;
-
   setLoading(true);
-  const { data, error } = await supabaseClient.auth.signInWithPassword({
-    email,
-    password,
-  });
+  const user = tempFindUser(userId, password);
   setLoading(false);
 
-  if (error) {
+  if (!user) {
     showError("Invalid User ID or password.");
     return;
   }
 
-  // Block sign-in for accounts the roster marks Inactive/Pending, in case
-  // the Supabase Auth account still exists but shouldn't be usable yet.
-  const { data: profile } = await supabaseClient
-    .from("profiles")
-    .select("status")
-    .eq("id", data.user.id)
-    .single();
-
-  if (profile && profile.status !== "Active") {
-    await supabaseClient.auth.signOut();
-    showError("This account is not active. Contact your administrator.");
-    return;
-  }
-
+  tempSetSession(user);
   window.location.href = "dashboard.html";
 }
 
-async function handleForgotPassword(event) {
+function handleForgotPassword(event) {
   event.preventDefault();
-  const userId = document.getElementById("userid").value.trim();
-  if (!userId) {
-    showError("Enter your User ID above first, then click 'Forgot password?'.");
-    return;
-  }
-  const { error } = await supabaseClient.auth.resetPasswordForEmail(userId, {
-    redirectTo: window.location.origin + "/reset-password.html",
-  });
-  if (error) {
-    showError("Could not send reset email. Try again later.");
-  } else {
-    showError("");
-    alert("If that account exists, a password reset link has been sent.");
-  }
+  showError("Password reset isn't available yet in this temporary login mode.");
 }
 
 document.addEventListener("DOMContentLoaded", () => {
