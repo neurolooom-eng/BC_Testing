@@ -4,6 +4,14 @@ Version numbers follow semver — see `VERSIONING.md` at the repo root.
 Build number and build date shown in the site footer are generated
 automatically per deploy and are not tracked here.
 
+## 1.1.0 — 2026-08-15
+
+- Redesigned `dashboard.html` with a top bar navigation (brand, 4 nav
+  items — Overview/Roster/Reports/Team, no search or notifications per
+  request), matching the site's navy/teal/orange/cream color scheme
+- User menu moved into a dropdown under the profile avatar (Dev Page
+  link for `msv`/`pnk`, Log out)
+
 ## 1.0.0 — 2026-08-15
 
 Baseline release: the point at which formal versioning started.
