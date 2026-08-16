@@ -4,6 +4,17 @@ Version numbers follow semver — see `VERSIONING.md` at the repo root.
 Build number and build date shown in the site footer are generated
 automatically per deploy and are not tracked here.
 
+## 1.3.1 — 2026-08-16
+
+- Point every logo reference (login, signup, and the shared top bar) at
+  `logo.svg` instead of the never-created `images/logo.png`
+- Deploy workflow now copies a root-level `Logo.svg` into `public/` when
+  publishing, so the repo root can stay the source of truth even though
+  only `public/` is deployed. Warns rather than fails if it's missing.
+
+  Note: `Logo.svg` still has to be committed — it isn't in the repo yet,
+  so the brand mark stays an empty circle until then.
+
 ## 1.3.0 — 2026-08-15
 
 - New **Process Check Sheet** module (QC FMT 038) under Production Records,

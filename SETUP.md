@@ -26,7 +26,10 @@ const SUPABASE_URL = "https://YOUR-PROJECT-REF.supabase.co";
 const SUPABASE_ANON_KEY = "YOUR-ANON-PUBLIC-KEY";
 ```
 
-Add your logo at `public/images/logo.png`.
+Add your logo as `Logo.svg` in the repo root. The deploy workflow copies it
+to `public/logo.svg` when publishing, which is where every page references
+it. To preview locally, copy it into `public/` yourself — serving `public/`
+alone won't see the root file.
 
 Serve the `public/` folder with any static host (Netlify, Vercel, GitHub
 Pages, or just `python -m http.server` locally from inside `public/` for
