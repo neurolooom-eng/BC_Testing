@@ -1,13 +1,22 @@
 // Process Check Sheet — field definitions.
 //
-// Field grouping comes from "PCS Update" (Daily once / Hourly / Shift once).
-// Types, ranges, and dropdown options come from "Tolerances updated".
-// This file is the single source of truth for both form rendering and
-// out-of-spec validation.
+// Structure mirrors form QC FMT 038:
+//
+//   Day Sheet (parent)
+//     ├── Machines      one row per M/C on the line that day; a machine may
+//     │                 start or stop part-way through the day
+//     ├── Hourly        furnace-level readings per 30-minute slot, plus a
+//     │                 Die Temp reading per running machine
+//     └── Shifts        one sign-off record per shift
+//
+// Types, ranges and dropdown options all come from "Tolerances updated".
+// This file is the single source of truth for form rendering and for
+// out-of-specification validation.
 //
 // Field shape:
 //   key        storage key
 //   label      form label (mirrors the paper check sheet wording)
+//   short      compact heading for the matrix view
 //   type       "date" | "text" | "number" | "select"
 //   unit       shown next to the input and in the spec hint
 //   min/max    inclusive numeric spec range — outside this is out of spec
@@ -19,8 +28,7 @@
 
 const OK_NOT_OK = ["OK", "NOT OK"];
 
-// --- Daily once (parent record) -----------------------------------------
-// One of these per date + line + machine. Owns the hourly and shift children.
+// --- Day sheet header (parent) ------------------------------------------
 const PCS_DAILY_FIELDS = [
   { key: "date", label: "Date", type: "date", required: true },
   {
@@ -38,47 +46,7 @@ const PCS_DAILY_FIELDS = [
     options: ["HF1", "HF2", "HF3", "HF4", "HF5", "HF6", "HF11", "HF12"],
     required: true,
   },
-  { key: "machineNo", label: "M/C No.", type: "number", step: 1, required: true },
-  {
-    key: "diePreheatTemp",
-    label: "Die Pre Heat Temp.",
-    type: "number",
-    unit: "°C",
-    min: 225,
-    max: 350,
-    required: true,
-  },
-  {
-    key: "coolingTime",
-    label: "Cooling Time",
-    type: "select",
-    options: ["120", "180"],
-    unit: "sec",
-    required: true,
-  },
-  {
-    key: "pouringTime",
-    label: "Pouring Time",
-    type: "number",
-    unit: "sec",
-    min: 6,
-    max: 9,
-    step: 0.1,
-    required: true,
-  },
-  {
-    key: "tiltingTime",
-    label: "Tilting Time",
-    type: "number",
-    unit: "sec",
-    min: 12,
-    max: 14,
-    step: 0.1,
-    required: true,
-    // The tolerances sheet stores this as the date 2026-12-14 — Excel
-    // autocorrected "12-14" into a date. Read here as 12–14 seconds.
-    note: "Spec cell in the tolerances sheet was auto-converted to a date; read as 12–14 sec.",
-  },
+  { key: "degassingGas", label: "Degassing Gas", type: "select", options: ["N2"], required: true },
   {
     key: "diePreheatingAsPerSOP",
     label: "Die Pre Heating as per SOP",
@@ -100,20 +68,88 @@ const PCS_DAILY_FIELDS = [
     options: OK_NOT_OK,
     required: true,
   },
+  { key: "inChargeSign", label: "In-Charge Signature", type: "select", options: ["VIKENSH"] },
+];
+
+// --- Machines (child of the day sheet) ----------------------------------
+// The paper sheet carries a block of these per day, one row per machine.
+const PCS_MACHINE_FIELDS = [
+  { key: "machineNo", label: "M/C No.", short: "M/C", type: "number", step: 1, required: true },
+  { key: "bcNo", label: "BC No.", short: "BC No.", type: "text", required: true },
   {
-    key: "inChargeSign",
-    label: "In-Charge Signature",
+    key: "dieCoatThickness",
+    label: "Die Coat Thickness",
+    short: "Die coat",
+    type: "number",
+    unit: "microns",
+    min: 100,
+    max: 150,
+    required: true,
+  },
+  {
+    key: "diePreheatTemp",
+    label: "Die Preheat Temp.",
+    short: "Die preheat",
+    type: "number",
+    unit: "°C",
+    min: 225,
+    max: 350,
+    required: true,
+  },
+  {
+    key: "coolingTime",
+    label: "Cooling Time",
+    short: "Cooling",
     type: "select",
-    options: ["VIKENSH"],
+    options: ["120", "180"],
+    unit: "sec",
+    required: true,
+  },
+  {
+    key: "pouringTime",
+    label: "Pouring Time",
+    short: "Pouring",
+    type: "number",
+    unit: "sec",
+    min: 6,
+    max: 9,
+    step: 0.1,
+    required: true,
+  },
+  {
+    key: "tiltingTime",
+    label: "Tilting Time",
+    short: "Tilting",
+    type: "number",
+    unit: "sec",
+    min: 12,
+    max: 14,
+    step: 0.1,
+    required: true,
+    // The tolerances sheet stores this as the date 2026-12-14 — Excel
+    // autocorrected "12-14" into a date. Read here as 12–14 seconds.
+    note: "Spec cell in the tolerances sheet was auto-converted to a date; read as 12–14 sec.",
   },
 ];
 
-// --- Hourly (child records, every 30 min across the day) ----------------
+// Recorded per machine, per time slot (paper sheet row 21, "Die Temp.").
+const PCS_MACHINE_HOURLY_FIELD = {
+  key: "dieTemp",
+  label: "Die Temp.",
+  short: "Die Temp",
+  type: "number",
+  unit: "°C",
+  min: 250,
+  max: 350,
+  required: true,
+};
+
+// --- Hourly furnace readings (child of the day sheet) -------------------
 const PCS_HOURLY_FIELDS = [
-  { key: "timeSlot", label: "Time", type: "select", options: [], required: true }, // filled at runtime
   {
     key: "holdingFurnaceCharges",
     label: "Holding Furnace / No. of Charges",
+    short: "Charges",
     type: "number",
     step: 1,
     required: true,
@@ -121,6 +157,7 @@ const PCS_HOURLY_FIELDS = [
   {
     key: "ingotKgs",
     label: "Ingot 50% (Kgs) + Foundry returns 50%",
+    short: "Ingot kg",
     type: "number",
     unit: "kg",
     expected: 300,
@@ -130,6 +167,7 @@ const PCS_HOURLY_FIELDS = [
   {
     key: "drossCleaning",
     label: "Dross Cleaning in Holding Furnace",
+    short: "Dross",
     type: "number",
     unit: "min",
     expected: 20,
@@ -139,6 +177,7 @@ const PCS_HOURLY_FIELDS = [
   {
     key: "meltingMetalTemp",
     label: "Melting Metal Temp.",
+    short: "Melt °C",
     type: "number",
     unit: "°C",
     min: 700,
@@ -149,6 +188,7 @@ const PCS_HOURLY_FIELDS = [
   {
     key: "coverall",
     label: "Coverall per charge",
+    short: "Coverall",
     type: "number",
     unit: "g",
     min: 200,
@@ -158,16 +198,18 @@ const PCS_HOURLY_FIELDS = [
   {
     key: "degassingMin",
     label: "Degassing per charge",
+    short: "Degas min",
     type: "number",
     unit: "min",
     expected: 15,
     required: true,
   },
-  { key: "pressure", label: "Pressure", type: "number", unit: "bar", min: 2, max: 3, step: 0.1, required: true },
-  { key: "flowRate", label: "Flow Rate", type: "number", unit: "Lpm", min: 6, max: 9, step: 0.1, required: true },
+  { key: "pressure", label: "Pressure", short: "Bar", type: "number", unit: "bar", min: 2, max: 3, step: 0.1, required: true },
+  { key: "flowRate", label: "Flow Rate", short: "Lpm", type: "number", unit: "Lpm", min: 6, max: 9, step: 0.1, required: true },
   {
     key: "rotorSize",
     label: "Rotor Size",
+    short: "Rotor",
     type: "select",
     options: ["100mm", "190mm"],
     required: true,
@@ -176,17 +218,18 @@ const PCS_HOURLY_FIELDS = [
   {
     key: "rotorRpm",
     label: "Rotor RPM",
+    short: "RPM",
     type: "number",
     unit: "RPM",
     step: 1,
     required: true,
-    // Range depends on the selected rotor size.
     dynamicRange: (entry) =>
       entry.rotorSize === "190mm" ? { min: 350, max: 400 } : { min: 550, max: 650 },
   },
   {
     key: "gasCheckKMould",
     label: "Gas Checking — K-Mould",
+    short: "K-Mould",
     type: "number",
     min: 0.0,
     max: 0.1,
@@ -196,17 +239,19 @@ const PCS_HOURLY_FIELDS = [
   {
     key: "gasCheckVacuum",
     label: "Gas Checking — Vacuum Sample",
+    short: "Vacuum",
     type: "number",
     min: 2.68,
     max: 2.75,
     step: 0.01,
     required: true,
   },
-  { key: "roomTemp", label: "Room Temp", type: "number", unit: "°C", step: 0.1, required: true },
-  { key: "humidity", label: "Humidity", type: "number", unit: "%", min: 0, max: 100, step: 0.1, required: true },
+  { key: "roomTemp", label: "Room Temp", short: "Room °C", type: "number", unit: "°C", step: 0.1, required: true },
+  { key: "humidity", label: "Humidity", short: "Hum %", type: "number", unit: "%", min: 0, max: 100, step: 0.1, required: true },
   {
     key: "holdingFurnaceTemp",
     label: "Holding Furnace Metal Temp.",
+    short: "Hold °C",
     type: "number",
     unit: "°C",
     min: 730,
@@ -216,16 +261,16 @@ const PCS_HOURLY_FIELDS = [
   {
     key: "degassingKillingTime",
     label: "Degassing Killing Time",
+    short: "Kill min",
     type: "number",
     unit: "min",
     min: 10,
     max: 15,
     required: true,
   },
-  { key: "dieTemp", label: "Die Temp.", type: "number", unit: "°C", min: 250, max: 350, required: true },
 ];
 
-// --- Shift once, 8 hrs (child records, 3 per day) -----------------------
+// --- Shift sign-off (child of the day sheet) ----------------------------
 const PCS_SHIFTS = ["1st Shift", "2nd Shift", "3rd Shift"];
 const PCS_CORE_PIN_CAVITIES = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
 
@@ -245,17 +290,6 @@ const PCS_SHIFT_FIELDS = [
   },
   { key: "bestCastAlloy", label: "Best Cast Alloy", type: "select", options: ["YES", "NO"], required: true },
   { key: "otherAlloy", label: "Other Alloy", type: "select", options: ["YES", "NO"], required: true },
-  { key: "degassingGas", label: "Degassing Gas", type: "select", options: ["N2"], required: true },
-  { key: "bcNo", label: "BC No.", type: "number", step: 1, required: true },
-  {
-    key: "dieCoatThickness",
-    label: "Die Coat Thickness",
-    type: "number",
-    unit: "microns",
-    min: 100,
-    max: 150,
-    required: true,
-  },
   { key: "operatorSign", label: "Operator Sign", type: "text", required: true },
   {
     key: "shiftSupervisorSign",
@@ -268,13 +302,19 @@ const PCS_SHIFT_FIELDS = [
 ];
 
 // --- Time slots ---------------------------------------------------------
-// 30-minute slots from 6:30am through 6:00am the next day (48 slots),
-// split into three 8-hour shifts of 16 slots each. The paper sheet skips
-// 12:00am; that looks like a transcription slip, so it's included here.
+// 30-minute slots from 6:30am through 6:00am the next day (48 slots), split
+// into three 8-hour shifts of 16 slots each. The paper sheet skips 12:00am;
+// that looks like a transcription slip, so it is included here.
+//
+// The fixed three-shift, 16-slot pattern is a placeholder for the Shift
+// Master (ENH-001 in the Backlog), which will carry real shift timings.
+const PCS_SLOT_MINUTES = 30;
+const PCS_DAY_START_MIN = 6 * 60 + 30;
+
 function pcsTimeSlots() {
   const slots = [];
   for (let i = 0; i < 48; i++) {
-    const minutesFromStart = 6 * 60 + 30 + i * 30;
+    const minutesFromStart = PCS_DAY_START_MIN + i * PCS_SLOT_MINUTES;
     const h24 = Math.floor(minutesFromStart / 60) % 24;
     const mm = minutesFromStart % 60 === 0 ? "00" : "30";
     const suffix = h24 < 12 ? "am" : "pm";
@@ -284,11 +324,26 @@ function pcsTimeSlots() {
   return slots;
 }
 
+const PCS_TIME_SLOTS = pcsTimeSlots();
+
 function pcsShiftForSlotIndex(index) {
   return PCS_SHIFTS[Math.floor(index / 16)];
 }
 
-PCS_HOURLY_FIELDS[0].options = pcsTimeSlots();
+// The slot whose 30-minute window has most recently closed, relative to now.
+// Used as the default selection for hourly entry, so an operator recording
+// at 14:45 is offered 2.30pm rather than having to find it.
+function pcsNearestCompletedSlot(dateStr) {
+  if (!dateStr) return 0;
+  const start = new Date(`${dateStr}T00:00:00`);
+  if (Number.isNaN(start.getTime())) return 0;
+  start.setMinutes(start.getMinutes() + PCS_DAY_START_MIN);
+
+  const elapsedMin = (Date.now() - start.getTime()) / 60000;
+  if (elapsedMin < PCS_SLOT_MINUTES) return 0; // day not started, or first slot still open
+  const index = Math.floor(elapsedMin / PCS_SLOT_MINUTES) - 1;
+  return Math.max(0, Math.min(47, index));
+}
 
 // --- Validation ---------------------------------------------------------
 // Returns { ok, outOfSpec: [{key, label, value, reason}], missing: [labels] }
@@ -304,6 +359,10 @@ function pcsValidate(entry, fields) {
       if (f.required) missing.push(f.label);
       return;
     }
+
+    // A machine that was not running in this slot is recorded as NA, which
+    // is a complete answer rather than a value to be range-checked.
+    if (raw === PCS_NA) return;
 
     if (f.type !== "number") return;
 
