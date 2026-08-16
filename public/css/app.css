@@ -103,6 +103,27 @@ body {
   letter-spacing: -0.2px;
 }
 
+/* Stands in for the logo when the asset is unavailable — see js/brand.js.
+   Sized by .brand-logo, which it inherits. */
+.logo-fallback {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #f6f4ee;
+  color: #0d0b5c;
+  border-radius: 50%;
+  font-family: 'Fraunces', serif;
+  font-weight: 600;
+  line-height: 1;
+  user-select: none;
+}
+
+.brand-logo.logo-fallback { font-size: 21px; padding: 0; }
+
+@media (max-width: 640px) {
+  .brand-logo.logo-fallback { font-size: 18px; }
+}
+
 /* The nav wraps onto further rows rather than scrolling sideways, so every
    item stays reachable at any width. min-width:0 lets it shrink inside the
    flex bar instead of forcing the bar wider than the viewport. */

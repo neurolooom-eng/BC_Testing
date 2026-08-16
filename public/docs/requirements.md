@@ -83,14 +83,14 @@ Digital implementation of form QC FMT 038 for the Mando model line.
 | REQ-PCS-002 | The module shall associate zero or more hourly reading records with each daily record. | Hourly readings are subordinate to the day's sheet. | Test | Implemented |
 | REQ-PCS-003 | The module shall associate zero or more shift records with each daily record. | Shift sign-offs are subordinate to the day's sheet. | Test | Implemented |
 | REQ-PCS-004 | The module shall delete all associated hourly and shift records when a daily record is deleted. | Prevent orphaned child records. | Test | Implemented |
-| REQ-PCS-005 | The module shall accept a maximum of three shift records per daily record, one per shift. | Three shifts are worked per day. | Test | Partial |
+| REQ-PCS-005 | The module shall accept at most one shift record per shift defined in the Shift Master, for a given daily record. | A shift is recorded once; duplicate or excess records corrupt the day's data. | Test | Deferred — depends on REQ-MST-001 |
 
 ### 5.2 Time structure
 
 | ID | Requirement | Rationale | Verification | Status |
 |---|---|---|---|---|
 | REQ-PCS-010 | The module shall provide 48 hourly reading time slots at 30-minute intervals, commencing at 06:30 and concluding at 06:00 the following day. | Matches the recording interval of the paper sheet. | Test | Implemented |
-| REQ-PCS-011 | The module shall assign each time slot to exactly one of 1st Shift, 2nd Shift or 3rd Shift, with 16 consecutive slots per shift. | Each reading must be attributable to a shift. | Test | Implemented |
+| REQ-PCS-011 | The module shall assign each time slot to exactly one shift, determined by the timings held in the Shift Master. | Each reading must be attributable to a shift, and shift timings are subject to change. | Test | Partial — assignment implemented against a fixed three-shift, 16-slot pattern pending REQ-MST-001 |
 | REQ-PCS-012 | The module shall display the shift assigned to a time slot alongside each hourly reading. | Supervisors review by shift. | Inspection | Implemented |
 
 ### 5.3 Data entry and validation
@@ -117,7 +117,23 @@ Digital implementation of form QC FMT 038 for the Mando model line.
 | REQ-PCS-041 | The module shall make a record entered by one user visible to all other authorised users. | Three shift supervisors record against the same daily sheet. | Test | Deferred |
 | REQ-PCS-042 | The module shall render a submitted check sheet in the layout of form QC FMT 038 for printing. | Required by the tolerances specification. | Demonstration | Deferred |
 
-## 6. Developer Documentation (DEV)
+## 6. Masters (MST)
+
+Controlled value lists are presently embedded in application code. These
+requirements define their replacement by maintained masters. All are
+deferred pending the backend — see the Backlog.
+
+| ID | Requirement | Rationale | Verification | Status |
+|---|---|---|---|---|
+| REQ-MST-001 | The system shall maintain a master of shifts, each defining a shift code, display name, start time, end time and sequence. | Shift timings are operational data and change without code changes. | Inspection | Deferred |
+| REQ-MST-002 | The system shall determine the shift applicable to any recorded time from the Shift Master. | One definition of shift boundaries, used everywhere, rather than an assumption repeated per module. | Test | Deferred |
+| REQ-MST-003 | The system shall offer, wherever a shift is selected, only those shifts marked active in the Shift Master. | Retired shift patterns must not be selectable, while historic records referencing them remain readable. | Test | Deferred |
+| REQ-MST-004 | The system shall maintain masters for production line, furnace, alloy grade, machine, personnel, rotor size and acceptance limits. | The same values are referenced by several modules and must not diverge. | Inspection | Deferred |
+| REQ-MST-005 | The system shall apply a change made to a master to every module referencing that master, without modification to application code. | A maintained master that requires a redeployment to change is not a master. | Test | Deferred |
+| REQ-MST-006 | The system shall restrict maintenance of masters to authorised administrative users. | Controlled values govern acceptance of production data. | Test | Deferred |
+| REQ-MST-007 | The system shall retain records that reference a master value after that value is deactivated. | Historic check sheets must remain complete and auditable. | Test | Deferred |
+
+## 7. Developer Documentation (DEV)
 
 | ID | Requirement | Rationale | Verification | Status |
 |---|---|---|---|---|
@@ -128,7 +144,7 @@ Digital implementation of form QC FMT 038 for the Mando model line.
 | REQ-DEV-005 | Each requirement shall be traceable to at least one test case. | Demonstrates coverage. | Analysis | Implemented |
 | REQ-DEV-006 | The Requirements and Test Cases documents shall be updated in the same change that alters the behaviour they describe. | Documentation drifts if updated separately. | Inspection | Implemented |
 
-## 7. Deployment (DEP)
+## 8. Deployment (DEP)
 
 | ID | Requirement | Rationale | Verification | Status |
 |---|---|---|---|---|
@@ -136,3 +152,4 @@ Digital implementation of form QC FMT 038 for the Mando model line.
 | REQ-DEP-002 | The system shall serve the sign-in page at the site root address. | Users arrive at the bare domain. | Test | Implemented |
 | REQ-DEP-003 | The publication process shall incorporate the brand mark held at the repository root into the published site. | Root is the single source of truth for the asset. | Test | Implemented |
 | REQ-DEP-004 | The publication process shall complete successfully, emitting a warning, when the brand mark is absent. | A missing optional asset must not block release. | Test | Implemented |
+| REQ-DEP-005 | The system shall display a placeholder brand mark when the brand mark asset cannot be loaded. | The asset is supplied separately from the code, so its absence is a foreseeable state and must not present as a rendering fault. | Test | Implemented |

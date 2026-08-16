@@ -30,7 +30,7 @@ function renderTopbar(activeKey) {
   header.className = "topbar";
   header.innerHTML = `
     <a class="brand" href="dashboard.html">
-      <img class="brand-logo" src="logo.svg" alt="Bestcast logo">
+      <img class="brand-logo" src="logo.svg" alt="Bestcast logo" data-brand-mark>
       <span class="brand-name">Bestcast</span>
     </a>
 
@@ -72,6 +72,10 @@ function renderTopbar(activeKey) {
     </div>
   `;
   document.body.insertBefore(header, document.body.firstChild);
+
+  // The bar is built here, which may be after brand.js has already run its
+  // DOMContentLoaded pass, so wire this header's mark up explicitly.
+  if (typeof initBrandMarks === "function") initBrandMarks(header);
 
   // --- menus ---
   const userTrigger = document.getElementById("user-menu-trigger");

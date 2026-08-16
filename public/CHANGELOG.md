@@ -4,6 +4,31 @@ Version numbers follow semver — see `VERSIONING.md` at the repo root.
 Build number and build date shown in the site footer are generated
 automatically per deploy and are not tracked here.
 
+## 1.4.1 — 2026-08-16
+
+**BUG-004 fixed — brand mark no longer renders as an empty circle**
+- The brand mark now falls back to a styled monogram when the logo asset
+  can't be loaded (`js/brand.js`), so a missing or late-arriving asset can
+  no longer present as a broken image
+- `renderTopbar()` initialises its own mark directly, since it builds the
+  bar after the document's load pass
+- `Logo.svg` still isn't committed, so the monogram is what shows today —
+  committing it at the repository root swaps in the real logo with no code
+  change
+
+**BUG-007 reclassified as an enhancement**
+- Constraining shift records in the form would have treated the symptom.
+  The real gap is that shifts have no single definition: the names are
+  hardcoded and the boundaries are a fixed assumption of 16 time slots,
+  with no timings recorded anywhere
+- Now tracked as ENH-001 — Shift Master — in the Backlog, alongside the
+  other masters (line, furnace, alloy, machine, personnel, rotor and
+  acceptance limits), all deferred pending the backend
+- Requirements added for masters (REQ-MST-001 to 007); REQ-PCS-005 and
+  REQ-PCS-011 now derive from the Shift Master rather than from constants
+
+No defects are currently open.
+
 ## 1.4.0 — 2026-08-16
 
 **Adaptive navigation**

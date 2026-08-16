@@ -21,11 +21,15 @@ not deleted — the history is the point.
 | BUG-001 | Sign-in impossible — User ID field rejected non-email values | Critical | Fixed | pre-1.0.0 |
 | BUG-002 | Published site served the repository README, not the application | Critical | Fixed | pre-1.0.0 |
 | BUG-003 | Site root address did not open the sign-in page | Major | Fixed | pre-1.0.0 |
-| BUG-004 | Brand mark renders as an empty circle | Minor | Open | partially 1.3.1 |
+| BUG-004 | Brand mark renders as an empty circle | Minor | Fixed | 1.4.1 |
 | BUG-005 | Navigation dropdown clipped inside the bar; page scrolled sideways | Major | Fixed | 1.3.2 |
 | BUG-006 | Authentication enforced only in client-side code | Critical | Deferred | — |
-| BUG-007 | A fourth shift record can be added to a daily record | Minor | Open | — |
+| BUG-007 | A fourth shift record can be added to a daily record | Minor | Reclassified | — |
 | BUG-008 | Navigation scrolled horizontally instead of wrapping | Major | Fixed | 1.4.0 |
+
+No defects are currently open. BUG-006 is a deferred design decision and
+BUG-007 has been reclassified as an enhancement; both are tracked in the
+Backlog.
 
 ---
 
@@ -98,19 +102,25 @@ and also offers a plain link for clients that do not follow the redirect.
 ## BUG-004 — Brand mark renders as an empty circle
 
 - **Severity:** Minor
-- **Status:** Open
-- **Partially corrected in:** 1.3.1
-- **Affects:** REQ-DEP-003
-- **Covered by:** TC-DEP-003
+- **Status:** Fixed
+- **Fixed in:** 1.4.1 (partial corrections in 1.3.1)
+- **Affects:** REQ-DEP-003, REQ-DEP-005
+- **Covered by:** TC-DEP-003, TC-DEP-005
 
-**Symptom.** The sign-in page and the navigation bar show an empty circle
+**Symptom.** The sign-in page and the navigation bar showed an empty circle
 where the Bestcast logo should be.
 
-**Root cause.** Two distinct causes. First, every page referenced
-`images/logo.png`, a path that was never created — no image file has ever
-been committed to the repository. Second, once the intended location was
-given as the repository root, that location is outside `public/` and so is
-not published, meaning a root-level file would still not have been served.
+**Root cause.** Three distinct causes, corrected in two stages.
+
+1. Every page referenced `images/logo.png`, a path that was never created —
+   no image file had been committed to the repository.
+2. Once the intended asset location was given as the repository root, that
+   location sits outside `public/` and so is not published, meaning a
+   root-level file would still not have been served.
+3. The brand mark had no defined appearance for the case where the asset is
+   unavailable. Because the asset is supplied separately from the code, an
+   `<img>` with no file resolved to a broken image — the empty circle. The
+   page had no way to degrade.
 
 **Correction applied (1.3.1).** Repointed all references to `logo.svg`, and
 added a publication step that copies a root-level `Logo.svg` into `public/`
@@ -118,9 +128,18 @@ at build time, so the repository root remains the source of truth. The
 lookup is case-insensitive and a missing file emits a warning rather than
 failing the build.
 
-**Why still open.** The image file itself has not been supplied. The
-defect closes when `Logo.svg` is committed at the repository root; no
-further code change is expected.
+**Correction applied (1.4.1).** Added `js/brand.js`, which substitutes a
+styled monogram for any brand mark whose image fails to load. The mark now
+has a defined appearance in both states, so a missing or late-arriving
+asset can no longer present as a rendering fault. `renderTopbar()` invokes
+it directly for the bar it builds, since that happens after the document's
+own load pass.
+
+**Note.** `Logo.svg` has still not been committed, so the monogram is what
+is currently displayed. That is now correct behaviour rather than a defect:
+committing the asset at the repository root replaces the monogram with the
+logo, with no further code change. Supplying the asset is tracked in the
+Backlog.
 
 ---
 
@@ -183,19 +202,29 @@ exist. This must be corrected before either becomes true.
 ## BUG-007 — A fourth shift record can be added to a daily record
 
 - **Severity:** Minor
-- **Status:** Open
-- **Affects:** REQ-PCS-005
-- **Covered by:** TC-PCS-005
+- **Status:** Reclassified as an enhancement — see ENH-001 in the Backlog
+- **Affects:** REQ-PCS-005, REQ-MST-001, REQ-MST-003
 
 **Symptom.** The Process Check Sheet accepts more than three shift records
 against one daily record, and permits two records for the same shift.
 
 **Root cause.** The shift entry form offers all three shifts unconditionally
-and does not test the shifts already recorded against that daily record. The
-constraint was specified but never implemented.
+and does not test the shifts already recorded against that daily record.
 
-**Planned correction.** Exclude shifts already recorded from the shift list,
-and hide the add control once three records exist.
+**Why reclassified.** Constraining the count in the form would treat the
+symptom while leaving the underlying gap: shifts have no single definition.
+The three shift names are hardcoded in `js/pcs-spec.js`, the boundary
+between them is a hardcoded assumption of 16 consecutive time slots, and
+neither carries the shift timings themselves. Any rule about "how many
+shifts may be recorded" should derive from a Shift Master rather than a
+constant in the form.
+
+This is therefore scoped as ENH-001 — Shift Master — in the Backlog, where
+a single definition of every shift and its timings is linked to each place a
+shift is referenced. The record-count constraint (REQ-PCS-005) becomes a
+consequence of that master rather than a separate check.
+
+No defect entry remains open for this; it is tracked as planned work.
 
 ---
 
