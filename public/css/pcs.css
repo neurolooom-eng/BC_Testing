@@ -1,8 +1,10 @@
 /* Process Check Sheet module styles. Layered on top of app.css. */
 
+/* min() keeps the track from forcing overflow once the viewport is
+   narrower than the stated minimum. */
 .field-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(230px, 100%), 1fr));
   gap: 16px;
 }
 
@@ -186,7 +188,7 @@ td a:hover { text-decoration: underline; }
 
 .kv-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(190px, 100%), 1fr));
   gap: 10px;
   margin-bottom: 14px;
 }
@@ -224,7 +226,7 @@ td a:hover { text-decoration: underline; }
 
 .pin-inputs {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(96px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(96px, 45%), 1fr));
   gap: 8px;
 }
 
@@ -252,6 +254,13 @@ td a:hover { text-decoration: underline; }
   padding: 26px;
   width: 100%;
   max-width: 880px;
+}
+
+@media (max-width: 640px) {
+  .modal-backdrop { padding: 16px 10px; }
+  .modal { padding: 18px 16px; border-radius: 12px; }
+  .tab { padding: 9px 12px; font-size: 12.5px; }
+  th, td { padding: 8px 9px; }
 }
 
 .modal h2 {

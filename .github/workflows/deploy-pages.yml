@@ -3,7 +3,7 @@ name: Deploy public/ to GitHub Pages
 on:
   push:
     branches: [main]
-    paths: ["public/**", "VERSION", "[Ll]ogo.svg"]
+    paths: ["public/**", "VERSION", "BACKLOG.md", "[Ll]ogo.svg"]
   workflow_dispatch:
 
 permissions:
@@ -35,6 +35,12 @@ jobs:
           else
             echo "::warning::No logo.svg at repo root; the brand mark will not render."
           fi
+      - name: Stage backlog into the published docs
+        # BACKLOG.md is kept at the repo root (referenced by README/SETUP),
+        # but the Dev page reads it from docs/, which must be inside public/.
+        run: |
+          mkdir -p public/docs
+          cp BACKLOG.md public/docs/backlog.md
       - name: Generate build info (version, build number, build date)
         run: |
           VERSION=$(tr -d '[:space:]' < VERSION)
