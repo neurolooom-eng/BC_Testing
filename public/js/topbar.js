@@ -30,7 +30,7 @@ function renderTopbar(activeKey) {
   header.className = "topbar";
   header.innerHTML = `
     <a class="brand" href="dashboard.html">
-      <img class="brand-logo" src="images/logo.png" alt="Bestcast logo">
+      <img class="brand-logo" src="logo.svg" alt="Bestcast logo">
       <span class="brand-name">Bestcast</span>
     </a>
 

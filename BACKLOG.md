@@ -115,6 +115,9 @@ tab (the "Remember me" option was removed).
 
 ## 5. Assets
 
-- `public/images/logo.png` doesn't exist yet — both the login page and the
-  top bar reference it, so the brand mark renders as an empty circle. Needs
-  the actual Bestcast logo file committed to the repo.
+- **`Logo.svg` is not in the repo yet.** Every page references `logo.svg`,
+  and the deploy workflow copies a root-level `Logo.svg` into `public/`
+  when publishing — but no such file has ever been committed, so the brand
+  mark still renders as an empty circle. Commit the actual Bestcast logo
+  as `Logo.svg` in the repo root to finish this. Until then the deploy
+  logs a warning rather than failing.

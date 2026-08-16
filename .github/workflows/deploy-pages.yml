@@ -3,7 +3,7 @@ name: Deploy public/ to GitHub Pages
 on:
   push:
     branches: [main]
-    paths: ["public/**", "VERSION"]
+    paths: ["public/**", "VERSION", "[Ll]ogo.svg"]
   workflow_dispatch:
 
 permissions:
@@ -23,6 +23,18 @@ jobs:
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - uses: actions/checkout@v4
+      - name: Stage root logo into the published folder
+        # Logo.svg lives at the repo root, but only public/ is published,
+        # so copy it in at build time. Matched case-insensitively since
+        # the file may be committed as Logo.svg or logo.svg.
+        run: |
+          SRC=$(find . -maxdepth 1 -iname 'logo.svg' | head -n1)
+          if [ -n "$SRC" ]; then
+            cp "$SRC" public/logo.svg
+            echo "Staged $SRC -> public/logo.svg"
+          else
+            echo "::warning::No logo.svg at repo root; the brand mark will not render."
+          fi
       - name: Generate build info (version, build number, build date)
         run: |
           VERSION=$(tr -d '[:space:]' < VERSION)
