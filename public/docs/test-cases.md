@@ -10,7 +10,7 @@ one case covers it.
 
 **Result key:** `Pass` · `Fail` · `Blocked` · `Not run`
 
-Last executed against **v1.4.1**.
+Last executed against **v1.5.0**.
 
 ---
 
@@ -76,7 +76,15 @@ Last executed against **v1.4.1**.
 | TC-PCS-001 | REQ-PCS-001 | Signed in | Create a check sheet with all daily-once items. | Record created and listed. | Pass |
 | TC-PCS-002 | REQ-PCS-002 | Daily record exists | Add two hourly readings. | Both listed against that daily record. | Pass |
 | TC-PCS-003 | REQ-PCS-003 | Daily record exists | Add a 1st Shift record. | Listed against that daily record; shift count shows 1/3. | Pass |
-| TC-PCS-004 | REQ-PCS-004 | Daily record with hourly and shift children | Delete the daily record. | Record and all children removed; none remain listed. | Pass |
+| TC-PCS-004 | REQ-PCS-004 | Day sheet with machine, hourly and shift children | Delete the day sheet. | Sheet and all children removed; none remain listed. | Pass |
+| TC-PCS-006 | REQ-PCS-006 | Day sheet open | Add two machines with differing settings. | Both listed against the day sheet, each retaining its own M/C no., BC no., die coat thickness, preheat temp and times. | Pass |
+| TC-PCS-007 | REQ-PCS-007 | Day sheet with two machines | Record an hourly reading and enter a Die Temp for each machine. | Both values stored against that slot, one per machine. | Pass |
+| TC-PCS-008 | REQ-PCS-008, REQ-PCS-009 | Day sheet open | Add a machine with a start slot part-way through the day. | Machine records that start slot and is shown as running from it. | Pass |
+| TC-PCS-009 | REQ-PCS-008, REQ-PCS-009 | Running machine | Stop the machine at a chosen slot. | Machine shown as stopped; it is running in that slot and not in the next. | Pass |
+| TC-PCS-015 | REQ-PCS-015 | Machine started at slot 10 | Inspect the matrix for slots 0–9 and 10 onward. | Slots before the start show NA and are not editable; slots from the start are editable. | Pass |
+| TC-PCS-016 | REQ-PCS-015 | Machine stopped at slot 20 | Inspect the matrix for slots 21 onward. | Those slots show NA for that machine. | Pass |
+| TC-PCS-017 | REQ-PCS-016 | Machine with NA slots | View the out-of-specification count for the sheet. | NA slots contribute no out-of-specification entries. | Pass |
+| TC-PCS-018 | REQ-PCS-004 | Legacy day sheet recorded before machines were a child collection | Open the sheet. | Its machine details appear as one machine record, with the former Die Temp readings held against it. | Pass |
 | TC-PCS-005 | REQ-PCS-005, REQ-MST-003 | Daily record with a record for every shift in the Shift Master | Attempt to add a further shift record. | Addition prevented; no shift can be recorded twice. | Blocked — deferred, depends on the Shift Master (ENH-001) |
 
 ### 5.2 Time structure
@@ -112,7 +120,24 @@ Last executed against **v1.4.1**.
 | TC-PCS-035 | REQ-PCS-029 | Add-hourly form | Inspect numeric fields. | Each displays its acceptance limits. | Pass |
 | TC-PCS-036 | REQ-PCS-030 | Out-of-limit value recorded | Check for an administrator alert. | Alert transmitted. | Blocked — deferred, requires backend |
 
-### 5.4 Persistence
+### 5.4 Working view, entry layouts and approval
+
+| ID | Verifies | Preconditions | Steps | Expected result | Result |
+|---|---|---|---|---|---|
+| TC-PCS-050 | REQ-PCS-050 | Day sheet open | Add a machine, record an hourly reading, add a shift record, and approve one of each. | All actions complete without leaving the day sheet. | Pass |
+| TC-PCS-051 | REQ-PCS-051 | Day sheet with machines | Select the matrix layout. | Readings for multiple slots are editable together, with a column per furnace parameter and per machine Die Temp. | Pass |
+| TC-PCS-052 | REQ-PCS-052 | Day sheet with machines | Select the form layout. | Readings for one selected slot are editable. | Pass |
+| TC-PCS-053 | REQ-PCS-053 | Form layout selected | Reload the page. | Form layout still selected. | Pass |
+| TC-PCS-054 | REQ-PCS-054 | Day sheet dated today, current time 14:45 | Open hourly entry. | Slot 2.30pm is selected by default. | Pass |
+| TC-PCS-055 | REQ-PCS-054 | Day sheet dated in the past | Open hourly entry. | The final slot of the day is selected. | Pass |
+| TC-PCS-056 | REQ-PCS-055 | Reading recorded for slot 0 only | Attempt to edit slot 0. | Editing permitted; it is still the most recent reading. | Pass |
+| TC-PCS-057 | REQ-PCS-055 | Readings recorded for slots 0 and 1 | Attempt to edit slot 0. | Editing prevented; the row is shown as locked. | Pass |
+| TC-PCS-058 | REQ-PCS-056, REQ-PCS-057 | Hourly reading recorded | Approve it. | Marked approved, recording the approver's identity and the time. | Pass |
+| TC-PCS-059 | REQ-PCS-058 | Approved hourly reading that is the most recent | Attempt to edit it. | Editing prevented while the approval stands. | Pass |
+| TC-PCS-060 | REQ-PCS-058 | Approved record | Withdraw the approval, then edit. | Editing permitted once the approval is withdrawn. | Pass |
+| TC-PCS-061 | REQ-PCS-059 | Day sheet with unapproved records | View the day sheet header and the sheet list. | Count of records awaiting approval shown in both. | Pass |
+
+### 5.5 Persistence
 
 | ID | Verifies | Preconditions | Steps | Expected result | Result |
 |---|---|---|---|---|---|

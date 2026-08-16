@@ -4,6 +4,38 @@ Version numbers follow semver — see `VERSIONING.md` at the repo root.
 Build number and build date shown in the site footer are generated
 automatically per deploy and are not tracked here.
 
+## 1.5.0 — 2026-08-16
+
+**Machines are now a child of the day sheet**
+- M/C No., BC No., die coat thickness, preheat temp, cooling/pouring/
+  tilting times move off the day header into a repeating machine table,
+  matching the block on the paper sheet
+- **Die Temp is recorded per machine per time slot**, as on the paper
+  sheet, rather than once per hour for the whole line
+- A machine carries a running window: it can be **added part-way through
+  a shift** and **stopped** at any slot, both from the day sheet
+- Slots outside a machine's running window are recorded as **NA** — a
+  complete answer rather than a blank, and excluded from spec checking
+- Existing day sheets are migrated automatically: former header machine
+  details become a single machine, with its Die Temp readings attached
+
+**One working view**
+- The day sheet is now the single view. Machines, hourly readings and
+  shift sign-offs are all added, edited and approved there — the separate
+  tabbed sub-views are gone
+- **Approval** added on machines, hourly readings and shift records,
+  recording who approved and when. Approved records lock until the
+  approval is withdrawn; pending counts show on the sheet and in the list
+
+**Hourly entry — two layouts to compare in use**
+- **Matrix view**: many slots editable at once, one column per furnace
+  parameter and one per machine Die Temp, with NA cells shaded
+- **Form view**: one slot at a time, full field labels and spec hints
+- Both default the slot to the **nearest completed** half-hour
+- Past data locks on the next update: a reading stays editable while it is
+  the most recent, and locks once a later slot is recorded
+- The chosen layout is remembered per device
+
 ## 1.4.1 — 2026-08-16
 
 **BUG-004 fixed — brand mark no longer renders as an empty circle**

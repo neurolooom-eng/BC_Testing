@@ -79,10 +79,16 @@ Digital implementation of form QC FMT 038 for the Mando model line.
 
 | ID | Requirement | Rationale | Verification | Status |
 |---|---|---|---|---|
-| REQ-PCS-001 | The Process Check Sheet module shall represent each production day as one daily record containing the daily-once data items. | The paper sheet is organised per day, per line, per machine. | Inspection | Implemented |
-| REQ-PCS-002 | The module shall associate zero or more hourly reading records with each daily record. | Hourly readings are subordinate to the day's sheet. | Test | Implemented |
-| REQ-PCS-003 | The module shall associate zero or more shift records with each daily record. | Shift sign-offs are subordinate to the day's sheet. | Test | Implemented |
-| REQ-PCS-004 | The module shall delete all associated hourly and shift records when a daily record is deleted. | Prevent orphaned child records. | Test | Implemented |
+| REQ-PCS-001 | The Process Check Sheet module shall represent each production day as one day sheet containing the daily-once data items. | The paper sheet is organised per day and per line. | Inspection | Implemented |
+| REQ-PCS-002 | The module shall associate zero or more hourly reading records with each day sheet. | Hourly readings are subordinate to the day's sheet. | Test | Implemented |
+| REQ-PCS-003 | The module shall associate zero or more shift records with each day sheet. | Shift sign-offs are subordinate to the day's sheet. | Test | Implemented |
+| REQ-PCS-004 | The module shall delete all associated machine, hourly and shift records when a day sheet is deleted. | Prevent orphaned child records. | Test | Implemented |
+| REQ-PCS-006 | The module shall associate zero or more machine records with each day sheet, each holding M/C number, BC number, die coat thickness, die preheat temperature, cooling time, pouring time and tilting time. | Several machines run on one line in a day, each with its own settings; the paper sheet carries a block of these per day. | Inspection | Implemented |
+| REQ-PCS-007 | The module shall record a Die Temp reading for each machine for each hourly time slot. | Die temperature is a per-machine, per-hour measurement on the paper sheet. | Test | Implemented |
+| REQ-PCS-008 | The module shall record, for each machine, the time slot at which it started running and, where applicable, the time slot at which it stopped. | A machine may be introduced or withdrawn part-way through a shift. | Test | Implemented |
+| REQ-PCS-009 | The module shall permit an operator to add a machine, and to stop a running machine, while recording hourly data. | Machine changes occur mid-shift and must be recordable without leaving the entry task. | Demonstration | Implemented |
+| REQ-PCS-015 | The module shall record NA for each machine for each time slot outside that machine's running window. | A slot in which a machine was not running is a complete answer, distinct from one nobody has filled in. | Test | Implemented |
+| REQ-PCS-016 | The module shall exclude a value recorded as NA from acceptance-limit evaluation. | NA states that no measurement applies, so it cannot be out of specification. | Test | Implemented |
 | REQ-PCS-005 | The module shall accept at most one shift record per shift defined in the Shift Master, for a given daily record. | A shift is recorded once; duplicate or excess records corrupt the day's data. | Test | Deferred — depends on REQ-MST-001 |
 
 ### 5.2 Time structure
@@ -109,7 +115,22 @@ Digital implementation of form QC FMT 038 for the Mando model line.
 | REQ-PCS-029 | The module shall display, for each numeric data item, the acceptance limits applicable to that item. | Operators should not need the paper tolerance sheet to hand. | Inspection | Implemented |
 | REQ-PCS-030 | The module shall transmit an alert to the administrator when a value outside its acceptance limits is recorded. | Required by the tolerances specification. | Test | Deferred |
 
-### 5.4 Persistence
+### 5.4 Working view, entry layouts and approval
+
+| ID | Requirement | Rationale | Verification | Status |
+|---|---|---|---|---|
+| REQ-PCS-050 | The module shall present the day sheet as the single working view, from which every machine, hourly reading and shift record is added, edited and approved. | One place to work avoids navigating between screens while recording against a live line. | Demonstration | Implemented |
+| REQ-PCS-051 | The module shall offer hourly entry in a matrix layout, in which the readings for multiple time slots are editable together. | Recording several slots in one pass suits catching up after a busy period. | Demonstration | Implemented |
+| REQ-PCS-052 | The module shall offer hourly entry in a form layout, in which the readings for a single time slot are editable. | Recording one slot at a time suits entry as the shift proceeds. | Demonstration | Implemented |
+| REQ-PCS-053 | The module shall retain the selected hourly entry layout across page loads on the same device. | The layout is an operator preference, not a per-visit choice. | Test | Implemented |
+| REQ-PCS-054 | The module shall default the selected time slot for hourly entry to the most recently completed time slot. | The reading being recorded is almost always the one just finished. | Test | Implemented |
+| REQ-PCS-055 | The module shall prevent modification of an hourly reading once a reading for a later time slot has been recorded. | Correcting the entry just made is legitimate; revising superseded history is not. | Test | Implemented |
+| REQ-PCS-056 | The module shall permit an authorised user to approve a machine, hourly or shift record. | Supervisory sign-off is required on recorded process data. | Test | Implemented |
+| REQ-PCS-057 | The module shall record the identity of the approver and the time of approval against each approved record. | Sign-off must be attributable. | Test | Implemented |
+| REQ-PCS-058 | The module shall prevent modification of an approved record until its approval is withdrawn. | Approved data is a controlled record. | Test | Implemented |
+| REQ-PCS-059 | The module shall indicate on each day sheet the number of records awaiting approval. | Supervisors must see outstanding sign-offs without opening each record. | Test | Implemented |
+
+### 5.5 Persistence
 
 | ID | Requirement | Rationale | Verification | Status |
 |---|---|---|---|---|
