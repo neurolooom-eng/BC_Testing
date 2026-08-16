@@ -54,12 +54,15 @@ body {
 /* ---------- Top bar ---------- */
 
 .topbar {
-  height: 86px;
+  /* Height grows as the nav wraps — never a fixed height, so nothing is
+     forced off-screen on narrow viewports. */
+  min-height: 86px;
   width: 100%;
   display: flex;
   align-items: center;
-  padding: 0 28px;
-  gap: 12px;
+  flex-wrap: wrap;
+  padding: 10px 28px;
+  gap: 10px 12px;
   /* Opaque base colour under the gradient layers, so page content
      scrolling underneath never shows through the bar. */
   background-color: #07061f;
@@ -100,23 +103,17 @@ body {
   letter-spacing: -0.2px;
 }
 
+/* The nav wraps onto further rows rather than scrolling sideways, so every
+   item stays reachable at any width. min-width:0 lets it shrink inside the
+   flex bar instead of forcing the bar wider than the viewport. */
 .main-nav {
   display: flex;
   align-items: center;
-  gap: 8px;
-  /* min-width:0 is what makes overflow-x actually engage — without it a
-     flex child defaults to min-width:auto and refuses to shrink below its
-     content, widening the whole bar past the viewport. */
+  flex-wrap: wrap;
+  gap: 6px 8px;
   min-width: 0;
   flex: 1 1 auto;
-  overflow-x: auto;
-  overflow-y: hidden;
-  /* Scrollable, but without a scrollbar cutting through the bar. */
-  scrollbar-width: none;
-  -ms-overflow-style: none;
 }
-
-.main-nav::-webkit-scrollbar { display: none; }
 
 .nav-item {
   position: relative;
@@ -324,12 +321,41 @@ button.nav-item {
 .user-dropdown a:hover,
 .user-dropdown button:hover { background: rgba(246,244,238,0.08); }
 
-@media (max-width: 900px) {
-  .topbar { padding: 0 16px; gap: 8px; }
-  .brand-name { display: none; }
-  .brand { min-width: auto; }
-  .nav-item { padding: 0 14px; font-size: 13.5px; }
+/* --- Responsive: desktop → tablet → mobile ---------------------------- */
+
+/* Tablet and below: the nav drops onto its own full-width row beneath the
+   brand and user controls, then wraps within that row as needed. */
+@media (max-width: 1024px) {
+  .topbar { padding: 10px 20px; }
+  .main-nav {
+    order: 3;
+    flex-basis: 100%;
+    justify-content: flex-start;
+  }
+  .nav-item { height: 48px; padding: 0 16px; }
+}
+
+@media (max-width: 640px) {
+  .topbar { padding: 10px 14px; gap: 8px; }
+  .brand-logo { width: 34px; height: 34px; }
+  .brand-name { font-size: 19px; }
+  .nav-item {
+    height: 42px;
+    padding: 0 12px;
+    font-size: 13px;
+    gap: 7px;
+    border-radius: 11px;
+  }
+  .nav-item svg { width: 17px; height: 17px; }
   .user-name { display: none; }
+  .header-actions { gap: 10px; }
+}
+
+/* Small phones: keep the brand mark but drop the wordmark so the nav row
+   gets the space. */
+@media (max-width: 400px) {
+  .brand-name { display: none; }
+  .nav-item { padding: 0 10px; font-size: 12.5px; }
 }
 
 /* ---------- Page content ---------- */
@@ -338,12 +364,19 @@ button.nav-item {
   max-width: 1180px;
   margin: 0 auto;
   padding: 40px 24px 24px;
+  min-width: 0;
 }
 
 .content h1 {
   font-family: 'Fraunces', serif;
   font-size: 26px;
   margin-bottom: 8px;
+  overflow-wrap: break-word;
+}
+
+@media (max-width: 640px) {
+  .content { padding: 24px 14px 16px; }
+  .content h1 { font-size: 21px; }
 }
 
 .subtitle {

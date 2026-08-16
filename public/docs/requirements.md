@@ -1,0 +1,138 @@
+# Requirements
+
+System requirements for the Bestcast web application, written in INCOSE
+style: each requirement is a single "shall" statement that is necessary,
+unambiguous, singular, feasible and verifiable.
+
+**Convention:** `The <subject> shall <action> <object> <condition/constraint>`
+
+**Maintenance rule:** this document is updated in the same change that
+alters behaviour. A change that adds, removes or modifies a capability
+updates the affected requirements and their test cases before it merges.
+
+**Status key:** `Implemented` · `Partial` · `Deferred` (see Backlog)
+
+---
+
+## 1. Authentication (AUTH)
+
+Current authentication is a temporary client-side mechanism; see the
+Backlog for the Supabase replacement. Requirements below describe intended
+behaviour independent of that mechanism.
+
+| ID | Requirement | Rationale | Verification | Status |
+|---|---|---|---|---|
+| REQ-AUTH-001 | The system shall require a User ID and password to be supplied before granting access to any page other than the sign-in page. | Restrict the application to authorised personnel. | Test | Implemented |
+| REQ-AUTH-002 | The system shall grant access when the supplied credentials match an authorised account. | Permit legitimate access. | Test | Implemented |
+| REQ-AUTH-003 | The system shall reject sign-in when the supplied credentials do not match an authorised account, and shall display the message "Invalid User ID or password." | Deny unauthorised access without disclosing which field was wrong. | Test | Implemented |
+| REQ-AUTH-004 | The system shall accept User ID values that are not formatted as email addresses. | Plant accounts are short identifiers such as `msv`, not addresses. | Test | Implemented |
+| REQ-AUTH-005 | The system shall redirect an unauthenticated user to the sign-in page when any protected page is requested. | Prevent direct URL access to protected content. | Test | Implemented |
+| REQ-AUTH-006 | The system shall provide a sign-out control that terminates the session and returns the user to the sign-in page. | Allow shared-terminal users to end their session. | Demonstration | Implemented |
+| REQ-AUTH-007 | The system shall terminate the user session when the browser tab is closed. | Shop-floor terminals are shared between shifts. | Test | Implemented |
+| REQ-AUTH-008 | The system shall verify credentials server-side such that authorisation cannot be bypassed by modifying client-side code. | Client-side checks are not a security boundary. | Inspection | Deferred |
+
+## 2. Navigation and Application Shell (NAV)
+
+| ID | Requirement | Rationale | Verification | Status |
+|---|---|---|---|---|
+| REQ-NAV-001 | The system shall present a top navigation bar on every authenticated page. | Consistent access to all modules. | Inspection | Implemented |
+| REQ-NAV-002 | The navigation bar shall provide entries for Overview, Production Records, Reports and Team. | Defined top-level information architecture. | Inspection | Implemented |
+| REQ-NAV-003 | The Team entry shall expose Roster as a sub-item. | Roster is subordinate to Team, not a peer. | Demonstration | Implemented |
+| REQ-NAV-004 | The navigation bar shall visually indicate which entry corresponds to the page currently displayed. | Orientation within the application. | Inspection | Implemented |
+| REQ-NAV-005 | The navigation bar shall wrap its entries onto additional rows when the entries exceed the available viewport width. | Every entry must remain reachable without horizontal scrolling. | Test | Implemented |
+| REQ-NAV-006 | The navigation bar shall not require horizontal scrolling to reach any entry at any supported viewport width. | Horizontal scrolling hides navigation on small screens. | Test | Implemented |
+| REQ-NAV-007 | The navigation bar shall remain visible at the top of the viewport while page content is scrolled vertically. | Navigation available from anywhere on long pages. | Demonstration | Implemented |
+| REQ-NAV-008 | Navigation dropdown menus shall be displayed over page content at full opacity. | Menu contents must be legible against arbitrary page content. | Inspection | Implemented |
+| REQ-NAV-009 | The navigation bar shall increase in height as required to accommodate wrapped entries. | A fixed height would clip wrapped rows. | Test | Implemented |
+
+## 3. User Interface and Responsiveness (UI)
+
+| ID | Requirement | Rationale | Verification | Status |
+|---|---|---|---|---|
+| REQ-UI-001 | The system shall render all pages legibly and operably at viewport widths from 320 px to 2560 px. | Supports mobile, tablet and desktop use on the shop floor and in the office. | Test | Implemented |
+| REQ-UI-002 | The system shall not require horizontal scrolling of the page body at any supported viewport width. | Horizontal page scroll makes content unreachable and detaches fixed elements. | Test | Implemented |
+| REQ-UI-003 | The system shall confine content wider than the viewport, such as data tables, to horizontal scrolling within that content's own container. | Wide tabular data must remain viewable without breaking page layout. | Test | Implemented |
+| REQ-UI-004 | The system shall provide a control to switch between light and dark themes. | Shop-floor lighting varies by shift. | Demonstration | Implemented |
+| REQ-UI-005 | The system shall apply the dark theme by default when no theme has been selected. | Defined default appearance. | Test | Implemented |
+| REQ-UI-006 | The system shall retain the selected theme across page loads and sessions on the same device. | Avoid re-selecting on every visit. | Test | Implemented |
+| REQ-UI-007 | The navigation bar shall retain identical colours in both light and dark themes. | Brand identity is carried by the bar. | Inspection | Implemented |
+| REQ-UI-008 | The system shall render page content other than the navigation bar in a monochrome palette when the light theme is selected. | Specified light-mode treatment. | Inspection | Implemented |
+
+## 4. Build Identification (BLD)
+
+| ID | Requirement | Rationale | Verification | Status |
+|---|---|---|---|---|
+| REQ-BLD-001 | The system shall display the version number, build number and build date/time in the footer of every page. | Traceability of a reported defect to a specific build. | Inspection | Implemented |
+| REQ-BLD-002 | The build number shall be a positive integer. | Unambiguous ordering. | Inspection | Implemented |
+| REQ-BLD-003 | Each build number shall be strictly greater than the build number of the preceding build, irrespective of the branch built. | Build numbers must totally order releases. | Analysis | Implemented |
+| REQ-BLD-004 | The build date/time shall record the instant of publication, expressed in UTC. | Site is maintained across time zones. | Inspection | Implemented |
+| REQ-BLD-005 | The version number shall conform to semantic versioning as `MAJOR.MINOR.PATCH`. | Industry-standard configuration management. | Inspection | Implemented |
+| REQ-BLD-006 | The MAJOR version shall be incremented when a change is not backward compatible. | Signal breaking change. | Inspection | Implemented |
+| REQ-BLD-007 | The MINOR version shall be incremented when backward-compatible functionality is added. | Signal new capability. | Inspection | Implemented |
+| REQ-BLD-008 | The PATCH version shall be incremented when a backward-compatible defect correction is made. | Signal fix-only release. | Inspection | Implemented |
+
+## 5. Process Check Sheet (PCS)
+
+Digital implementation of form QC FMT 038 for the Mando model line.
+
+### 5.1 Record structure
+
+| ID | Requirement | Rationale | Verification | Status |
+|---|---|---|---|---|
+| REQ-PCS-001 | The Process Check Sheet module shall represent each production day as one daily record containing the daily-once data items. | The paper sheet is organised per day, per line, per machine. | Inspection | Implemented |
+| REQ-PCS-002 | The module shall associate zero or more hourly reading records with each daily record. | Hourly readings are subordinate to the day's sheet. | Test | Implemented |
+| REQ-PCS-003 | The module shall associate zero or more shift records with each daily record. | Shift sign-offs are subordinate to the day's sheet. | Test | Implemented |
+| REQ-PCS-004 | The module shall delete all associated hourly and shift records when a daily record is deleted. | Prevent orphaned child records. | Test | Implemented |
+| REQ-PCS-005 | The module shall accept a maximum of three shift records per daily record, one per shift. | Three shifts are worked per day. | Test | Partial |
+
+### 5.2 Time structure
+
+| ID | Requirement | Rationale | Verification | Status |
+|---|---|---|---|---|
+| REQ-PCS-010 | The module shall provide 48 hourly reading time slots at 30-minute intervals, commencing at 06:30 and concluding at 06:00 the following day. | Matches the recording interval of the paper sheet. | Test | Implemented |
+| REQ-PCS-011 | The module shall assign each time slot to exactly one of 1st Shift, 2nd Shift or 3rd Shift, with 16 consecutive slots per shift. | Each reading must be attributable to a shift. | Test | Implemented |
+| REQ-PCS-012 | The module shall display the shift assigned to a time slot alongside each hourly reading. | Supervisors review by shift. | Inspection | Implemented |
+
+### 5.3 Data entry and validation
+
+| ID | Requirement | Rationale | Verification | Status |
+|---|---|---|---|---|
+| REQ-PCS-020 | The module shall present each data item using the data type defined for that item in the approved tolerances specification. | Prevents free-text entry of controlled values. | Inspection | Implemented |
+| REQ-PCS-021 | The module shall restrict entry of an enumerated data item to the values defined for that item in the approved tolerances specification. | Eliminates transcription errors such as "pk" for "ok". | Test | Implemented |
+| REQ-PCS-022 | The module shall evaluate each numeric data item against the acceptance limits defined for that item in the approved tolerances specification. | Detect out-of-specification process conditions. | Test | Implemented |
+| REQ-PCS-023 | The module shall evaluate Rotor RPM against the acceptance limits corresponding to the rotor size selected for that reading. | Acceptance limits differ by rotor size (100 mm: 550–650; 190 mm: 350–400). | Test | Implemented |
+| REQ-PCS-024 | The module shall indicate, in red, each data item whose value lies outside its acceptance limits. | Required by the tolerances specification. | Inspection | Implemented |
+| REQ-PCS-025 | The module shall indicate on the check sheet list the count of out-of-specification values recorded against each daily record. | Supervisors must identify affected sheets without opening each one. | Test | Implemented |
+| REQ-PCS-026 | The module shall record a value that lies outside its acceptance limits when the operator confirms entry. | The record must reflect actual process conditions, not only compliant ones. | Test | Implemented |
+| REQ-PCS-027 | The module shall prevent a record from being saved while any mandatory data item is empty, and shall identify each such item. | Incomplete records are not auditable. | Test | Implemented |
+| REQ-PCS-028 | The module shall record the verification result of each of core pin cavities 1 to 10 for each shift record. | Required by the paper sheet. | Inspection | Implemented |
+| REQ-PCS-029 | The module shall display, for each numeric data item, the acceptance limits applicable to that item. | Operators should not need the paper tolerance sheet to hand. | Inspection | Implemented |
+| REQ-PCS-030 | The module shall transmit an alert to the administrator when a value outside its acceptance limits is recorded. | Required by the tolerances specification. | Test | Deferred |
+
+### 5.4 Persistence
+
+| ID | Requirement | Rationale | Verification | Status |
+|---|---|---|---|---|
+| REQ-PCS-040 | The module shall retain recorded data across page reloads and browser restarts. | Entries must not be lost. | Test | Implemented |
+| REQ-PCS-041 | The module shall make a record entered by one user visible to all other authorised users. | Three shift supervisors record against the same daily sheet. | Test | Deferred |
+| REQ-PCS-042 | The module shall render a submitted check sheet in the layout of form QC FMT 038 for printing. | Required by the tolerances specification. | Demonstration | Deferred |
+
+## 6. Developer Documentation (DEV)
+
+| ID | Requirement | Rationale | Verification | Status |
+|---|---|---|---|---|
+| REQ-DEV-001 | The system shall restrict access to the developer pages to authorised developer accounts. | Internal engineering information. | Test | Partial |
+| REQ-DEV-002 | The developer pages shall provide sub-pages for Version History, Requirements, Test Cases, Bugs and Backlog. | Single location for engineering records. | Inspection | Implemented |
+| REQ-DEV-003 | Requirements shall be expressed in INCOSE style as single "shall" statements that are unambiguous and verifiable. | Consistent, reviewable specification. | Inspection | Implemented |
+| REQ-DEV-004 | Each recorded defect shall state its cause, the correction applied, and the version in which the correction was released. | Traceability from defect to release. | Inspection | Implemented |
+| REQ-DEV-005 | Each requirement shall be traceable to at least one test case. | Demonstrates coverage. | Analysis | Implemented |
+| REQ-DEV-006 | The Requirements and Test Cases documents shall be updated in the same change that alters the behaviour they describe. | Documentation drifts if updated separately. | Inspection | Implemented |
+
+## 7. Deployment (DEP)
+
+| ID | Requirement | Rationale | Verification | Status |
+|---|---|---|---|---|
+| REQ-DEP-001 | The system shall publish the contents of the `public/` directory when a change is merged to the `main` branch. | Continuous delivery of the site. | Demonstration | Implemented |
+| REQ-DEP-002 | The system shall serve the sign-in page at the site root address. | Users arrive at the bare domain. | Test | Implemented |
+| REQ-DEP-003 | The publication process shall incorporate the brand mark held at the repository root into the published site. | Root is the single source of truth for the asset. | Test | Implemented |
+| REQ-DEP-004 | The publication process shall complete successfully, emitting a warning, when the brand mark is absent. | A missing optional asset must not block release. | Test | Implemented |
