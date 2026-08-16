@@ -4,6 +4,24 @@ Version numbers follow semver — see `VERSIONING.md` at the repo root.
 Build number and build date shown in the site footer are generated
 automatically per deploy and are not tracked here.
 
+## 1.3.2 — 2026-08-16
+
+Fixes the top bar breaking up when a nav dropdown is opened on a sub-page.
+
+- The Team dropdown was being clipped inside the nav instead of overlaying
+  the page. `.main-nav` sets `overflow-x: auto`, and CSS forces the other
+  axis to clip too, so the dropdown was trapped in the bar and produced
+  scrollbars. It's now `position: fixed` (placed from the trigger's rect in
+  `topbar.js`), so it escapes that clipping and overlays content fully.
+- `.main-nav` was missing `min-width: 0`, so as a flex child it refused to
+  shrink and widened the whole bar past the viewport — which scrolled the
+  page sideways and left the sticky bar not covering the full width.
+- Top bar now has an opaque base background colour under its gradients, so
+  content scrolling underneath can't show through.
+- Nav scrollbars hidden, page-level horizontal scroll clipped, and open
+  dropdowns close on scroll/resize (a fixed element can't follow its
+  trigger).
+
 ## 1.3.1 — 2026-08-16
 
 - Point every logo reference (login, signup, and the shared top bar) at
