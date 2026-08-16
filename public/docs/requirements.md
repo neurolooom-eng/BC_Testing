@@ -138,7 +138,56 @@ Digital implementation of form QC FMT 038 for the Mando model line.
 | REQ-PCS-041 | The module shall make a record entered by one user visible to all other authorised users. | Three shift supervisors record against the same daily sheet. | Test | Deferred |
 | REQ-PCS-042 | The module shall render a submitted check sheet in the layout of form QC FMT 038 for printing. | Required by the tolerances specification. | Demonstration | Deferred |
 
-## 6. Masters (MST)
+## 6. Access Control and Configuration (AC)
+
+Access is granted through roles. Per-user grants and denials exist for
+exceptions and are off by default.
+
+**Note on enforcement:** these requirements describe what the application
+offers and permits in the browser. Until the checks are enforced
+server-side (REQ-AUTH-008, BUG-006) they are not a security boundary.
+
+### 6.1 Model
+
+| ID | Requirement | Rationale | Verification | Status |
+|---|---|---|---|---|
+| REQ-AC-001 | The system shall maintain a set of roles, each defining the operations permitted on each resource. | Access is administered per role rather than per person. | Inspection | Implemented |
+| REQ-AC-002 | The system shall assign zero or more roles to each user. | A person may hold more than one responsibility. | Test | Implemented |
+| REQ-AC-003 | The system shall derive a user's access from the union of the permissions of their assigned roles. | Role-based access is the default and only mechanism required. | Test | Implemented |
+| REQ-AC-004 | The system shall permit an administrator to grant a user an operation in addition to those conferred by their roles. | Occasional exceptions arise before a role change is justified. | Test | Implemented |
+| REQ-AC-005 | The system shall permit an administrator to deny a user an operation otherwise conferred by their roles. | An individual may need to be withheld from one operation. | Test | Implemented |
+| REQ-AC-006 | The system shall apply a denial in preference to any grant of the same operation. | A withheld operation must not be reinstated by a role. | Test | Implemented |
+| REQ-AC-007 | The system shall create each user with no additional grants and no denials. | Role-based access is the default; exceptions are deliberate. | Test | Implemented |
+| REQ-AC-008 | The system shall report, for each operation shown to an administrator, whether it derives from a role, from an additional grant, or from a denial. | Exceptions must be visible rather than indistinguishable from role access. | Inspection | Implemented |
+| REQ-AC-009 | The system shall report the count of additional and denied operations held by each user. | Accumulated exceptions must be noticeable without inspecting each user. | Test | Implemented |
+| REQ-AC-010 | The system shall withhold all access from a user marked inactive. | Departures must be revocable in one step. | Test | Implemented |
+| REQ-AC-011 | The system shall remove a deleted role from every user to which it was assigned. | Prevent references to a role that no longer exists. | Test | Implemented |
+| REQ-AC-012 | The system shall prevent deletion of a role designated as a system role. | The administrator role must remain, or configuration becomes unreachable. | Test | Implemented |
+| REQ-AC-013 | The system shall remove every role permission and per-user exception referring to a resource when that resource is deleted. | A reused identifier must not silently inherit former grants. | Test | Implemented |
+
+### 6.2 Cloning access
+
+| ID | Requirement | Rationale | Verification | Status |
+|---|---|---|---|---|
+| REQ-AC-020 | The system shall permit an administrator to copy one user's access to another user. | Staff joining an existing team are usually granted the same access as a colleague. | Test | Implemented |
+| REQ-AC-021 | The system shall permit role assignments, additional grants and denials to be selected independently when copying access. | Copying a colleague's roles should not silently duplicate their one-off exceptions. | Test | Implemented |
+| REQ-AC-022 | The system shall copy role assignments only, unless additional grants or denials are expressly selected. | The safe default. | Test | Implemented |
+| REQ-AC-023 | The system shall offer copying that replaces the recipient's access and copying that adds to it. | Both "make them the same as" and "also give them" are needed. | Test | Implemented |
+| REQ-AC-024 | The system shall reject an attempt to copy a user's access to themselves. | A meaningless operation that would obscure a mis-selection. | Test | Implemented |
+
+### 6.3 Resources under control
+
+| ID | Requirement | Rationale | Verification | Status |
+|---|---|---|---|---|
+| REQ-AC-030 | The system shall control access to pages, actions, exec links, sheet links and variables. | These are the distinct things a user may be permitted to reach or perform. | Inspection | Implemented |
+| REQ-AC-031 | The system shall define, for each resource type, the operations that may be permitted on it. | Viewing a variable and editing it are different privileges. | Inspection | Implemented |
+| REQ-AC-032 | The system shall permit an administrator to maintain the register of each resource type. | New pages, actions and links are added as the application grows. | Test | Implemented |
+| REQ-AC-033 | The system shall omit from the navigation any page the signed-in user may not view. | Offering an unreachable destination is a defect in the interface. | Test | Implemented |
+| REQ-AC-034 | The system shall redirect a user who requests a page they may not view to a page they may. | Direct entry of an address must not bypass the interface. | Test | Implemented |
+| REQ-AC-035 | The system shall omit any control whose action the signed-in user may not perform. | The same reasoning as REQ-AC-033, applied to actions. | Test | Implemented |
+| REQ-AC-036 | The system shall report, for each resource, the number of roles granting access to it. | Identifies resources nobody can reach and resources granted too widely. | Inspection | Implemented |
+
+## 7. Masters (MST)
 
 Controlled value lists are presently embedded in application code. These
 requirements define their replacement by maintained masters. All are
@@ -154,7 +203,7 @@ deferred pending the backend — see the Backlog.
 | REQ-MST-006 | The system shall restrict maintenance of masters to authorised administrative users. | Controlled values govern acceptance of production data. | Test | Deferred |
 | REQ-MST-007 | The system shall retain records that reference a master value after that value is deactivated. | Historic check sheets must remain complete and auditable. | Test | Deferred |
 
-## 7. Developer Documentation (DEV)
+## 8. Developer Documentation (DEV)
 
 | ID | Requirement | Rationale | Verification | Status |
 |---|---|---|---|---|
@@ -165,7 +214,7 @@ deferred pending the backend — see the Backlog.
 | REQ-DEV-005 | Each requirement shall be traceable to at least one test case. | Demonstrates coverage. | Analysis | Implemented |
 | REQ-DEV-006 | The Requirements and Test Cases documents shall be updated in the same change that alters the behaviour they describe. | Documentation drifts if updated separately. | Inspection | Implemented |
 
-## 8. Deployment (DEP)
+## 9. Deployment (DEP)
 
 | ID | Requirement | Rationale | Verification | Status |
 |---|---|---|---|---|

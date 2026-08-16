@@ -27,6 +27,10 @@
         <h2>Team</h2>
         <p>Coming soon. Includes Roster.</p>
       </div>
+      <a class="card" href="configuration.html" id="config-card" style="display:none;">
+        <h2>Configuration</h2>
+        <p>Users, roles and access control.</p>
+      </a>
     </div>
   </main>
 
@@ -36,13 +40,17 @@
   <script src="js/footer.js"></script>
   <script src="js/brand.js"></script>
   <script src="js/temp-local-auth.js"></script>
+  <script src="js/rbac.js"></script>
   <script src="js/topbar.js"></script>
   <script>
     // TEMPORARY: gated by the hardcoded local session, not Supabase.
     // See BACKLOG.md for restoring real Supabase-backed auth.
     const session = renderTopbar("overview");
-    if (session) {
+    if (session && rbacRequirePage(session, "page.overview", "login.html")) {
       document.getElementById("welcome").textContent = `Signed in as ${session.fullName}.`;
+      if (rbacCanViewPage(session.userid, "page.configuration")) {
+        document.getElementById("config-card").style.display = "block";
+      }
     }
   </script>
 </body>

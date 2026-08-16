@@ -1,0 +1,88 @@
+/* Configuration module — layered on app.css and pcs.css. */
+
+.mono {
+  font-family: ui-monospace, 'SF Mono', Consolas, monospace;
+  font-size: 11.5px;
+}
+
+.role-chip {
+  display: inline-block;
+  padding: 3px 9px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 600;
+  background: rgba(47,167,135,0.14);
+  color: var(--teal);
+  border: 1px solid var(--teal);
+  white-space: nowrap;
+  margin: 1px 0;
+}
+
+body.light-theme .role-chip { color: #1d6b56; border-color: #1d6b56; }
+
+/* Where a permission comes from — used in both the per-user access view
+   and the role permission editor. */
+.src-role { background: rgba(47,167,135,0.10); text-align: center; }
+.src-extra { background: rgba(232,130,58,0.14); text-align: center; }
+.src-denied { background: rgba(232,83,79,0.14); text-align: center; }
+.src-none { text-align: center; color: var(--content-mute); }
+
+.legend-row {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 14px;
+}
+
+.legend {
+  font-size: 11px;
+  padding: 4px 10px;
+  border-radius: 6px;
+  border: 1px solid var(--card-border);
+}
+
+.op-select {
+  padding: 3px 4px;
+  background: var(--input-bg);
+  border: 1px solid var(--input-border);
+  border-radius: 5px;
+  color: var(--content-fg);
+  font-family: inherit;
+  font-size: 11px;
+  max-width: 92px;
+}
+
+.check-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  max-height: 320px;
+  overflow-y: auto;
+}
+
+.check-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  font-size: 13px;
+  line-height: 1.45;
+  cursor: pointer;
+}
+
+.check-row input { margin-top: 3px; accent-color: var(--teal); flex-shrink: 0; }
+
+/* Tabs on this page are links. */
+a.tab { text-decoration: none; display: inline-block; }
+
+.modal .sheet-block { background: none; }
+
+.modal .sheet-block > summary { gap: 10px; }
+
+.modal .sheet-block > summary h2 { font-size: 15px; }
+
+.modal .table-wrap { max-height: 340px; overflow: auto; }
+
+@media (max-width: 640px) {
+  .op-select { max-width: 78px; font-size: 10.5px; }
+  .legend { font-size: 10.5px; }
+}

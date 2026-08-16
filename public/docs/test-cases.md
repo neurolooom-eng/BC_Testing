@@ -10,7 +10,7 @@ one case covers it.
 
 **Result key:** `Pass` · `Fail` · `Blocked` · `Not run`
 
-Last executed against **v1.5.0**.
+Last executed against **v1.6.0**.
 
 ---
 
@@ -145,7 +145,38 @@ Last executed against **v1.5.0**.
 | TC-PCS-041 | REQ-PCS-041 | Record entered on device A | Open the site on device B as another user. | The record is visible. | Fail — deferred, see Backlog |
 | TC-PCS-042 | REQ-PCS-042 | Completed daily record | Request a printable copy of the sheet. | Sheet rendered in the QC FMT 038 layout suitable for printing. | Blocked — deferred, not implemented |
 
-## 6. Masters
+## 6. Access Control and Configuration
+
+| ID | Verifies | Preconditions | Steps | Expected result | Result |
+|---|---|---|---|---|---|
+| TC-AC-001 | REQ-AC-001, REQ-AC-002 | Signed in as an administrator | Open Configuration → Roles, then assign a role to a user. | Roles listed with their permissions; assignment saved against the user. | Pass |
+| TC-AC-002 | REQ-AC-003 | User assigned the Operator role only | Check whether they may record an hourly reading, and whether they may approve. | Recording permitted; approving refused. | Pass |
+| TC-AC-003 | REQ-AC-003 | User assigned two roles | Inspect their effective access. | They hold the union of both roles' permissions. | Pass |
+| TC-AC-004 | REQ-AC-007 | New user created with a role | Open their Access view. | No additional grants and no denials are present. | Pass |
+| TC-AC-005 | REQ-AC-004 | Operator who cannot approve | Grant "Approve records" to that user alone. | They may now approve; the Operator role is unchanged and other operators still cannot. | Pass |
+| TC-AC-006 | REQ-AC-005, REQ-AC-006 | Supervisor whose role permits approving | Deny "Approve records" for that user. | They may no longer approve, despite the role granting it. | Pass |
+| TC-AC-007 | REQ-AC-008 | User with one additional grant and one denial | Open their Access view. | Each operation is shown as deriving from a role, an additional grant, or a denial. | Pass |
+| TC-AC-008 | REQ-AC-009 | As above | View the user list. | Counts of additional and denied operations shown against that user. | Pass |
+| TC-AC-009 | REQ-AC-010 | Active user with roles | Mark the user inactive. | They hold no access to any resource. | Pass |
+| TC-AC-010 | REQ-AC-011 | Role assigned to a user | Delete the role. | Role removed, and no longer assigned to that user. | Pass |
+| TC-AC-011 | REQ-AC-012 | Signed in as an administrator | Attempt to delete the Administrator role. | Deletion refused; the role remains. | Pass |
+| TC-AC-012 | REQ-AC-013 | Action granted to a role | Delete that action from the register. | The grant is removed from the role; recreating the identifier confers nothing. | Pass |
+| TC-AC-020 | REQ-AC-020, REQ-AC-022 | Two users, one with roles and one without | Clone access, accepting the defaults. | Recipient receives the source's roles; no exceptions are copied. | Pass |
+| TC-AC-021 | REQ-AC-021, REQ-AC-022 | Source user holding an additional grant | Clone with defaults, then inspect the recipient. | The additional grant is not present on the recipient. | Pass |
+| TC-AC-022 | REQ-AC-021 | Source user holding an additional grant | Clone with additional grants selected. | The additional grant is present on the recipient. | Pass |
+| TC-AC-023 | REQ-AC-023 | Recipient already holding a role | Clone with "merge". | Recipient retains their existing role and gains the source's. | Pass |
+| TC-AC-024 | REQ-AC-023 | Recipient already holding a role | Clone with "replace". | Recipient holds exactly the source's roles. | Pass |
+| TC-AC-025 | REQ-AC-024 | Any user | Attempt to clone that user's access to themselves. | Operation refused. | Pass |
+| TC-AC-030 | REQ-AC-030, REQ-AC-031 | Configuration open | Inspect each resource tab. | Pages, actions, exec links, sheet links and variables each listed, with their applicable operations. | Pass |
+| TC-AC-031 | REQ-AC-032 | Configuration open | Add, edit and remove a resource of each type. | Register updated in each case. | Pass |
+| TC-AC-032 | REQ-AC-033 | User without permission to view Configuration | Sign in and inspect the navigation bar. | No Configuration entry is shown. | Pass |
+| TC-AC-033 | REQ-AC-034 | As above | Request `configuration.html` directly by address. | Redirected away from the page. | Pass |
+| TC-AC-034 | REQ-AC-035 | Operator who may not delete a day sheet | Open a day sheet. | No delete control is offered. | Pass |
+| TC-AC-035 | REQ-AC-035 | Operator who may not approve | Open a day sheet with recorded readings. | No approve control is offered. | Pass |
+| TC-AC-036 | REQ-AC-036 | Configuration open | View any resource register. | Each resource shows how many roles grant access to it. | Pass |
+| TC-AC-037 | REQ-AC-003 | Role permission changed | Amend a role, then check a user holding it. | The change applies to that user without further action. | Pass |
+
+## 7. Masters
 
 All cases below are blocked pending the Shift Master and its siblings
 (ENH-001 and the Masters section of the Backlog).
@@ -161,7 +192,7 @@ All cases below are blocked pending the Shift Master and its siblings
 | TC-MST-007 | REQ-MST-006 | Signed in as a non-administrator | Attempt to open a master for maintenance. | Access refused. | Blocked — deferred |
 | TC-MST-008 | REQ-MST-007 | Historic record referencing a master value | Deactivate that value; reopen the historic record. | The record still displays the value it was recorded against. | Blocked — deferred |
 
-## 7. Developer Documentation
+## 8. Developer Documentation
 
 | ID | Verifies | Preconditions | Steps | Expected result | Result |
 |---|---|---|---|---|---|
@@ -173,7 +204,7 @@ All cases below are blocked pending the Shift Master and its siblings
 | TC-DEV-006 | REQ-DEV-004 | Bugs open | Review each entry with status Fixed. | Each states symptom, root cause, correction applied, and the version the correction shipped in. | Pass |
 | TC-DEV-007 | REQ-DEV-006 | A merged change that altered behaviour | Inspect that change's contents. | Requirements and Test Cases were updated within the same change. | Pass |
 
-## 8. Deployment
+## 9. Deployment
 
 | ID | Verifies | Preconditions | Steps | Expected result | Result |
 |---|---|---|---|---|---|

@@ -4,6 +4,45 @@ Version numbers follow semver — see `VERSIONING.md` at the repo root.
 Build number and build date shown in the site footer are generated
 automatically per deploy and are not tracked here.
 
+## 1.6.0 — 2026-08-16
+
+**Configuration module — users, roles and access control**
+
+New Configuration page (administrators only) with eight sections:
+
+- **Users** — accounts, role assignment, active/inactive, and a per-user
+  Access view showing every operation and where it comes from
+- **Roles** — five seeded roles (Administrator, Quality Manager, Shift
+  Supervisor, Operator, Viewer) with a full permission editor
+- **Access Matrix** — every role against every resource, at a glance
+- **Pages, Actions, Exec Links, Sheet Links, Variables** — the registers of
+  everything access can be granted on, each maintainable
+
+**Access is role-based by default.** A user's access is the union of their
+roles' permissions. Per-user *additional grants* and *denials* exist for
+exceptions, are empty on every new user, and are always displayed as
+exceptions rather than blended into role access — a denial always beats a
+grant.
+
+**Cloning** copies one user's access to another. Roles only by default, so
+copying a colleague's access doesn't silently duplicate their one-off
+exceptions; additional grants and denials can be included deliberately,
+and either replace the recipient's access or merge with it.
+
+**Enforcement across the app**
+- Navigation omits pages the user may not view; an empty Team menu is
+  dropped rather than left as a dead end
+- Requesting a page directly redirects if the user may not view it
+- Check sheet controls — create, edit, delete, machine changes, hourly
+  recording, approve and unapprove — are each hidden unless permitted
+- The Dev page gate moved from a hardcoded user list to the `page.dev`
+  permission
+
+Note: this is UI-level access control, not a security boundary, until the
+checks run server-side (BUG-006 / REQ-AUTH-008). The roles and permissions
+defined here are what the Supabase row level security policies should be
+built from.
+
 ## 1.5.0 — 2026-08-16
 
 **Machines are now a child of the day sheet**
