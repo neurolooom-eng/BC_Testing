@@ -3,84 +3,87 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Bestcast — Dev Page</title>
+<title>Bestcast — Dev</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
-<style>
-  :root { --navy-deep: #07061f; --teal: #2fa787; --orange: #e8823a; --cream: #f6f4ee; --mute: rgba(246,244,238,0.55); }
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-  body {
-    font-family: 'Inter', sans-serif;
-    background: var(--navy-deep);
-    color: var(--cream);
-    min-height: 100vh;
-    padding: 40px 20px;
-  }
-  .wrap { max-width: 720px; margin: 0 auto; }
-  h1 { font-family: 'Fraunces', serif; font-size: 24px; margin-bottom: 4px; }
-  .subtitle { color: var(--mute); font-size: 13px; margin-bottom: 24px; }
-  .current-build {
-    background: rgba(246,244,238,0.04);
-    border: 1px solid rgba(246,244,238,0.12);
-    border-radius: 12px;
-    padding: 16px 20px;
-    margin-bottom: 24px;
-    font-size: 13px;
-    color: var(--mute);
-  }
-  .current-build strong { color: var(--cream); }
-  pre {
-    background: rgba(246,244,238,0.04);
-    border: 1px solid rgba(246,244,238,0.12);
-    border-radius: 12px;
-    padding: 20px 24px;
-    white-space: pre-wrap;
-    word-wrap: break-word;
-    font-family: ui-monospace, 'SF Mono', Consolas, monospace;
-    font-size: 12.5px;
-    line-height: 1.6;
-    color: var(--cream);
-    overflow-x: auto;
-  }
-  a.back { display: inline-block; margin-top: 20px; font-size: 13px; color: var(--teal); text-decoration: none; border-bottom: 1px solid var(--teal); }
-  .denied { text-align: center; margin-top: 80px; color: var(--mute); }
-</style>
+<link rel="stylesheet" href="css/app.css">
+<link rel="stylesheet" href="css/pcs.css">
+<link rel="stylesheet" href="css/docs.css">
 </head>
 <body>
-  <div class="wrap" id="content" style="display:none;">
-    <h1>Dev Page</h1>
-    <p class="subtitle">Version history — visible only to msv and pnk.</p>
+
+  <main class="content">
+    <h1>Dev</h1>
+    <p class="subtitle" id="dev-subtitle">Engineering records — visible to developer accounts only.</p>
+
+    <div class="tabs" id="doc-tabs"></div>
     <div class="current-build" id="current-build"></div>
-    <pre id="changelog">Loading changelog…</pre>
-    <a class="back" href="dashboard.html">&larr; Back to dashboard</a>
-  </div>
-  <div class="denied" id="denied" style="display:none;">
-    <p>Redirecting…</p>
-  </div>
+    <article class="doc" id="doc-body">Loading…</article>
+  </main>
+
+  <p class="build-footer"></p>
 
   <script src="js/build-info.js"></script>
+  <script src="js/footer.js"></script>
   <script src="js/temp-local-auth.js"></script>
+  <script src="js/topbar.js"></script>
+  <script src="js/md.js"></script>
   <script>
-    const session = tempGetSession();
-    if (!session) {
-      window.location.href = "login.html";
-    } else if (!DEV_PAGE_USERS.includes(session.userid)) {
-      document.getElementById("denied").style.display = "block";
+    // Access is restricted to developer accounts. NOTE: this is a
+    // client-side check only and can be bypassed — see BUG-006. It becomes
+    // a real boundary once Supabase row level security is in place.
+    const session = renderTopbar(null);
+    if (session && !DEV_PAGE_USERS.includes(session.userid)) {
       window.location.href = "dashboard.html";
-    } else {
-      document.getElementById("content").style.display = "block";
-      const info = window.BUILD_INFO || {};
-      document.getElementById("current-build").innerHTML =
-        `<strong>Current build:</strong> v${info.version || "?"} &middot; Build #${info.buildNumber ?? "?"} &middot; ${info.buildDate || "unknown"}`;
-
-      fetch("CHANGELOG.md")
-        .then((r) => (r.ok ? r.text() : Promise.reject(r.status)))
-        .then((text) => {
-          document.getElementById("changelog").textContent = text;
-        })
-        .catch(() => {
-          document.getElementById("changelog").textContent = "Could not load CHANGELOG.md.";
-        });
     }
+
+    const DOCS = [
+      { key: "version", label: "Version History", src: "CHANGELOG.md" },
+      { key: "requirements", label: "Requirements", src: "docs/requirements.md" },
+      { key: "test-cases", label: "Test Cases", src: "docs/test-cases.md" },
+      { key: "bugs", label: "Bugs", src: "docs/bugs.md" },
+      { key: "backlog", label: "Backlog", src: "docs/backlog.md" },
+    ];
+
+    const info = window.BUILD_INFO || {};
+    document.getElementById("current-build").innerHTML =
+      `<strong>Current build:</strong> v${info.version || "?"} &middot; Build #${info.buildNumber ?? "?"} &middot; ${info.buildDate || "unknown"}`;
+
+    const tabsEl = document.getElementById("doc-tabs");
+    const bodyEl = document.getElementById("doc-body");
+
+    function activeKey() {
+      const key = (window.location.hash || "").replace("#/", "");
+      return DOCS.some((d) => d.key === key) ? key : DOCS[0].key;
+    }
+
+    function renderTabs() {
+      const current = activeKey();
+      tabsEl.innerHTML = DOCS.map(
+        (d) => `<a class="tab${d.key === current ? " active" : ""}" href="#/${d.key}">${d.label}</a>`
+      ).join("");
+    }
+
+    async function renderDoc() {
+      renderTabs();
+      const doc = DOCS.find((d) => d.key === activeKey());
+      bodyEl.innerHTML = "Loading…";
+      try {
+        const res = await fetch(doc.src, { cache: "no-cache" });
+        if (!res.ok) throw new Error(res.status);
+        bodyEl.innerHTML = renderMarkdown(await res.text());
+      } catch (e) {
+        bodyEl.innerHTML =
+          `<p class="doc-error">Could not load <code>${doc.src}</code>.` +
+          (doc.key === "backlog"
+            ? " The backlog is copied into <code>docs/</code> when the site is published, so it is unavailable when previewing files directly."
+            : "") +
+          `</p>`;
+      }
+    }
+
+    window.addEventListener("hashchange", renderDoc);
+    renderDoc();
   </script>
 </body>
 </html>

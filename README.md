@@ -9,10 +9,10 @@ See [SETUP.md](SETUP.md) for step-by-step setup instructions.
 ## Layout
 
 ```
+Logo.svg                 Brand mark — copied into public/ by the deploy workflow
 public/
   login.html            Sign-in page
   signup.html           Self-service account request (goes to "Pending")
-  images/logo.png        <- put your logo here
   js/
     supabase-client.js  Supabase URL + anon key (fill in, see SETUP.md)
     auth.js             Login logic

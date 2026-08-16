@@ -30,7 +30,7 @@ function renderTopbar(activeKey) {
   header.className = "topbar";
   header.innerHTML = `
     <a class="brand" href="dashboard.html">
-      <img class="brand-logo" src="images/logo.png" alt="Bestcast logo">
+      <img class="brand-logo" src="logo.svg" alt="Bestcast logo">
       <span class="brand-name">Bestcast</span>
     </a>
 
@@ -86,7 +86,17 @@ function renderTopbar(activeKey) {
     teamDropdown.classList.remove("open");
   }
 
-  function toggleMenu(wrap, dropdown) {
+  // .nav-dropdown is position:fixed (it has to escape .main-nav's overflow
+  // clipping), so its coordinates come from the trigger's viewport rect.
+  function placeNavDropdown() {
+    const rect = document.getElementById("team-menu-trigger").getBoundingClientRect();
+    teamDropdown.style.top = `${rect.bottom + 6}px`;
+    const width = teamDropdown.offsetWidth || 160;
+    const maxLeft = window.innerWidth - width - 12;
+    teamDropdown.style.left = `${Math.max(12, Math.min(rect.left, maxLeft))}px`;
+  }
+
+  function toggleMenu(wrap, dropdown, onOpen) {
     return (e) => {
       e.stopPropagation();
       const willOpen = !dropdown.classList.contains("open");
@@ -94,13 +104,20 @@ function renderTopbar(activeKey) {
       if (willOpen) {
         wrap.classList.add("open");
         dropdown.classList.add("open");
+        if (onOpen) onOpen();
       }
     };
   }
 
   userTrigger.addEventListener("click", toggleMenu(userTrigger, userDropdown));
-  teamWrap.addEventListener("click", toggleMenu(teamWrap, teamDropdown));
+  teamWrap.addEventListener("click", toggleMenu(teamWrap, teamDropdown, placeNavDropdown));
   document.addEventListener("click", closeAllMenus);
+
+  // A fixed dropdown doesn't follow its trigger, so close it if the page
+  // moves underneath it.
+  window.addEventListener("resize", closeAllMenus);
+  window.addEventListener("scroll", closeAllMenus, { passive: true });
+  document.querySelector(".main-nav").addEventListener("scroll", closeAllMenus, { passive: true });
 
   document.getElementById("logout").addEventListener("click", () => {
     tempClearSession();

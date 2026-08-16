@@ -1,3 +1,26 @@
+# Versioning, Build Numbering & Engineering Records
+
+## Standing rules for every change
+
+These apply to every change in this repo, regardless of branch:
+
+1. **Bump `VERSION`** per the semantic versioning rules below.
+2. **Update `public/docs/requirements.md`** if the change adds, removes or
+   alters a capability. Requirements are written in INCOSE style: a single
+   "shall" statement per requirement, unambiguous and verifiable.
+3. **Update `public/docs/test-cases.md`** to match. A new requirement is
+   not complete until at least one test case verifies it, and a changed
+   behaviour means the affected cases change in the same commit.
+4. **Log defects in `public/docs/bugs.md`** when found. When one is fixed,
+   record the root cause, the correction applied, and the version the fix
+   shipped in. Fixed entries stay in the register — they are not deleted.
+5. **Add an entry to `public/CHANGELOG.md`** describing the change.
+
+Documentation updated in a later commit than the behaviour it describes
+drifts immediately, so it belongs in the same change.
+
+---
+
 # Versioning & Build Numbering
 
 This applies to every change in this repo, regardless of which branch it

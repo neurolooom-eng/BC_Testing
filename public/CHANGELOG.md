@@ -4,6 +4,64 @@ Version numbers follow semver — see `VERSIONING.md` at the repo root.
 Build number and build date shown in the site footer are generated
 automatically per deploy and are not tracked here.
 
+## 1.4.0 — 2026-08-16
+
+**Adaptive navigation**
+- The nav no longer scrolls sideways — entries wrap onto further rows when
+  they exceed the viewport width, and the bar grows in height to fit them
+  (fixes BUG-008)
+- Below 1024px the nav moves to its own full-width row under the brand and
+  user controls; sizing steps down again at 640px and 400px
+
+**Responsive across mobile, tablet and desktop**
+- Pages render legibly from 320px to 2560px, with no horizontal page scroll
+  at any width — wide tables still scroll inside their own container
+- Form grids, the shift core-pin grid, and the entry modal all collapse
+  properly on narrow screens instead of forcing overflow
+
+**Dev documentation**
+- The Dev page is now a hub with five sub-pages: Version History,
+  Requirements, Test Cases, Bugs and Backlog
+- **Requirements** — 65 requirements in INCOSE style covering every module
+  built so far, each with rationale, verification method and status
+- **Test Cases** — 74 cases, every requirement traced to at least one
+- **Bugs** — full defect register: symptom, root cause, correction, and the
+  version each fix shipped in
+- Markdown is rendered in-page by a small local renderer (`js/md.js`) — no
+  external dependency
+- `VERSIONING.md` now carries the standing rule that requirements, test
+  cases, bugs and changelog are updated in the same change as the
+  behaviour they describe
+
+## 1.3.2 — 2026-08-16
+
+Fixes the top bar breaking up when a nav dropdown is opened on a sub-page.
+
+- The Team dropdown was being clipped inside the nav instead of overlaying
+  the page. `.main-nav` sets `overflow-x: auto`, and CSS forces the other
+  axis to clip too, so the dropdown was trapped in the bar and produced
+  scrollbars. It's now `position: fixed` (placed from the trigger's rect in
+  `topbar.js`), so it escapes that clipping and overlays content fully.
+- `.main-nav` was missing `min-width: 0`, so as a flex child it refused to
+  shrink and widened the whole bar past the viewport — which scrolled the
+  page sideways and left the sticky bar not covering the full width.
+- Top bar now has an opaque base background colour under its gradients, so
+  content scrolling underneath can't show through.
+- Nav scrollbars hidden, page-level horizontal scroll clipped, and open
+  dropdowns close on scroll/resize (a fixed element can't follow its
+  trigger).
+
+## 1.3.1 — 2026-08-16
+
+- Point every logo reference (login, signup, and the shared top bar) at
+  `logo.svg` instead of the never-created `images/logo.png`
+- Deploy workflow now copies a root-level `Logo.svg` into `public/` when
+  publishing, so the repo root can stay the source of truth even though
+  only `public/` is deployed. Warns rather than fails if it's missing.
+
+  Note: `Logo.svg` still has to be committed — it isn't in the repo yet,
+  so the brand mark stays an empty circle until then.
+
 ## 1.3.0 — 2026-08-15
 
 - New **Process Check Sheet** module (QC FMT 038) under Production Records,
