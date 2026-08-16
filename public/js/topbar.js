@@ -13,8 +13,32 @@ const NAV_ICONS = {
     '<svg viewBox="0 0 24 24"><path d="M4 20V10"/><path d="M12 20V4"/><path d="M20 20v-7"/></svg>',
   team:
     '<svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.2"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0"/><path d="M16 8.2a3.2 3.2 0 1 1 3.2 3.2"/><path d="M15.5 14.2c2.7.3 4.9 2.4 5.4 5.6"/></svg>',
+  config:
+    '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1A1.7 1.7 0 0 0 8.9 19a1.7 1.7 0 0 0-1.9.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.9 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1A1.7 1.7 0 0 0 5 8.9a1.7 1.7 0 0 0-.3-1.9l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.9.3H9.5a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.9-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.9v.1a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1Z"/></svg>',
   chevron: '<svg class="nav-chevron" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg>',
 };
+
+// Nav entries, each tied to the page permission that reveals it. Where the
+// access configuration is unavailable (a page that does not load rbac.js),
+// everything is shown — the bar must never be the thing that breaks.
+const NAV_ITEMS = [
+  { key: "overview", page: "page.overview", label: "Overview", href: "dashboard.html", icon: "overview" },
+  { key: "production-records", page: "page.production_records", label: "Production Records", href: "production-records.html", icon: "production" },
+  { key: "reports", page: "page.reports", label: "Reports", href: "#", icon: "reports", comingSoon: true },
+  {
+    key: "team",
+    page: "page.team",
+    label: "Team",
+    icon: "team",
+    children: [{ page: "page.roster", label: "Roster", href: "#", comingSoon: true }],
+  },
+  { key: "configuration", page: "page.configuration", label: "Configuration", href: "configuration.html", icon: "config" },
+];
+
+function navCanView(session, pageId) {
+  if (typeof rbacCanViewPage !== "function") return true;
+  return rbacCanViewPage(session.userid, pageId);
+}
 
 function renderTopbar(activeKey) {
   const session = tempGetSession();
@@ -35,23 +59,29 @@ function renderTopbar(activeKey) {
     </a>
 
     <nav class="main-nav">
-      <a class="${cls("overview")}" href="dashboard.html">
-        ${NAV_ICONS.overview} Overview
-      </a>
-      <a class="${cls("production-records")}" href="production-records.html">
-        ${NAV_ICONS.production} Production Records
-      </a>
-      <a class="${cls("reports")}" href="#" title="Coming soon">
-        ${NAV_ICONS.reports} Reports
-      </a>
-      <div class="nav-item-wrap" id="team-menu-wrap">
-        <button class="${cls("team")}" id="team-menu-trigger" type="button">
-          ${NAV_ICONS.team} Team ${NAV_ICONS.chevron}
-        </button>
-        <div class="nav-dropdown" id="team-dropdown">
-          <a href="#" title="Coming soon">Roster</a>
-        </div>
-      </div>
+      ${NAV_ITEMS.filter((item) => navCanView(session, item.page))
+        .map((item) => {
+          const icon = NAV_ICONS[item.icon];
+          if (!item.children) {
+            const title = item.comingSoon ? ' title="Coming soon"' : "";
+            return `<a class="${cls(item.key)}" href="${item.href}"${title}>${icon} ${item.label}</a>`;
+          }
+          const children = item.children.filter((c) => navCanView(session, c.page));
+          // A menu with nothing left in it would be a dead end.
+          if (!children.length) return "";
+          return `
+            <div class="nav-item-wrap" id="team-menu-wrap">
+              <button class="${cls(item.key)}" id="team-menu-trigger" type="button">
+                ${icon} ${item.label} ${NAV_ICONS.chevron}
+              </button>
+              <div class="nav-dropdown" id="team-dropdown">
+                ${children
+                  .map((c) => `<a href="${c.href}"${c.comingSoon ? ' title="Coming soon"' : ""}>${c.label}</a>`)
+                  .join("")}
+              </div>
+            </div>`;
+        })
+        .join("")}
     </nav>
 
     <div class="header-actions">
@@ -66,7 +96,7 @@ function renderTopbar(activeKey) {
         <svg class="user-chevron" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg>
       </div>
       <div class="user-dropdown" id="user-dropdown">
-        ${DEV_PAGE_USERS.includes(session.userid) ? '<a href="dev.html">Dev Page</a>' : ""}
+        ${navCanView(session, "page.dev") ? '<a href="dev.html">Dev Page</a>' : ""}
         <button id="logout">Log out</button>
       </div>
     </div>
@@ -83,17 +113,20 @@ function renderTopbar(activeKey) {
   const teamWrap = document.getElementById("team-menu-wrap");
   const teamDropdown = document.getElementById("team-dropdown");
 
+  // The Team menu is absent when the user may not view anything inside it.
   function closeAllMenus() {
     userTrigger.classList.remove("open");
     userDropdown.classList.remove("open");
-    teamWrap.classList.remove("open");
-    teamDropdown.classList.remove("open");
+    if (teamWrap) teamWrap.classList.remove("open");
+    if (teamDropdown) teamDropdown.classList.remove("open");
   }
 
-  // .nav-dropdown is position:fixed (it has to escape .main-nav's overflow
-  // clipping), so its coordinates come from the trigger's viewport rect.
+  // .nav-dropdown is position:fixed (it has to escape the wrapping bar's
+  // stacking), so its coordinates come from the trigger's viewport rect.
   function placeNavDropdown() {
-    const rect = document.getElementById("team-menu-trigger").getBoundingClientRect();
+    const trigger = document.getElementById("team-menu-trigger");
+    if (!trigger || !teamDropdown) return;
+    const rect = trigger.getBoundingClientRect();
     teamDropdown.style.top = `${rect.bottom + 6}px`;
     const width = teamDropdown.offsetWidth || 160;
     const maxLeft = window.innerWidth - width - 12;
@@ -114,14 +147,16 @@ function renderTopbar(activeKey) {
   }
 
   userTrigger.addEventListener("click", toggleMenu(userTrigger, userDropdown));
-  teamWrap.addEventListener("click", toggleMenu(teamWrap, teamDropdown, placeNavDropdown));
+  if (teamWrap && teamDropdown) {
+    teamWrap.addEventListener("click", toggleMenu(teamWrap, teamDropdown, placeNavDropdown));
+  }
   document.addEventListener("click", closeAllMenus);
 
   // A fixed dropdown doesn't follow its trigger, so close it if the page
   // moves underneath it.
   window.addEventListener("resize", closeAllMenus);
   window.addEventListener("scroll", closeAllMenus, { passive: true });
-  document.querySelector(".main-nav").addEventListener("scroll", closeAllMenus, { passive: true });
+  header.querySelector(".main-nav").addEventListener("scroll", closeAllMenus, { passive: true });
 
   document.getElementById("logout").addEventListener("click", () => {
     tempClearSession();

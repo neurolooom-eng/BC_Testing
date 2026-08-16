@@ -113,6 +113,14 @@ function outOfSpecBanner(issues) {
     </div>`;
 }
 
+// Whether the signed-in user may perform an action. Controls are hidden
+// rather than shown-and-refused, so the sheet reflects what this operator
+// can actually do. See rbac.js on why this is not a security boundary.
+function pcsCan(actionId) {
+  if (typeof rbacCanDo !== "function") return true;
+  return rbacCanDo(PCS_SESSION.userid, actionId);
+}
+
 function approvalBadge(child) {
   if (!child.approval) return `<span class="pending-badge">Pending</span>`;
   const when = new Date(child.approval.at).toLocaleString();
@@ -155,7 +163,7 @@ function renderList(root) {
     </p>
 
     <div class="btn-row" style="margin-bottom:22px;">
-      <a class="btn" href="#/new">+ New Day Sheet</a>
+      ${pcsCan("action.pcs.sheet.create") ? '<a class="btn" href="#/new">+ New Day Sheet</a>' : '<span class="muted-xs">You do not have permission to create a day sheet.</span>'}
     </div>
 
     ${
@@ -256,14 +264,14 @@ function renderHeaderSection(panel, record) {
         </div>
         <div id="daily-edit-alert"></div>
         <div class="btn-row" style="margin-top:18px;">
-          <button class="btn" id="update-daily">Save day details</button>
-          <button class="btn btn-danger" id="delete-daily">Delete day sheet</button>
+          ${pcsCan("action.pcs.sheet.edit") ? '<button class="btn" id="update-daily">Save day details</button>' : ""}
+          ${pcsCan("action.pcs.sheet.delete") ? '<button class="btn btn-danger" id="delete-daily">Delete day sheet</button>' : ""}
         </div>
       </div>
     </details>`;
 
   const form = panel.querySelector("#daily-edit");
-  panel.querySelector("#update-daily").addEventListener("click", () => {
+  panel.querySelector("#update-daily")?.addEventListener("click", () => {
     const entry = readForm(form, PCS_DAILY_FIELDS);
     const result = paintValidation(form, entry, PCS_DAILY_FIELDS);
     panel.querySelector("#daily-edit-alert").innerHTML = outOfSpecBanner(result.outOfSpec);
@@ -272,7 +280,7 @@ function renderHeaderSection(panel, record) {
     reload(record.id);
   });
 
-  panel.querySelector("#delete-daily").addEventListener("click", () => {
+  panel.querySelector("#delete-daily")?.addEventListener("click", () => {
     if (!confirm("Delete this day sheet and all its machines, hourly readings and shift records?")) return;
     pcsDeleteDaily(record.id);
     window.location.hash = "#/";
@@ -305,18 +313,24 @@ function renderMachinesSection(panel, record) {
           </td>
           <td>${approvalBadge(m)}</td>
           <td class="row-actions">
-            <button class="link-btn" data-edit-machine="${m.id}">Edit</button>
+            ${pcsCan("action.pcs.machine.manage") ? `<button class="link-btn" data-edit-machine="${m.id}">Edit</button>` : ""}
             ${
-              running
+              !pcsCan("action.pcs.machine.stop")
+                ? ""
+                : running
                 ? `<button class="link-btn" data-stop-machine="${m.id}">Stop</button>`
                 : `<button class="link-btn" data-resume-machine="${m.id}">Resume</button>`
             }
             ${
               m.approval
-                ? `<button class="link-btn" data-unapprove="machines:${m.id}">Unapprove</button>`
-                : `<button class="link-btn" data-approve="machines:${m.id}">Approve</button>`
+                ? pcsCan("action.pcs.unapprove")
+                  ? `<button class="link-btn" data-unapprove="machines:${m.id}">Unapprove</button>`
+                  : ""
+                : pcsCan("action.pcs.approve")
+                ? `<button class="link-btn" data-approve="machines:${m.id}">Approve</button>`
+                : ""
             }
-            <button class="link-btn danger" data-del-machine="${m.id}">Delete</button>
+            ${pcsCan("action.pcs.machine.delete") ? `<button class="link-btn danger" data-del-machine="${m.id}">Delete</button>` : ""}
           </td>
         </tr>`;
     })
@@ -326,7 +340,7 @@ function renderMachinesSection(panel, record) {
     <details class="sheet-block" open>
       <summary><h2>Machines</h2><span class="muted-xs">${machines.length} on the line — a machine can start or stop mid-day</span></summary>
       <div class="btn-row" style="margin:0 0 14px;">
-        <button class="btn" id="add-machine">+ Add machine</button>
+        ${pcsCan("action.pcs.machine.manage") ? '<button class="btn" id="add-machine">+ Add machine</button>' : ""}
         <span class="muted-xs">Hours outside a machine's running window are recorded as NA.</span>
       </div>
       ${
@@ -344,7 +358,7 @@ function renderMachinesSection(panel, record) {
       }
     </details>`;
 
-  panel.querySelector("#add-machine").addEventListener("click", () =>
+  panel.querySelector("#add-machine")?.addEventListener("click", () =>
     openMachineModal(record, null, nearest)
   );
   panel.querySelectorAll("[data-edit-machine]").forEach((b) =>
@@ -553,8 +567,10 @@ function renderHourlyMatrix(body, record, nearest) {
     const hasEntry = pcsHourlyFor(record, i);
     const approvalCell = hasEntry
       ? hasEntry.approval
-        ? `${approvalBadge(hasEntry)} <button class="link-btn" data-unapprove="hourly:${hasEntry.id}">Undo</button>`
-        : `<button class="link-btn" data-approve="hourly:${hasEntry.id}">Approve</button>`
+        ? `${approvalBadge(hasEntry)} ${pcsCan("action.pcs.unapprove") ? `<button class="link-btn" data-unapprove="hourly:${hasEntry.id}">Undo</button>` : ""}`
+        : pcsCan("action.pcs.approve")
+        ? `<button class="link-btn" data-approve="hourly:${hasEntry.id}">Approve</button>`
+        : `<span class="pending-badge">Pending</span>`
       : `<span class="muted-xs">—</span>`;
 
     rows.push(`
@@ -571,7 +587,7 @@ function renderHourlyMatrix(body, record, nearest) {
 
   body.innerHTML = `
     <div class="btn-row" style="margin-bottom:12px;">
-      <button class="btn" id="save-matrix">Save changes</button>
+      ${pcsCan("action.pcs.hourly.record") ? '<button class="btn" id="save-matrix">Save changes</button>' : '<span class="muted-xs">Read-only — recording hourly readings is not permitted for your role.</span>'}
       <button class="btn btn-secondary" id="toggle-slots">
         ${PCS_SHOW_ALL_SLOTS ? "Show up to current slot" : "Show all 48 slots"}
       </button>
@@ -587,7 +603,7 @@ function renderHourlyMatrix(body, record, nearest) {
     reload(record.id);
   });
 
-  body.querySelector("#save-matrix").addEventListener("click", () => {
+  body.querySelector("#save-matrix")?.addEventListener("click", () => {
     const bySlot = {};
     body.querySelectorAll(".cell-input").forEach((input) => {
       const slot = Number(input.dataset.slot);
@@ -687,7 +703,7 @@ function renderHourlyForm(body, record, nearest) {
       <div class="btn-row" style="margin-top:18px;">
         <button class="btn" id="save-hourly"${locked ? " disabled" : ""}>Save reading</button>
         ${
-          entry.id && !entry.approval
+          entry.id && !entry.approval && pcsCan("action.pcs.approve")
             ? `<button class="btn btn-secondary" data-approve="hourly:${entry.id}">Approve</button>`
             : ""
         }
@@ -756,13 +772,17 @@ function renderShiftsSection(panel, record) {
           <div class="kv-grid">${details}</div>
           <div class="pin-row"><span class="muted-xs">Core pin verification (cavity 1–10):</span> ${pins}</div>
           <div class="btn-row" style="margin-top:14px;">
-            <button class="link-btn" data-edit-shift="${e.id}">Edit</button>
+            ${pcsCan("action.pcs.shift.record") ? `<button class="link-btn" data-edit-shift="${e.id}">Edit</button>` : ""}
             ${
               e.approval
-                ? `<button class="link-btn" data-unapprove="shifts:${e.id}">Unapprove</button>`
-                : `<button class="link-btn" data-approve="shifts:${e.id}">Approve</button>`
+                ? pcsCan("action.pcs.unapprove")
+                  ? `<button class="link-btn" data-unapprove="shifts:${e.id}">Unapprove</button>`
+                  : ""
+                : pcsCan("action.pcs.approve")
+                ? `<button class="link-btn" data-approve="shifts:${e.id}">Approve</button>`
+                : ""
             }
-            <button class="link-btn danger" data-del-shift="${e.id}">Delete</button>
+            ${pcsCan("action.pcs.shift.delete") ? `<button class="link-btn danger" data-del-shift="${e.id}">Delete</button>` : ""}
           </div>
         </div>`;
     })
@@ -772,12 +792,12 @@ function renderShiftsSection(panel, record) {
     <details class="sheet-block" open>
       <summary><h2>Shift sign-off</h2><span class="muted-xs">${entries.length} of 3 shifts recorded</span></summary>
       <div class="btn-row" style="margin:0 0 14px;">
-        <button class="btn" id="add-shift">+ Add shift entry</button>
+        ${pcsCan("action.pcs.shift.record") ? '<button class="btn" id="add-shift">+ Add shift entry</button>' : ""}
       </div>
       ${entries.length ? `<div class="cards">${cards}</div>` : `<div class="card"><p>No shift entries recorded yet.</p></div>`}
     </details>`;
 
-  panel.querySelector("#add-shift").addEventListener("click", () => openShiftModal(record, null));
+  panel.querySelector("#add-shift")?.addEventListener("click", () => openShiftModal(record, null));
   panel.querySelectorAll("[data-edit-shift]").forEach((b) =>
     b.addEventListener("click", () => openShiftModal(record, b.dataset.editShift))
   );
@@ -870,6 +890,7 @@ function pcsRoute() {
 document.addEventListener("DOMContentLoaded", () => {
   PCS_SESSION = renderTopbar("production-records");
   if (!PCS_SESSION) return;
+  if (!rbacRequirePage(PCS_SESSION, "page.process_check_sheet")) return;
   pcsRoute();
   window.addEventListener("hashchange", () => {
     PCS_FORM_SLOT = null;

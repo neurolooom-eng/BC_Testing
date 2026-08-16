@@ -36,9 +36,11 @@
   <script src="js/footer.js"></script>
   <script src="js/brand.js"></script>
   <script src="js/temp-local-auth.js"></script>
+  <script src="js/rbac.js"></script>
   <script src="js/topbar.js"></script>
   <script>
-    renderTopbar("production-records");
+    const session = renderTopbar("production-records");
+    rbacRequirePage(session, "page.production_records");
   </script>
 </body>
 </html>
