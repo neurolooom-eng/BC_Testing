@@ -10,7 +10,7 @@ one case covers it.
 
 **Result key:** `Pass` · `Fail` · `Blocked` · `Not run`
 
-Last executed against **v1.4.0**.
+Last executed against **v1.4.1**.
 
 ---
 
@@ -77,7 +77,7 @@ Last executed against **v1.4.0**.
 | TC-PCS-002 | REQ-PCS-002 | Daily record exists | Add two hourly readings. | Both listed against that daily record. | Pass |
 | TC-PCS-003 | REQ-PCS-003 | Daily record exists | Add a 1st Shift record. | Listed against that daily record; shift count shows 1/3. | Pass |
 | TC-PCS-004 | REQ-PCS-004 | Daily record with hourly and shift children | Delete the daily record. | Record and all children removed; none remain listed. | Pass |
-| TC-PCS-005 | REQ-PCS-005 | Daily record with three shift records | Attempt to add a fourth. | Addition prevented. | Fail — see BUG-007 |
+| TC-PCS-005 | REQ-PCS-005, REQ-MST-003 | Daily record with a record for every shift in the Shift Master | Attempt to add a further shift record. | Addition prevented; no shift can be recorded twice. | Blocked — deferred, depends on the Shift Master (ENH-001) |
 
 ### 5.2 Time structure
 
@@ -86,6 +86,7 @@ Last executed against **v1.4.0**.
 | TC-PCS-010 | REQ-PCS-010 | Add-hourly form open | Inspect the Time list. | 48 entries, first 6.30am, last 6.00am. | Pass |
 | TC-PCS-011 | REQ-PCS-011 | Add-hourly form open | Select 6.30am, then 2.30pm, then 10.30pm. | Assigned to 1st, 2nd and 3rd Shift respectively. | Pass |
 | TC-PCS-012 | REQ-PCS-011 | Add-hourly form open | Select 2.00pm and 10.00pm. | Assigned to 1st and 2nd Shift respectively (shift boundaries). | Pass |
+| TC-PCS-014 | REQ-PCS-011, REQ-MST-002 | Shift Master defines shift timings other than three equal 8-hour shifts | Record an hourly reading and inspect the shift assigned. | Assignment follows the timings in the master, not a fixed slot count. | Blocked — deferred, depends on the Shift Master (ENH-001) |
 | TC-PCS-013 | REQ-PCS-012 | Hourly readings recorded | View the Hourly tab. | Each row shows its time slot and the shift it belongs to. | Pass |
 
 ### 5.3 Data entry and validation
@@ -119,7 +120,23 @@ Last executed against **v1.4.0**.
 | TC-PCS-041 | REQ-PCS-041 | Record entered on device A | Open the site on device B as another user. | The record is visible. | Fail — deferred, see Backlog |
 | TC-PCS-042 | REQ-PCS-042 | Completed daily record | Request a printable copy of the sheet. | Sheet rendered in the QC FMT 038 layout suitable for printing. | Blocked — deferred, not implemented |
 
-## 6. Developer Documentation
+## 6. Masters
+
+All cases below are blocked pending the Shift Master and its siblings
+(ENH-001 and the Masters section of the Backlog).
+
+| ID | Verifies | Preconditions | Steps | Expected result | Result |
+|---|---|---|---|---|---|
+| TC-MST-001 | REQ-MST-001 | Signed in as an administrator | Open the Shift Master. | Each shift lists a code, display name, start time, end time and sequence. | Blocked — deferred |
+| TC-MST-002 | REQ-MST-002 | Shift Master defined | Record entries at times spanning a shift boundary. | Each entry is attributed to the shift whose timings contain it. | Blocked — deferred |
+| TC-MST-003 | REQ-MST-003 | A shift marked inactive in the master | Open any shift selector. | The inactive shift is not offered. | Blocked — deferred |
+| TC-MST-004 | REQ-MST-004 | Signed in as an administrator | Open the masters area. | Masters exist for line, furnace, alloy grade, machine, personnel, rotor size and acceptance limits. | Blocked — deferred |
+| TC-MST-005 | REQ-MST-005 | Line master maintained | Add a production line to the master; open the check sheet form. | The new line is offered without any code change or redeployment. | Blocked — deferred |
+| TC-MST-006 | REQ-MST-005 | Tolerance master maintained | Alter an acceptance limit; record a value against the former limit. | Validation applies the new limit. | Blocked — deferred |
+| TC-MST-007 | REQ-MST-006 | Signed in as a non-administrator | Attempt to open a master for maintenance. | Access refused. | Blocked — deferred |
+| TC-MST-008 | REQ-MST-007 | Historic record referencing a master value | Deactivate that value; reopen the historic record. | The record still displays the value it was recorded against. | Blocked — deferred |
+
+## 7. Developer Documentation
 
 | ID | Verifies | Preconditions | Steps | Expected result | Result |
 |---|---|---|---|---|---|
@@ -131,7 +148,7 @@ Last executed against **v1.4.0**.
 | TC-DEV-006 | REQ-DEV-004 | Bugs open | Review each entry with status Fixed. | Each states symptom, root cause, correction applied, and the version the correction shipped in. | Pass |
 | TC-DEV-007 | REQ-DEV-006 | A merged change that altered behaviour | Inspect that change's contents. | Requirements and Test Cases were updated within the same change. | Pass |
 
-## 7. Deployment
+## 8. Deployment
 
 | ID | Verifies | Preconditions | Steps | Expected result | Result |
 |---|---|---|---|---|---|
@@ -139,3 +156,5 @@ Last executed against **v1.4.0**.
 | TC-DEP-002 | REQ-DEP-002 | Published site | Request the site root address. | Sign-in page displayed. | Pass |
 | TC-DEP-003 | REQ-DEP-003 | Brand mark present at repository root | Publish. | Brand mark displayed on the sign-in page and in the navigation bar. | Not run — asset not yet supplied |
 | TC-DEP-004 | REQ-DEP-004 | Brand mark absent | Publish. | Workflow completes and emits a warning. | Pass |
+| TC-DEP-005 | REQ-DEP-005 | Brand mark absent | View the sign-in page and the navigation bar on each page. | A monogram placeholder is shown in place of the logo; no broken or empty image appears. | Pass |
+| TC-DEP-006 | REQ-DEP-005 | Brand mark absent | View the Process Check Sheet page, where the bar is built after the document load pass. | Monogram shown in the bar, as on statically authored pages. | Pass |

@@ -5,7 +5,7 @@
 Real auth is built and ready (`sql/schema.sql`,
 `scripts/import_users_from_excel.py`, `data/users_master.xlsx`, `SETUP.md`)
 but **not wired up**. The site runs on temporary hardcoded credentials
-instead (see section 3).
+instead (see section 4).
 
 Several other items below are blocked on this, because they all need a
 real server-side identity and a real database rather than the browser.
@@ -81,7 +81,69 @@ Not started — needs a print/PDF view laid out like the paper QC FMT 038
 form, and a submit-and-lock step per shift so a submitted sheet can't be
 quietly edited afterwards.
 
-## 3. Temporary hardcoded login (current state)
+## 3. Masters (deferred)
+
+Controlled value lists are currently hardcoded — the shift names, line
+numbers, furnace identifiers, supervisor names and every acceptance limit
+live in `public/js/pcs-spec.js` and `public/js/temp-local-auth.js`. Each
+should become a master held in one place and referenced everywhere the
+value is used, so a change is made once and takes effect everywhere.
+
+All masters are deferred until the Supabase backend exists (section 1): a
+master maintained in the browser cannot be shared between users, which
+defeats the purpose of having one.
+
+### ENH-001 — Shift Master
+
+*Reclassified from BUG-007. See the Bugs register for why.*
+
+A single definition of every shift and its timings, linked to every place a
+shift is referenced.
+
+**Fields:** shift code · display name · start time · end time · sequence ·
+active flag
+
+**Consumers — every place a shift is currently derived or named:**
+- Process Check Sheet hourly readings, where a reading's shift is presently
+  inferred from its position in the time-slot list (16 slots per shift, a
+  hardcoded assumption that breaks if shift lengths ever differ)
+- Process Check Sheet shift records, whose shift selector is presently a
+  hardcoded three-item list
+- Shift supervisor assignment
+- Future reports and rosters
+
+**What it enables:**
+- A daily record accepts at most one record per shift defined in the master,
+  satisfying REQ-PCS-005 as a consequence of the data model rather than as a
+  separate check bolted onto the form (this is the ENH-001 case that
+  replaces BUG-007)
+- Shift timings become data, so a change to shift patterns needs no code
+  change
+- The time-slot to shift mapping is computed from the timings rather than
+  assumed
+
+**Removes:** the `PCS_SHIFTS` constant and the fixed 16-slots-per-shift
+assumption in `public/js/pcs-spec.js`.
+
+### Other masters
+
+Same treatment, same reasoning — each currently hardcoded:
+
+| Master | Values today | Referenced by |
+|---|---|---|
+| Line | 01, 02, 03, 06 | Check sheet daily record |
+| Furnace | HF1–HF6, HF11, HF12 | Check sheet daily record |
+| Alloy / Metal Grade | AC2A; Best Cast and other alloy flags | Daily and shift records |
+| Machine | M/C number, BC number | Daily and shift records |
+| Personnel | Operators, shift supervisors, in-charge | Shift records, sign-off |
+| Rotor | 100 mm → 550–650 RPM; 190 mm → 350–400 RPM | Hourly readings |
+| Tolerance / Specification | Acceptance limits for every numeric item | Hourly, shift and daily validation |
+
+The Tolerance master is the most valuable of these: acceptance limits
+currently change only by editing and redeploying code, when they should be
+maintained by quality staff against the approved tolerances document.
+
+## 4. Temporary hardcoded login (current state)
 
 Two accounts are hardcoded in `public/js/temp-local-auth.js`:
 
@@ -99,7 +161,7 @@ data are involved.
 Sessions are kept in `sessionStorage`, so they last only for the current
 tab (the "Remember me" option was removed).
 
-## 4. Open questions on the source spreadsheets
+## 5. Open questions on the source spreadsheets
 
 - **Tilting Time tolerance** — the cell in `Tolerances_updated_.xlsx`
   contains the date `2026-12-14`, which is Excel autocorrecting `12-14`.
@@ -113,11 +175,14 @@ tab (the "Remember me" option was removed).
   into this row instead of charge counts, so the intended unit is unclear.
   Currently a plain number.
 
-## 5. Assets
+## 6. Assets
 
 - **`Logo.svg` is not in the repo yet.** Every page references `logo.svg`,
   and the deploy workflow copies a root-level `Logo.svg` into `public/`
-  when publishing — but no such file has ever been committed, so the brand
-  mark still renders as an empty circle. Commit the actual Bestcast logo
-  as `Logo.svg` in the repo root to finish this. Until then the deploy
-  logs a warning rather than failing.
+  when publishing — but no such file has ever been committed.
+
+  This is no longer a defect (see BUG-004, fixed in 1.4.1): the brand mark
+  now falls back to a styled monogram when the asset is absent, so nothing
+  renders broken, and the deploy logs a warning rather than failing.
+  Committing the actual Bestcast logo as `Logo.svg` in the repository root
+  replaces the monogram with the logo — no code change needed.
