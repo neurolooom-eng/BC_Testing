@@ -10,7 +10,7 @@ one case covers it.
 
 **Result key:** `Pass` · `Fail` · `Blocked` · `Not run`
 
-Last executed against **v1.7.1**.
+Last executed against **v1.8.0**.
 
 ---
 
@@ -252,7 +252,26 @@ All cases below are blocked pending the Shift Master and its siblings
 | TC-MST-007 | REQ-MST-006 | Signed in as a non-administrator | Attempt to open a master for maintenance. | Access refused. | Blocked — deferred |
 | TC-MST-008 | REQ-MST-007 | Historic record referencing a master value | Deactivate that value; reopen the historic record. | The record still displays the value it was recorded against. | Blocked — deferred |
 
-## 8. Developer Documentation
+## 8. Test Fixtures
+
+| ID | Verifies | Preconditions | Steps | Expected result | Result |
+|---|---|---|---|---|---|
+| TC-FIX-001 | REQ-FIX-001 | Signed out | Sign in as `administrator`, `quality_manager`, `shift_supervisor`, `operator` and `viewer`, each with password `123`. | All five are admitted. | Pass |
+| TC-FIX-002 | REQ-FIX-002 | Signed in as `operator` | Attempt to reach Configuration; inspect the check sheet controls. | Configuration unreachable; hourly readings can be recorded; no approval control offered. | Pass |
+| TC-FIX-003 | REQ-FIX-002 | Signed in as `shift_supervisor` | Open a saved day sheet. | Approval offered; day details read-only. | Pass |
+| TC-FIX-004 | REQ-FIX-002 | Signed in as `viewer` | Open the check sheet. | Readable; no control offered to record or approve anything. | Pass |
+| TC-FIX-005 | REQ-FIX-003 | Access configuration stored before the role accounts existed | Load any page. | The missing accounts are admitted, each holding the role it is named for. | Pass |
+| TC-FIX-006 | REQ-FIX-004 | An account reassigned to a different role in Configuration | Reload the page. | The reassignment stands; it is not reset to the account's original role. | Pass |
+| TC-FIX-007 | REQ-FIX-005 | Signed in as `administrator`, day sheet open | Use each generator in turn: day details, machines, shift details, hourly, sign-off. | Each section is populated completely. | Pass |
+| TC-FIX-008 | REQ-FIX-007 | Generation mode "in spec only" | Generate a whole shift; inspect the sheet. | No reading is flagged out of specification. | Pass |
+| TC-FIX-009 | REQ-FIX-008 | Generation mode "occasional out of spec" | Generate a whole shift; inspect the sheet and the shift sign-off. | Some readings are flagged, most are not; the flagged ones are listed in the sign-off and counted on the sheet. | Pass |
+| TC-FIX-010 | REQ-FIX-006 | Any generation mode | Generate hourly readings and check Rotor RPM against the rotor size generated alongside it. | RPM falls in the band belonging to that rotor size, not the other. | Pass |
+| TC-FIX-011 | REQ-FIX-009 | Machine starting part-way through the shift | Generate that shift's readings; inspect the slots before its start. | No Die Temp recorded for that machine in those slots; they read NA. | Pass |
+| TC-FIX-012 | REQ-FIX-010 | Signed in as `operator` | Inspect every section of the day sheet. | No generation control is present. | Pass |
+| TC-FIX-013 | REQ-FIX-010 | Signed in as `administrator` | Inspect every section of the day sheet. | A generation control is present in each. | Pass |
+| TC-FIX-014 | REQ-FIX-011 | Signed in as `administrator` | Look at the generation controls beside the working controls. | Visibly set apart and labelled as test data. | Pass |
+
+## 9. Developer Documentation
 
 | ID | Verifies | Preconditions | Steps | Expected result | Result |
 |---|---|---|---|---|---|
@@ -264,7 +283,7 @@ All cases below are blocked pending the Shift Master and its siblings
 | TC-DEV-006 | REQ-DEV-004 | Bugs open | Review each entry with status Fixed. | Each states symptom, root cause, correction applied, and the version the correction shipped in. | Pass |
 | TC-DEV-007 | REQ-DEV-006 | A merged change that altered behaviour | Inspect that change's contents. | Requirements and Test Cases were updated within the same change. | Pass |
 
-## 9. Deployment
+## 10. Deployment
 
 | ID | Verifies | Preconditions | Steps | Expected result | Result |
 |---|---|---|---|---|---|

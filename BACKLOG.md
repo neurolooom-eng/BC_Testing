@@ -1,191 +1,11 @@
 # Backlog
 
-## 1. Process Check Sheet refinements — next work item
-
-Seven changes requested against the Process Check Sheet as built in v1.5.0
-(machines as day-sheet children, single day-sheet view, matrix and form
-hourly entry) and v1.6.0 (role-based access control). Specified here so the
-work can start from a settled definition.
-
-These are deliverable on the current static build — none of them are
-blocked on the backend, though Task 2's archive and Task 4's approval
-routing become real controls rather than UI conventions once section 2
-lands.
-
----
-
-### T1 — Order the day sheet sections
-
-Present the day sheet in this order:
-
-1. Day Details
-2. Machines
-3. Shift Details
-4. Hourly Details
-
-Currently `renderSheet()` in `public/js/pcs.js` emits Day → Machines →
-Hourly → Shifts. Shift Details moves above Hourly Details.
-
-The reorder is small in itself, but it is a prerequisite for T4: the
-"Save & Send for Approval" control lives in the hourly section and acts on
-the shift record, so the shift context should already be on screen above it.
-
----
-
-### T2 — Day details become controlled once saved
-
-Once a day sheet is saved:
-
-- **No delete.** Remove the delete control, the `action.pcs.sheet.delete`
-  permission and `pcsDeleteDaily()`. A production record is not something
-  anyone should be able to remove.
-- **Edit restricted.** Amending day details stays behind
-  `action.pcs.sheet.edit`, which currently sits with Administrator, Quality
-  Manager and Shift Supervisor. Decide who should keep it — the intent is
-  "only certain people", so Shift Supervisor probably drops off.
-- **Archive, for administrators.** Add `action.pcs.sheet.archive`, plus
-  `archivedAt` / `archivedBy` on the day sheet. An archived sheet is
-  read-only throughout (header, machines, hourly, shifts) and is hidden
-  from the sheet list behind a "Show archived" toggle. Archiving is
-  reversible by an administrator; the record itself is never destroyed.
-
-**Decision needed:** whether editing day details should also be barred once
-any shift on that sheet has been approved, or whether the permission alone
-is sufficient control.
-
----
-
-### T3 — Machine changes recorded as shift remarks
-
-When a machine is added or stopped part-way through a shift, that fact must
-appear as a remark on that shift's sign-off.
-
-The data already exists: `machine.startSlot` and `machine.stopSlot` are slot
-indices, and each shift covers a known slot range (currently 0–15, 16–31,
-32–47 — see ENH-001, section 4). A machine whose start or stop slot falls
-inside a shift's range changed state during that shift.
-
-Add a `remarks` field to the shift record, populated automatically with
-entries such as:
-
-```
-M/C 12 added at 10.30am (auto)
-M/C 5 stopped at 2.00pm (auto)
-```
-
-Requirements on the field:
-
-- System-generated entries are visually distinct from typed ones and are
-  regenerated if a machine's window is subsequently corrected
-- The supervisor can add free-text remarks alongside them
-- System-generated entries cannot be deleted by hand — they are a record of
-  what happened, not a comment
-
----
-
-### T4 — Shift goes for approval automatically on last entry
-
-When the final hourly reading of a shift is recorded, the shift should be
-submitted for approval from the **hourly section**, via a
-**"Save & Send for Approval"** control alongside the normal save.
-
-This needs a shift status lifecycle, which does not exist today — a shift
-record is currently either approved or not:
-
-```
-Draft → Pending Approval → Approved
-                ↑              │
-                └── Reopened ──┘
-```
-
-- The control appears when the slot being saved is the last of its shift
-  (slot 15, 31 or 47 under the current fixed pattern)
-- Submitting sets the shift record to Pending Approval and locks it for
-  editing, consistent with T5
-- Approval remains a separate act by someone holding `action.pcs.approve`
-
-**Decisions needed:**
-
-- Should submission be blocked if earlier slots in that shift are
-  incomplete, or permitted with the gaps flagged? Blocking is stricter but
-  risks stranding a shift that genuinely had no reading for a slot.
-- If no shift record exists yet when the last slot is saved, does the
-  system create one, or prompt the operator to complete the sign-off first?
-  Prompting seems right — the sign-off carries the supervisor's name.
-
----
-
-### T5 — Older shift details are not editable
-
-A shift record stops being editable once the shift has passed. This mirrors
-the rule already applied to hourly readings by `pcsHourlyLocked()`, which
-locks a slot once a later slot has been recorded.
-
-Define the equivalent for shifts: a shift record is editable only while it
-is the current shift, and locks once a later shift has any entry, or once
-it has been submitted or approved. Reopening is an explicit act requiring
-`action.pcs.unapprove` and should be recorded.
-
----
-
-### T6 — Out-of-spec highlighting on entry
-
-Currently a value is checked when the record is saved, and shown with red
-text and a red border.
-
-Wanted instead:
-
-- **Immediate.** The check runs as the value is entered, not on save.
-- **Whole cell.** The full cell fills, rather than just tinting the text:
-  red background with white text in light mode, and a dark-mode treatment
-  with equivalent contrast — the light-mode red on a dark background will
-  not carry, so the dark palette needs its own pair.
-- **Carried forward.** If the operator leaves the value as entered, it is
-  listed as an out-of-spec reading during that shift's sign-off, so the
-  supervisor signs with the exceptions in front of them.
-
-Contrast must be checked in both themes. Colour alone should not be the
-only signal — pair it with a marker or title text so the state survives
-greyscale and colour-blind viewing.
-
-This strengthens REQ-PCS-024, which currently says only "shall indicate, in
-red"; it will need rewording to cover immediacy and the full-cell treatment.
-
----
-
-### T7 — Tablet and touch-first data entry
-
-Line workers enter data on a tablet, so the entry surfaces must be built
-for touch rather than adapted from the desktop layout.
-
-The matrix view is the problem case: cells are currently 74 px wide with
-12 px text and 5 px padding, which is dense by design and too small to hit
-reliably.
-
-- Touch targets of at least 44 px for anything tappable — inputs, approve,
-  stop, and the small text link-buttons in the machine and shift rows,
-  which are currently well under that
-- `inputmode="decimal"` on numeric fields so the numeric keypad opens
-- Nothing important behind hover, since there is no hover on a touch device
-  — the matrix currently puts full field names in `title` attributes
-- Landscape tablet as the primary layout, with the time column staying
-  pinned while parameters scroll
-- Larger, better-separated controls in the modals
-
-**Design tension to resolve:** density and touch targets pull against each
-other, and the matrix exists precisely to show many slots at once. Options
-are a `@media (pointer: coarse)` treatment that sizes up automatically, an
-explicit "touch mode" toggle, or accepting fewer visible columns on tablet.
-Worth deciding against a real device before building.
-
----
-
-## 2. Supabase authentication (deferred — the big one)
+## 1. Supabase authentication (deferred — the big one)
 
 Real auth is built and ready (`sql/schema.sql`,
 `scripts/import_users_from_excel.py`, `data/users_master.xlsx`, `SETUP.md`)
 but **not wired up**. The site runs on temporary hardcoded credentials
-instead (see section 5).
+instead (see section 4).
 
 Several other items below are blocked on this, because they all need a
 real server-side identity and a real database rather than the browser.
@@ -220,10 +40,10 @@ real server-side identity and a real database rather than the browser.
    switch it back to `type="email"` or map User ID → email on submit.
 4. Delete `public/js/temp-local-auth.js` and the temporary accounts.
 
-## 3. Blocked on the backend
+## 2. Blocked on the backend
 
 These are implemented as far as a static site allows, and each needs
-section 2 done first.
+section 1 done first.
 
 ### Enforcing the access model server-side
 Since v1.6.0 access is defined properly — roles, per-user grants and
@@ -276,7 +96,7 @@ approval from its last hourly reading and locks on submission. **Printing
 is not** — it still needs a print or PDF view laid out like the paper
 QC FMT 038 form, so a signed shift can be filed as a document.
 
-## 4. Masters (deferred)
+## 3. Masters (deferred)
 
 Controlled value lists are currently hardcoded — the shift names, line
 numbers, furnace identifiers, supervisor names and every acceptance limit
@@ -284,7 +104,7 @@ live in `public/js/pcs-spec.js` and `public/js/temp-local-auth.js`. Each
 should become a master held in one place and referenced everywhere the
 value is used, so a change is made once and takes effect everywhere.
 
-All masters are deferred until the Supabase backend exists (section 2): a
+All masters are deferred until the Supabase backend exists (section 1): a
 master maintained in the browser cannot be shared between users, which
 defeats the purpose of having one.
 
@@ -338,14 +158,20 @@ The Tolerance master is the most valuable of these: acceptance limits
 currently change only by editing and redeploying code, when they should be
 maintained by quality staff against the approved tolerances document.
 
-## 5. Temporary hardcoded login (current state)
+## 4. Temporary hardcoded login (current state)
 
-Two accounts are hardcoded in `public/js/temp-local-auth.js`:
+Seven accounts are hardcoded in `public/js/temp-local-auth.js`, all with
+the password `123`:
 
-| User ID | Password |
-|---|---|
-| msv | 123 |
-| pnk | 123 |
+| User ID | Role | Purpose |
+|---|---|---|
+| msv | Administrator | Original working account |
+| pnk | Administrator | Original working account |
+| administrator | Administrator | Role test fixture |
+| quality_manager | Quality Manager | Role test fixture |
+| shift_supervisor | Shift Supervisor | Role test fixture |
+| operator | Operator | Role test fixture |
+| viewer | Viewer | Role test fixture |
 
 **This is not secure.** The credentials are readable in page source, and
 "login" is a client-side JavaScript check with no server behind it —
@@ -353,10 +179,72 @@ nothing stops anyone from skipping `login.html` entirely. Fine for
 exercising the UI; must be replaced before real users or real production
 data are involved.
 
+### Cleanup required before real use
+
+The five role fixtures exist so the access model can be exercised from
+each side without reassigning roles in Configuration — sign in as
+`operator` to see exactly what an operator sees. They are **test data and
+must not survive into production use.**
+
+When Supabase auth lands (section 1), all of this goes together:
+
+1. Delete the five role fixtures from `TEMP_USERS`. Each carries a
+   `roleId` naming the role it was created for; that account-to-role
+   mapping is what the real roster has to reproduce for genuine users.
+2. Delete `msv` and `pnk` as well, and `public/js/temp-local-auth.js`
+   entirely with them.
+3. Remove `DEV_PAGE_USERS` — already a derived remnant that nothing
+   reads, since dev access became the `page.dev` permission.
+4. **Clear the stored access configuration** (`bestcast_rbac_config` in
+   `localStorage`) on every device that has run a test build. The
+   fixtures persist there after the code is gone, because the
+   configuration is stored, not recomputed. Configuration has a reset
+   control for this.
+5. Confirm afterwards that no account signs in with `123`, and that the
+   roles themselves are untouched — the roles are real and stay; only the
+   accounts holding them are disposable.
+
+Note for step 4: `rbacLoad()` deliberately admits any sign-in account
+missing from a stored configuration, so that adding an account cannot
+lock it out of everything. That reconciliation is what makes the fixtures
+reappear on an older device, and it is removed as part of this cleanup.
+
+### Test data generator — also to be removed
+
+`public/js/pcs-demo.js` generates plausible check sheet data so the module
+can be exercised without typing sixteen slots by hand. It fills day
+details, machines, shift details, a whole shift's hourly readings and the
+sign-off, in either of two modes — every value in spec, or with the
+occasional deliberate breach so the out-of-spec highlighting and the
+sign-off exception list have something to show.
+
+Values are derived from the field definitions rather than hardcoded, so
+generated data follows the acceptance limits as those limits change.
+
+Removed alongside the accounts:
+
+1. Delete `public/js/pcs-demo.js`.
+2. Remove its `<script>` tag from `public/process-check-sheet.html`.
+3. Remove `pcsDemoControls()`, `pcsDemoModePicker()`, `wireDemoControls()`
+   and `PCS_DEMO_MODE` from `public/js/pcs.js`, and the five
+   `wireDemoControls(panel, record)` calls and the `data-demo` controls in
+   each section.
+4. Remove the `action.pcs.demo.fill` permission from `public/js/rbac.js`,
+   and the `.demo-bar` / `.demo-controls` / `.demo-tag` rules from
+   `public/css/pcs.css`.
+5. Check for generated records left in `localStorage`
+   (`bestcast_pcs_records`) on test devices — plausible-looking readings
+   attributed to fixture accounts are worse than obviously fake ones.
+
+The generator is gated behind `action.pcs.demo.fill`, held only by
+Administrator, so an operator never sees it. That gate is a convenience,
+not a safeguard — the same client-side caveat as everything else here
+(BUG-006).
+
 Sessions are kept in `sessionStorage`, so they last only for the current
 tab (the "Remember me" option was removed).
 
-## 6. Open questions on the source spreadsheets
+## 5. Open questions on the source spreadsheets
 
 - **Tilting Time tolerance** — the cell in `Tolerances_updated_.xlsx`
   contains the date `2026-12-14`, which is Excel autocorrecting `12-14`.
@@ -370,7 +258,7 @@ tab (the "Remember me" option was removed).
   into this row instead of charge counts, so the intended unit is unclear.
   Currently a plain number.
 
-## 7. Assets
+## 6. Assets
 
 - **`Logo.svg` is not in the repo yet.** Every page references `logo.svg`,
   and the deploy workflow copies a root-level `Logo.svg` into `public/`

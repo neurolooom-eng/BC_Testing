@@ -188,6 +188,79 @@ function reload(id) {
   renderSheet(document.getElementById("pcs-root"), id);
 }
 
+// ---------- test data generation (fixture) ------------------------------
+// Offered only to accounts holding action.pcs.demo.fill, so it never
+// appears to an operator. Removed with the rest of the test scaffolding —
+// see BACKLOG.md.
+
+let PCS_DEMO_MODE = "in-spec";
+
+function pcsDemoControls(label, id) {
+  if (!pcsCan("action.pcs.demo.fill")) return "";
+  return `
+    <span class="demo-controls">
+      <span class="demo-tag">Test data</span>
+      <button class="btn btn-secondary" data-demo="${id}">Fill ${escapeHtml(label)}</button>
+    </span>`;
+}
+
+function pcsDemoModePicker() {
+  if (!pcsCan("action.pcs.demo.fill")) return "";
+  return `
+    <div class="demo-bar">
+      <span class="demo-tag">Test data</span>
+      <label class="shift-picker">
+        <span class="muted-xs">Mode</span>
+        <select id="demo-mode">
+          <option value="in-spec"${PCS_DEMO_MODE === "in-spec" ? " selected" : ""}>In spec only</option>
+          <option value="occasional"${PCS_DEMO_MODE === "occasional" ? " selected" : ""}>Occasional out of spec</option>
+        </select>
+      </label>
+      <button class="btn btn-secondary" data-demo="hourly">Fill this shift's readings</button>
+      <button class="btn btn-secondary" data-demo="whole-shift">Fill shift end to end</button>
+      <span class="muted-xs">Values generated from the acceptance limits. Test fixture.</span>
+    </div>`;
+}
+
+// Wires every data-demo control within a container.
+function wireDemoControls(container, record) {
+  container.querySelector("#demo-mode")?.addEventListener("change", (e) => {
+    PCS_DEMO_MODE = e.target.value;
+  });
+
+  container.querySelectorAll("[data-demo]").forEach((btn) =>
+    btn.addEventListener("click", () => {
+      const what = btn.dataset.demo;
+      const mode = PCS_DEMO_MODE;
+      const currentShift = pcsShiftForSlotIndex(pcsNearestCompletedSlot(record.date));
+      const shift = PCS_MATRIX_SHIFT || currentShift;
+
+      if (what === "day") {
+        pcsUpdateDaily(record.id, pcsDemoDayDetails(mode));
+      } else if (what === "machines") {
+        pcsDemoMachines(record.id, mode, 2);
+      } else if (what === "shift-details") {
+        pcsDemoShiftDetails(record.id, shift, mode);
+      } else if (what === "hourly") {
+        const n = pcsDemoHourlyForShift(record.id, shift, mode);
+        if (!n) {
+          alert(`No open slots to fill in ${shift} — its readings are locked or already recorded.`);
+          return;
+        }
+      } else if (what === "signoff") {
+        if (!pcsDemoSignoff(record.id, shift)) {
+          alert(`${shift} has not been opened yet. Fill its shift details first.`);
+          return;
+        }
+      } else if (what === "whole-shift") {
+        pcsDemoWholeShift(record.id, shift, mode);
+      }
+
+      reload(record.id);
+    })
+  );
+}
+
 // ---------- list --------------------------------------------------------
 
 function renderList(root) {
@@ -374,6 +447,7 @@ function renderHeaderSection(panel, record) {
         }
         <div class="btn-row" style="margin-top:18px;">
           ${canEdit ? '<button class="btn" id="update-daily">Save day details</button>' : ""}
+          ${canEdit ? pcsDemoControls("day details", "day") : ""}
           ${
             canArchive && !archived
               ? '<button class="btn btn-secondary" id="archive-daily">Archive day sheet</button>'
@@ -398,6 +472,8 @@ function renderHeaderSection(panel, record) {
     reload(record.id);
   });
 
+  wireDemoControls(panel, record);
+
   panel.querySelector("#archive-daily")?.addEventListener("click", () => {
     if (!confirm("Archive this day sheet? It becomes read-only and is withdrawn from the working list. Nothing is deleted, and it can be restored.")) return;
     pcsArchiveDaily(record.id, PCS_SESSION.userid);
@@ -413,6 +489,7 @@ function renderHeaderSection(panel, record) {
 // --- machines -----------------------------------------------------------
 
 function renderMachinesSection(panel, record) {
+  const archived = pcsIsArchived(record);
   const machines = record.machines || [];
   const nearest = pcsNearestCompletedSlot(record.date);
 
@@ -464,6 +541,7 @@ function renderMachinesSection(panel, record) {
       <summary><h2>Machines</h2><span class="muted-xs">${machines.length} on the line — a machine can start or stop mid-day</span></summary>
       <div class="btn-row" style="margin:0 0 14px;">
         ${pcsCan("action.pcs.machine.manage") ? '<button class="btn" id="add-machine">+ Add machine</button>' : ""}
+        ${archived ? "" : pcsDemoControls("machines", "machines")}
         <span class="muted-xs">Hours outside a machine's running window are recorded as NA.</span>
       </div>
       ${
@@ -480,6 +558,8 @@ function renderMachinesSection(panel, record) {
           : `<div class="card"><p>No machines recorded. Add the machines running on this line today.</p></div>`
       }
     </details>`;
+
+  wireDemoControls(panel, record);
 
   panel.querySelector("#add-machine")?.addEventListener("click", () =>
     openMachineModal(record, null, nearest)
@@ -623,6 +703,7 @@ function renderHourlySection(panel, record) {
         <button class="toggle-btn${PCS_HOURLY_MODE === "form" ? " active" : ""}" data-mode="form">Form view</button>
         <span class="muted-xs">Two layouts for the same data — use whichever suits the line.</span>
       </div>
+      ${pcsDemoModePicker()}
       <div id="hourly-body"></div>
     </details>`;
 
@@ -633,6 +714,8 @@ function renderHourlySection(panel, record) {
       reload(record.id);
     })
   );
+
+  wireDemoControls(panel, record);
 
   const body = panel.querySelector("#hourly-body");
   if (PCS_HOURLY_MODE === "matrix") renderHourlyMatrix(body, record, nearest);
@@ -1133,6 +1216,7 @@ function renderShiftDetailsSection(panel, record) {
             ? `<button class="btn" id="open-shift">+ Open shift</button>`
             : ""
         }
+        ${archived ? "" : pcsDemoControls("shift details", "shift-details")}
         <span class="muted-xs">${recorded.length} of ${PCS_SHIFTS.length} shifts opened</span>
       </div>
       ${
@@ -1141,6 +1225,8 @@ function renderShiftDetailsSection(panel, record) {
           : `<div class="card"><p>No shift opened yet. Open a shift before recording hourly readings against it.</p></div>`
       }
     </details>`;
+
+  wireDemoControls(panel, record);
 
   panel.querySelector("#open-shift")?.addEventListener("click", () =>
     openShiftDetailModal(record, null, remaining)
@@ -1324,12 +1410,15 @@ function renderShiftSignoffSection(panel, record) {
         <h2>Shift sign-off</h2>
         <span class="muted-xs">Completed at the end of the shift — signatures, machine changes and the exceptions being signed for</span>
       </summary>
+      ${archived ? "" : `<div class="btn-row" style="margin:0 0 14px;">${pcsDemoControls("sign-off", "signoff")}</div>`}
       ${
         recorded.length
           ? `<div class="cards">${cards}</div>`
           : `<div class="card"><p>No shift opened yet. Shift sign-off appears once a shift has been opened above.</p></div>`
       }
     </details>`;
+
+  wireDemoControls(panel, record);
 
   panel.querySelectorAll("[data-edit-signoff]").forEach((b) =>
     b.addEventListener("click", () => openSignoffModal(record, b.dataset.editSignoff))

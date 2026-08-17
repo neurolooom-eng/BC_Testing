@@ -56,6 +56,7 @@ function rbacSeed() {
     { id: "action.pcs.shift.delete", label: "Delete shift record", group: "Process Check Sheet", description: "Remove a shift sign-off." },
     { id: "action.pcs.approve", label: "Approve records", group: "Approval", description: "Approve machine, hourly and shift records." },
     { id: "action.pcs.unapprove", label: "Withdraw approval", group: "Approval", description: "Reopen an approved record for editing." },
+    { id: "action.pcs.demo.fill", label: "Fill test data", group: "Testing", description: "Generate plausible readings to exercise the module. Test fixture — removed with the rest of the scaffolding, see BACKLOG.md." },
     { id: "action.config.users.manage", label: "Manage users", group: "Administration", description: "Create and amend users and their role assignments." },
     { id: "action.config.roles.manage", label: "Manage roles", group: "Administration", description: "Create roles and set their permissions." },
     { id: "action.config.access.override", label: "Grant per-user access", group: "Administration", description: "Add or deny access for one user outside their roles." },
@@ -177,15 +178,7 @@ function rbacSeed() {
   // Seed accounts from the temporary sign-in list, so the two accounts that
   // can currently sign in are administrators and the app stays usable.
   const seedUsers = (typeof TEMP_USERS !== "undefined" ? TEMP_USERS : [{ userid: "msv", fullName: "msv" }])
-    .map((u) => ({
-      userid: u.userid,
-      fullName: u.fullName || u.userid,
-      email: "",
-      roleIds: ["role.administrator"],
-      additional: {},
-      denied: {},
-      active: true,
-    }));
+    .map(rbacUserFromAccount);
 
   return {
     version: 1,
@@ -196,6 +189,21 @@ function rbacSeed() {
 }
 
 // --- Storage ------------------------------------------------------------
+
+// Builds the access-control user record for a sign-in account, taking the
+// role from the account itself so each dummy account carries the role it
+// is named for.
+function rbacUserFromAccount(account) {
+  return {
+    userid: account.userid,
+    fullName: account.fullName || account.userid,
+    email: "",
+    roleIds: [account.roleId || "role.administrator"],
+    additional: {},
+    denied: {},
+    active: true,
+  };
+}
 
 function rbacLoad() {
   try {
@@ -209,11 +217,28 @@ function rbacLoad() {
     // Resource types added after a config was stored should not break it.
     config.resources = config.resources || {};
     RBAC_TYPE_KEYS.forEach((t) => (config.resources[t] = config.resources[t] || []));
+    config.users = config.users || [];
     (config.users || []).forEach((u) => {
       u.additional = u.additional || {};
       u.denied = u.denied || {};
       u.roleIds = u.roleIds || [];
     });
+
+    // An account that can sign in but has no access record would be locked
+    // out of everything, so accounts added to the sign-in list after this
+    // configuration was stored are admitted here with their own role.
+    // Existing records are left alone: a role reassigned in Configuration
+    // must not be undone on the next page load.
+    if (typeof TEMP_USERS !== "undefined") {
+      let added = false;
+      TEMP_USERS.forEach((account) => {
+        if (config.users.some((u) => u.userid === account.userid)) return;
+        config.users.push(rbacUserFromAccount(account));
+        added = true;
+      });
+      if (added) rbacSave(config);
+    }
+
     return config;
   } catch (e) {
     console.error("Could not read access configuration:", e);
