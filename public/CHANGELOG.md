@@ -4,6 +4,36 @@ Version numbers follow semver — see `VERSIONING.md` at the repo root.
 Build number and build date shown in the site footer are generated
 automatically per deploy and are not tracked here.
 
+## 1.8.0 — 2026-08-17
+
+**Test fixtures — removed before real use, see BACKLOG.md**
+
+**A dummy account per role**
+- Five accounts named for the roles they carry — `administrator`,
+  `quality_manager`, `shift_supervisor`, `operator`, `viewer` — all with
+  password `123`, alongside the existing `msv` and `pnk`
+- Each carries exactly its role's access, so the model can be seen from
+  each side without reassigning roles in Configuration: sign in as
+  `operator` to see what an operator sees
+- An account missing from a stored access configuration is now admitted on
+  load with its own role, so devices that ran an earlier build pick the new
+  accounts up. An assignment already made in Configuration is left alone.
+
+**A test data generator**
+- Fills day details, machines, shift details, a whole shift's hourly
+  readings, and the sign-off — per module, or end to end for a shift
+- Two modes: every value **in spec**, or **occasional out of spec** so the
+  cell highlighting, the sign-off exception list and the sheet counters
+  have something to report
+- Values are derived from the field definitions, not hardcoded, so they
+  follow the acceptance limits as those change — including Rotor RPM
+  following the rotor size generated beside it
+- Machines are given staggered start slots, and no Die Temp is generated
+  for a machine that was not running, so NA handling and the generated
+  shift remarks have something real to describe
+- Gated behind a new `action.pcs.demo.fill` permission held only by
+  Administrator, and styled deliberately apart from the working controls
+
 ## 1.7.1 — 2026-08-17
 
 **BUG-009 fixed — saving an hourly reading appeared to do nothing**

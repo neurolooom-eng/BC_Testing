@@ -249,6 +249,40 @@ td a:hover { text-decoration: underline; }
   font-weight: 600;
 }
 
+/* ---------- test data controls (fixture) ----------
+   Deliberately set apart from the working controls, so nobody mistakes a
+   generator for part of the sheet. Removed with the rest of the test
+   scaffolding — see BACKLOG.md. */
+
+.demo-bar,
+.demo-controls {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  padding: 8px 12px;
+  border: 1px dashed var(--card-border);
+  border-radius: 10px;
+  background: repeating-linear-gradient(
+    45deg,
+    transparent, transparent 6px,
+    var(--card-bg) 6px, var(--card-bg) 12px
+  );
+}
+
+.demo-bar { display: flex; margin-bottom: 14px; }
+
+.demo-tag {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  font-weight: 700;
+  color: var(--orange);
+  white-space: nowrap;
+}
+
+body.light-theme .demo-tag { color: #8a4a12; }
+
 .shift-picker {
   display: inline-flex;
   align-items: center;

@@ -235,7 +235,27 @@ deferred pending the backend — see the Backlog.
 | REQ-MST-006 | The system shall restrict maintenance of masters to authorised administrative users. | Controlled values govern acceptance of production data. | Test | Deferred |
 | REQ-MST-007 | The system shall retain records that reference a master value after that value is deactivated. | Historic check sheets must remain complete and auditable. | Test | Deferred |
 
-## 8. Developer Documentation (DEV)
+## 8. Test Fixtures (FIX)
+
+Scaffolding that exists to exercise the system before it carries real
+data. Every requirement here is discharged by **removing** the thing it
+describes — see the Backlog cleanup.
+
+| ID | Requirement | Rationale | Verification | Status |
+|---|---|---|---|---|
+| REQ-FIX-001 | The system shall provide one sign-in account per defined role, named for that role. | Each role's access must be observable from the inside without reassigning roles. | Test | Implemented |
+| REQ-FIX-002 | Each role account shall carry exactly the access its named role confers. | An account that does not match its role misrepresents what it is testing. | Test | Implemented |
+| REQ-FIX-003 | The system shall admit a sign-in account absent from a stored access configuration, assigning it the role recorded against that account. | An account able to sign in but with no access record would be locked out of every page. | Test | Implemented |
+| REQ-FIX-004 | The system shall not alter the role assignment of an account already present in a stored access configuration. | A reassignment made in Configuration must survive a page load. | Test | Implemented |
+| REQ-FIX-005 | The system shall generate check sheet data for day details, machines, shift details, a shift's hourly readings and shift sign-off. | Exercising the module by hand costs sixteen slots of typing per shift. | Test | Implemented |
+| REQ-FIX-006 | Generated data shall be derived from the field definitions rather than from fixed values. | Generated data must follow the acceptance limits as those limits change. | Inspection | Implemented |
+| REQ-FIX-007 | The system shall offer a generation mode in which every generated value lies inside its acceptance limits. | A clean sheet is needed to exercise the normal path. | Test | Implemented |
+| REQ-FIX-008 | The system shall offer a generation mode in which a minority of generated readings lie outside their acceptance limits. | The out-of-spec highlighting, the sign-off exception list and the sheet counters need something to report. | Test | Implemented |
+| REQ-FIX-009 | Generated data shall omit a Die Temp reading for any machine not running in that time slot. | A generated reading for an idle machine would contradict the NA rule. | Test | Implemented |
+| REQ-FIX-010 | Data generation shall be offered only to users holding the test-data permission. | Generation must never be reachable by someone recording real readings. | Test | Implemented |
+| REQ-FIX-011 | Data generation controls shall be presented so as to be distinguishable from the working controls of the sheet. | A generator that looks like part of the form invites a mistake. | Inspection | Implemented |
+
+## 9. Developer Documentation (DEV)
 
 | ID | Requirement | Rationale | Verification | Status |
 |---|---|---|---|---|
@@ -246,7 +266,7 @@ deferred pending the backend — see the Backlog.
 | REQ-DEV-005 | Each requirement shall be traceable to at least one test case. | Demonstrates coverage. | Analysis | Implemented |
 | REQ-DEV-006 | The Requirements and Test Cases documents shall be updated in the same change that alters the behaviour they describe. | Documentation drifts if updated separately. | Inspection | Implemented |
 
-## 9. Deployment (DEP)
+## 10. Deployment (DEP)
 
 | ID | Requirement | Rationale | Verification | Status |
 |---|---|---|---|---|
