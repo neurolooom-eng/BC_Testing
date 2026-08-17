@@ -26,6 +26,8 @@ not deleted — the history is the point.
 | BUG-006 | Authentication enforced only in client-side code | Critical | Deferred | — |
 | BUG-007 | A fourth shift record can be added to a daily record | Minor | Reclassified | — |
 | BUG-008 | Navigation scrolled horizontally instead of wrapping | Major | Fixed | 1.4.0 |
+| BUG-009 | Saving an hourly reading appeared to do nothing | Major | Fixed | 1.7.1 |
+| BUG-010 | Stated Rotor RPM limits did not follow the selected rotor size | Major | Fixed | 1.7.1 |
 
 No defects are currently open. BUG-006 is a deferred design decision and
 BUG-007 has been reclassified as an enhancement; both are tracked in the
@@ -249,3 +251,55 @@ the bar and the nav, and changed the bar's fixed height to a minimum height
 so it grows as rows wrap. Below 1024 px the nav moves onto its own
 full-width row beneath the brand and user controls; entry padding and type
 size step down again at 640 px and 400 px.
+
+---
+
+## BUG-009 — Saving an hourly reading appeared to do nothing
+
+- **Severity:** Major
+- **Status:** Fixed
+- **Fixed in:** 1.7.1
+- **Affects:** REQ-PCS-090, REQ-PCS-091
+- **Covered by:** TC-PCS-120, TC-PCS-121, TC-PCS-122
+
+**Symptom.** In the form layout, pressing Save produced no visible change:
+the same slot remained selected, showing the same values. Operators could
+not tell whether the reading had been stored, and were liable to press it
+again.
+
+**Root cause.** The reading was in fact being saved. The form then
+re-rendered the same slot, which — being the most recently recorded — was
+still unlocked and still populated, so the result was pixel-identical to
+the state before the press. Two things were missing rather than broken:
+the form did not move on, and nothing confirmed the save.
+
+**Correction.** On a successful save the form now advances to the following
+slot, which is the next reading due, and shows a one-shot confirmation
+naming the slot saved and the slot now selected. Advancing is clamped at
+the final slot of the day.
+
+---
+
+## BUG-010 — Stated Rotor RPM limits did not follow the selected rotor size
+
+- **Severity:** Major
+- **Status:** Fixed
+- **Fixed in:** 1.7.1
+- **Affects:** REQ-PCS-092, REQ-PCS-023
+- **Covered by:** TC-PCS-124, TC-PCS-125
+
+**Symptom.** Selecting a 190mm rotor left the Rotor RPM field still stating
+550–650 RPM, the 100mm band. The validation used the correct band, so a
+value could be marked out of spec while the limits printed beside it said it
+was acceptable — the field contradicted itself until the record was saved
+and the form re-rendered.
+
+**Root cause.** The live validation added in 1.7.0 repainted the
+out-of-spec state and the error text on every keystroke, but the spec hint
+was written once when the field was first rendered and never revisited. For
+every other field that is correct, since their limits are fixed; Rotor RPM
+is the only item whose limits depend on another field.
+
+**Correction.** Fields declaring a dependent range now have their stated
+limits recomputed alongside their validation, so hint and verdict are always
+derived from the same evaluation.

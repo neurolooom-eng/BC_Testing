@@ -249,6 +249,35 @@ td a:hover { text-decoration: underline; }
   font-weight: 600;
 }
 
+.shift-picker {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 10px 0 12px;
+  border: 1px solid var(--card-border);
+  border-radius: 9px;
+  background: var(--card-bg);
+}
+
+.shift-picker select {
+  background: none;
+  border: none;
+  color: var(--content-fg);
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 9px 4px;
+  outline: none;
+  cursor: pointer;
+}
+
+.shift-picker select option { background: var(--menu-bg); color: #f6f4ee; }
+body.light-theme .shift-picker select option { background: #ffffff; color: #000000; }
+
+@media (pointer: coarse) {
+  .shift-picker select { min-height: 44px; font-size: 15px; }
+}
+
 /* ---------- matrix ---------- */
 
 .matrix-wrap { max-height: 70vh; overflow: auto; }

@@ -10,7 +10,7 @@ one case covers it.
 
 **Result key:** `Pass` · `Fail` · `Blocked` · `Not run`
 
-Last executed against **v1.7.0**.
+Last executed against **v1.7.1**.
 
 ---
 
@@ -130,6 +130,17 @@ Last executed against **v1.7.0**.
 | TC-PCS-053 | REQ-PCS-053 | Form layout selected | Reload the page. | Form layout still selected. | Pass |
 | TC-PCS-054 | REQ-PCS-054 | Day sheet dated today, current time 14:45 | Open hourly entry. | Slot 2.30pm is selected by default. | Pass |
 | TC-PCS-055 | REQ-PCS-054 | Day sheet dated in the past | Open hourly entry. | The final slot of the day is selected. | Pass |
+| TC-PCS-120 | REQ-PCS-090 | Form layout on a given slot, all mandatory items entered | Save the reading. | The reading is stored and the form moves to the following slot. | Pass |
+| TC-PCS-121 | REQ-PCS-091 | As above | Observe the form after saving. | A confirmation names the slot saved and the slot now selected. | Pass |
+| TC-PCS-122 | REQ-PCS-091 | Reading just saved | Cause the sheet to re-render without saving again. | The confirmation is not shown a second time. | Pass |
+| TC-PCS-123 | REQ-PCS-090 | Form layout on the final slot of the day | Save the reading. | The form remains on the final slot rather than advancing past the end of the day. | Pass |
+| TC-PCS-124 | REQ-PCS-092 | Form layout, rotor size 100mm | Change rotor size to 190mm without saving. | The stated Rotor RPM limits change to 350–400 immediately. | Pass |
+| TC-PCS-125 | REQ-PCS-092 | Rotor RPM 400 entered with rotor size 100mm | Observe the field, then change rotor size to 190mm. | Marked out of spec under 100mm; the mark clears under 190mm, and the stated limits agree with the mark in both cases. | Pass |
+| TC-PCS-126 | REQ-PCS-093, REQ-PCS-094 | Day sheet dated today, matrix layout | Open the hourly section. | Only the shift in progress is shown, from its first slot to the most recently completed slot. | Pass |
+| TC-PCS-127 | REQ-PCS-095, REQ-PCS-096 | Matrix layout | Select another shift. | All 16 slots of that shift are shown. | Pass |
+| TC-PCS-128 | REQ-PCS-095 | Matrix layout | Inspect the shift control. | All three shifts are offered, and the shift in progress is identified as current. | Pass |
+| TC-PCS-129 | REQ-PCS-097 | Matrix layout showing the shift in progress | Choose to display the whole shift. | All 16 slots of that shift are shown, including those not yet completed. | Pass |
+| TC-PCS-130 | REQ-PCS-096 | Matrix layout showing a completed shift | Look for the whole-shift control. | Not offered — the shift is already shown in full. | Pass |
 | TC-PCS-056 | REQ-PCS-055 | Reading recorded for slot 0 only | Attempt to edit slot 0. | Editing permitted; it is still the most recent reading. | Pass |
 | TC-PCS-057 | REQ-PCS-055 | Readings recorded for slots 0 and 1 | Attempt to edit slot 0. | Editing prevented; the row is shown as locked. | Pass |
 | TC-PCS-058 | REQ-PCS-056, REQ-PCS-057 | Hourly reading recorded | Approve it. | Marked approved, recording the approver's identity and the time. | Pass |

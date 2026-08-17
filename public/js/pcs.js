@@ -16,7 +16,12 @@ const PCS_HOURLY_MODE_KEY = "bestcast_pcs_hourly_mode";
 let PCS_HOURLY_MODE = localStorage.getItem(PCS_HOURLY_MODE_KEY) || "matrix";
 let PCS_SHOW_ALL_SLOTS = false;
 let PCS_SHOW_ARCHIVED = false;
+// Which shift the matrix is scoped to; null follows the shift in progress.
+let PCS_MATRIX_SHIFT = null;
 let PCS_FORM_SLOT = null;
+// One-shot confirmation shown after a reading is saved, since the form
+// then moves on to the next slot and the save would otherwise be silent.
+let PCS_FORM_FLASH = null;
 
 // ---------- helpers -----------------------------------------------------
 
@@ -104,8 +109,18 @@ function paintValidation(container, entry, fields) {
 // Marks a single field out of spec as it is typed, rather than waiting for
 // the record to be saved — the operator should see it while the value is
 // still under their hand.
+//
+// Also refreshes the stated limits: rotor RPM's acceptable band depends on
+// the selected rotor size, so the hint has to follow the dependency or it
+// contradicts the validation sitting next to it.
 function paintFieldOutOfSpec(fieldNode, field, entry) {
   if (!fieldNode) return;
+
+  if (field.dynamicRange) {
+    const hint = fieldNode.querySelector(".spec-hint");
+    if (hint) hint.textContent = pcsSpecHint(field, entry);
+  }
+
   const issue = pcsValidate(entry, [field]).outOfSpec[0];
   fieldNode.classList.toggle("oos", !!issue);
   const err = fieldNode.querySelector(".field-error");
@@ -628,8 +643,20 @@ function renderHourlySection(panel, record) {
 // entry are locked, so a correction is possible until the operator moves on.
 function renderHourlyMatrix(body, record, nearest) {
   const machines = record.machines || [];
-  const lastSlot = PCS_SHOW_ALL_SLOTS ? 47 : nearest;
   const latestRecorded = pcsLatestRecordedSlot(record);
+
+  // The matrix is scoped to one shift rather than the whole day: 48 slots
+  // is more than anyone works through at once, and an operator is only ever
+  // recording within their own shift. Defaults to the shift in progress,
+  // shown up to the slot just completed.
+  const currentShift = pcsShiftForSlotIndex(nearest);
+  const shiftName = PCS_MATRIX_SHIFT || currentShift;
+  const range = pcsShiftSlotRange(shiftName);
+  const isCurrentShift = shiftName === currentShift;
+
+  const firstSlot = range.first;
+  const lastSlot =
+    isCurrentShift && !PCS_SHOW_ALL_SLOTS ? Math.min(nearest, range.last) : range.last;
 
   const header = `
     <tr>
@@ -642,7 +669,7 @@ function renderHourlyMatrix(body, record, nearest) {
     </tr>`;
 
   const rows = [];
-  for (let i = 0; i <= lastSlot; i++) {
+  for (let i = firstSlot; i <= lastSlot; i++) {
     const entry = pcsHourlyFor(record, i) || {};
     const locked = pcsHourlyLocked(record, i);
     const issues = new Set(pcsValidate(entry, PCS_HOURLY_FIELDS).outOfSpec.map((x) => x.key));
@@ -695,7 +722,7 @@ function renderHourlyMatrix(body, record, nearest) {
   }
 
   // The last slot of a shift is where that shift is sent for approval.
-  const submitTarget = pcsMatrixSubmitTarget(record, lastSlot);
+  const submitTarget = pcsMatrixSubmitTarget(record, shiftName, lastSlot);
 
   body.innerHTML = `
     <div class="btn-row" style="margin-bottom:12px;">
@@ -705,18 +732,44 @@ function renderHourlyMatrix(body, record, nearest) {
           ? `<button class="btn" id="save-send-matrix">Save &amp; Send ${escapeHtml(submitTarget.shift)} for Approval</button>`
           : ""
       }
-      <button class="btn btn-secondary" id="toggle-slots">
-        ${PCS_SHOW_ALL_SLOTS ? "Show up to current slot" : "Show all 48 slots"}
-      </button>
-      <span class="muted-xs">Rows lock once a later slot is recorded. Approved rows stay locked.</span>
+      <label class="shift-picker">
+        <span class="muted-xs">Shift</span>
+        <select id="matrix-shift">
+          ${PCS_SHIFTS.map(
+            (s) =>
+              `<option value="${escapeHtml(s)}"${s === shiftName ? " selected" : ""}>${escapeHtml(s)}${
+                s === currentShift ? " (current)" : ""
+              }</option>`
+          ).join("")}
+        </select>
+      </label>
+      ${
+        isCurrentShift
+          ? `<button class="btn btn-secondary" id="toggle-slots">
+               ${PCS_SHOW_ALL_SLOTS ? "Up to current slot" : "Show whole shift"}
+             </button>`
+          : ""
+      }
+      <span class="muted-xs">
+        ${escapeHtml(PCS_TIME_SLOTS[firstSlot])}–${escapeHtml(PCS_TIME_SLOTS[lastSlot])} ·
+        rows lock once a later slot is recorded.
+      </span>
     </div>
     <div id="matrix-alert"></div>
     <div class="table-wrap matrix-wrap">
       <table class="dense matrix"><thead>${header}</thead><tbody>${rows.join("")}</tbody></table>
     </div>`;
 
-  body.querySelector("#toggle-slots").addEventListener("click", () => {
+  body.querySelector("#toggle-slots")?.addEventListener("click", () => {
     PCS_SHOW_ALL_SLOTS = !PCS_SHOW_ALL_SLOTS;
+    reload(record.id);
+  });
+
+  body.querySelector("#matrix-shift")?.addEventListener("change", (e) => {
+    PCS_MATRIX_SHIFT = e.target.value;
+    // Switching away from the shift in progress shows that shift whole;
+    // the cap only makes sense for the one still running.
+    PCS_SHOW_ALL_SLOTS = false;
     reload(record.id);
   });
 
@@ -770,19 +823,14 @@ function renderHourlyMatrix(body, record, nearest) {
   wireApprovalButtons(body, record);
 }
 
-// The shift eligible for submission from the matrix: the one whose final
-// slot is on screen and still in draft.
-function pcsMatrixSubmitTarget(record, lastVisibleSlot) {
-  for (let s = PCS_SHIFTS.length - 1; s >= 0; s--) {
-    const shift = PCS_SHIFTS[s];
-    const range = pcsShiftSlotRange(shift);
-    if (range.last > lastVisibleSlot) continue;
-    const shiftRecord = pcsShiftRecordFor(record, shift);
-    if (!shiftRecord) return { shift, shiftRecord: null };
-    if (pcsShiftStatus(shiftRecord) === PCS_SHIFT_STATUS.DRAFT) return { shift, shiftRecord };
-    return null; // most recent complete shift already submitted
-  }
-  return null;
+// The matrix is scoped to one shift, so submission applies to that shift —
+// offered once its final slot is on screen and it is still in draft.
+function pcsMatrixSubmitTarget(record, shiftName, lastVisibleSlot) {
+  const range = pcsShiftSlotRange(shiftName);
+  if (!range || range.last > lastVisibleSlot) return null;
+  const shiftRecord = pcsShiftRecordFor(record, shiftName);
+  if (shiftRecord && pcsShiftStatus(shiftRecord) !== PCS_SHIFT_STATUS.DRAFT) return null;
+  return { shift: shiftName, shiftRecord };
 }
 
 // Live out-of-spec fill for the matrix. The whole cell changes as the value
@@ -921,7 +969,9 @@ function renderHourlyForm(body, record, nearest) {
         ${machines.length ? `<div class="field-grid">${dieFields}</div>` : `<p class="muted-xs">No machines added yet.</p>`}
       </fieldset>
 
-      <div id="form-alert"></div>
+      <div id="form-alert">${
+        PCS_FORM_FLASH ? `<div class="alert alert-ok">${escapeHtml(PCS_FORM_FLASH)} Now on ${escapeHtml(PCS_TIME_SLOTS[slot])}.</div>` : ""
+      }</div>
       <div class="btn-row" style="margin-top:18px;">
         <button class="btn" id="save-hourly"${locked ? " disabled" : ""}>Save reading</button>
         ${
@@ -937,6 +987,9 @@ function renderHourlyForm(body, record, nearest) {
         ${entry.approval ? approvalBadge(entry) : ""}
       </div>
     </div>`;
+
+  // One-shot: consumed by the render that follows the save.
+  PCS_FORM_FLASH = null;
 
   body.querySelector("#form-slot").addEventListener("change", (e) => {
     PCS_FORM_SLOT = Number(e.target.value);
@@ -983,7 +1036,13 @@ function renderHourlyForm(body, record, nearest) {
   const saveBtn = body.querySelector("#save-hourly");
   if (saveBtn && !locked) {
     saveBtn.addEventListener("click", () => {
-      if (saveHourlyForm()) reload(record.id);
+      if (!saveHourlyForm()) return;
+      // Recording runs forward through the day, so a saved reading hands
+      // the operator the next slot rather than leaving them on the one
+      // they have just finished.
+      PCS_FORM_SLOT = Math.min(slot + 1, PCS_TIME_SLOTS.length - 1);
+      PCS_FORM_FLASH = `${PCS_TIME_SLOTS[slot]} saved.`;
+      reload(record.id);
     });
   }
 

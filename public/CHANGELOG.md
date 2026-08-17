@@ -4,6 +4,31 @@ Version numbers follow semver — see `VERSIONING.md` at the repo root.
 Build number and build date shown in the site footer are generated
 automatically per deploy and are not tracked here.
 
+## 1.7.1 — 2026-08-17
+
+**BUG-009 fixed — saving an hourly reading appeared to do nothing**
+- The reading was being saved, but the form re-rendered the same slot with
+  the same values, so the result was identical to the state before the
+  press. It now advances to the following slot — the next reading due —
+  and confirms the save, naming the slot stored and the slot now selected.
+  Advancing stops at the final slot of the day.
+
+**BUG-010 fixed — stated Rotor RPM limits did not follow rotor size**
+- Selecting a 190mm rotor left the field stating 550–650 RPM while the
+  validation used 350–400, so a value could be flagged out of spec beside
+  limits saying it was fine. The live validation added in 1.7.0 repainted
+  the verdict on every keystroke but never revisited the stated limits.
+  Fields with a dependent range now recompute both from the same
+  evaluation.
+
+**Matrix scoped to a shift**
+- The matrix showed the whole day from 6.30am, with a toggle between "up to
+  current slot" and all 48. It now shows **one shift at a time**, defaulting
+  to the shift in progress up to the most recently completed slot
+- A shift selector switches between the three, marking which is current; a
+  completed shift is shown in full, and the shift in progress keeps a
+  control to reveal its remaining slots
+
 ## 1.7.0 — 2026-08-16
 
 Process Check Sheet refinements T1–T7, plus the shift split.
