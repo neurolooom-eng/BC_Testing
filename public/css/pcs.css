@@ -302,6 +302,167 @@ input.cell-input.cell-bad { border-color: var(--danger); color: var(--danger); f
 
 .row-actions { white-space: nowrap; }
 
+/* ---------- out of spec (T6) ----------
+   The whole cell fills, and the fill is applied the moment the value is
+   entered rather than on save. Light and dark need separate pairs: the
+   light-mode red is too dark to read white text against on a dark ground,
+   and too light to carry as a fill on a pale one. The "!" marker means the
+   state survives greyscale printing and colour-blind viewing, where a fill
+   alone would not. */
+
+:root {
+  --oos-bg: #c62828;
+  --oos-fg: #ffffff;
+  --oos-edge: #8e0000;
+}
+
+body.light-theme {
+  --oos-bg: #d32f2f;
+  --oos-fg: #ffffff;
+  --oos-edge: #7f1414;
+}
+
+.cell-oos,
+td.cell-oos {
+  background: var(--oos-bg) !important;
+  color: var(--oos-fg) !important;
+  font-weight: 700;
+  box-shadow: inset 0 0 0 1px var(--oos-edge);
+}
+
+input.cell-input.cell-oos,
+select.cell-input.cell-oos {
+  background: var(--oos-bg);
+  color: var(--oos-fg);
+  border-color: var(--oos-edge);
+  font-weight: 700;
+}
+
+input.cell-input.cell-oos::placeholder { color: rgba(255,255,255,0.75); }
+
+/* Marks the containing cell so the fill covers the full cell, not just the
+   input sitting inside it. */
+td.has-oos {
+  background: var(--oos-bg);
+  box-shadow: inset 0 0 0 1px var(--oos-edge);
+}
+
+td.has-oos::after {
+  content: "!";
+  position: absolute;
+  top: 1px;
+  right: 3px;
+  font-size: 9px;
+  font-weight: 800;
+  color: var(--oos-fg);
+  pointer-events: none;
+}
+
+td.has-oos { position: relative; }
+
+/* Field-level equivalent for the form view. */
+.field.oos input,
+.field.oos select {
+  background: var(--oos-bg);
+  color: var(--oos-fg);
+  border-color: var(--oos-edge);
+  font-weight: 700;
+}
+
+.field.oos .field-error { color: var(--oos-bg); font-weight: 700; }
+body.light-theme .field.oos .field-error { color: var(--oos-edge); }
+
+.oos-summary { margin-top: 4px; }
+
+.oos-summary li { margin-bottom: 4px; }
+
+/* ---------- touch and tablet (T7) ----------
+   Line workers enter data on a tablet. Where the pointer is coarse, every
+   target grows to at least 44 px and the dense matrix relaxes — density is
+   worth less than being able to hit the right cell. */
+
+@media (pointer: coarse) {
+  .cell-input,
+  select.cell-input {
+    width: 92px;
+    min-height: 44px;
+    font-size: 15px;
+    padding: 8px 10px;
+  }
+
+  table.matrix td { padding: 6px 7px; }
+  table.matrix th { font-size: 12px; padding: 10px 8px; }
+
+  .matrix .sticky-col { min-width: 112px; }
+
+  .link-btn {
+    min-height: 44px;
+    padding: 10px 12px;
+    font-size: 14px;
+    display: inline-flex;
+    align-items: center;
+  }
+
+  .btn, .toggle-btn {
+    min-height: 44px;
+    padding: 12px 20px;
+    font-size: 14.5px;
+  }
+
+  .field input,
+  .field select {
+    min-height: 44px;
+    font-size: 15px;
+  }
+
+  .pin-input select { min-height: 44px; font-size: 15px; }
+
+  .pin {
+    width: 34px;
+    height: 34px;
+    font-size: 13px;
+  }
+
+  .sheet-block > summary { padding: 6px 0; }
+
+  /* Hover-only affordances do not exist on touch, so nothing is hidden
+     behind them: row actions stay visible and spaced. */
+  .row-actions { display: flex; gap: 6px; flex-wrap: wrap; }
+}
+
+.archived-badge {
+  display: inline-block;
+  padding: 3px 9px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 600;
+  white-space: nowrap;
+  background: var(--card-bg);
+  color: var(--content-mute);
+  border: 1px solid var(--card-border);
+}
+
+.remark-auto {
+  display: flex;
+  gap: 8px;
+  align-items: baseline;
+  font-size: 12.5px;
+  padding: 6px 10px;
+  border-left: 2px solid var(--teal);
+  background: var(--card-bg);
+  border-radius: 0 6px 6px 0;
+  margin-bottom: 6px;
+}
+
+.remark-auto .remark-tag {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  color: var(--teal);
+  font-weight: 700;
+  white-space: nowrap;
+}
+
 .pending-badge,
 .stopped-badge {
   display: inline-block;
