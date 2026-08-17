@@ -258,18 +258,23 @@ Supabase queries and the UI above it needs no changes.
 
 ### Out-of-spec admin alerts
 The tolerances sheet requires: *"Out of spec data must be highlighted in
-red with an automated alert sent to admin."* The red highlighting is done
-(field, row and sheet level). The **alert is not** — sending mail needs a
-backend. Once on Supabase, do this with a database trigger or Edge
-Function on insert into `pcs_hourly` / `pcs_shift`. Until then the UI says
-plainly that no alert was sent, rather than implying one was.
+red with an automated alert sent to admin."*
 
-### Check sheet printing / submission
+The highlighting is done and then some: the whole cell fills as the value
+is typed, and every breach is listed again in the shift sign-off. The
+**alert is not** — sending mail needs a backend. Once on Supabase, do this
+with a database trigger or Edge Function on insert into `pcs_hourly` /
+`pcs_shift`. Until then the UI says plainly that no alert was sent, rather
+than implying one was.
+
+### Check sheet printing
 The tolerances sheet notes: *"Per day 3 times shift wise submission from
 shift supervisors, all datas should be printed in check sheet documents."*
-Not started — needs a print/PDF view laid out like the paper QC FMT 038
-form, and a submit-and-lock step per shift so a submitted sheet can't be
-quietly edited afterwards.
+
+The submission half is done as of v1.7.0: each shift is submitted for
+approval from its last hourly reading and locks on submission. **Printing
+is not** — it still needs a print or PDF view laid out like the paper
+QC FMT 038 form, so a signed shift can be filed as a document.
 
 ## 4. Masters (deferred)
 

@@ -10,7 +10,7 @@ one case covers it.
 
 **Result key:** `Pass` · `Fail` · `Blocked` · `Not run`
 
-Last executed against **v1.6.0**.
+Last executed against **v1.7.0**.
 
 ---
 
@@ -76,7 +76,7 @@ Last executed against **v1.6.0**.
 | TC-PCS-001 | REQ-PCS-001 | Signed in | Create a check sheet with all daily-once items. | Record created and listed. | Pass |
 | TC-PCS-002 | REQ-PCS-002 | Daily record exists | Add two hourly readings. | Both listed against that daily record. | Pass |
 | TC-PCS-003 | REQ-PCS-003 | Daily record exists | Add a 1st Shift record. | Listed against that daily record; shift count shows 1/3. | Pass |
-| TC-PCS-004 | REQ-PCS-004 | Day sheet with machine, hourly and shift children | Delete the day sheet. | Sheet and all children removed; none remain listed. | Pass |
+| TC-PCS-004 | REQ-PCS-004 | Day sheet with machine, hourly and shift children | Archive the sheet, then restore it. | All children are still present and correctly associated after restoring. | Pass |
 | TC-PCS-006 | REQ-PCS-006 | Day sheet open | Add two machines with differing settings. | Both listed against the day sheet, each retaining its own M/C no., BC no., die coat thickness, preheat temp and times. | Pass |
 | TC-PCS-007 | REQ-PCS-007 | Day sheet with two machines | Record an hourly reading and enter a Die Temp for each machine. | Both values stored against that slot, one per machine. | Pass |
 | TC-PCS-008 | REQ-PCS-008, REQ-PCS-009 | Day sheet open | Add a machine with a start slot part-way through the day. | Machine records that start slot and is shown as running from it. | Pass |
@@ -136,6 +136,55 @@ Last executed against **v1.6.0**.
 | TC-PCS-059 | REQ-PCS-058 | Approved hourly reading that is the most recent | Attempt to edit it. | Editing prevented while the approval stands. | Pass |
 | TC-PCS-060 | REQ-PCS-058 | Approved record | Withdraw the approval, then edit. | Editing permitted once the approval is withdrawn. | Pass |
 | TC-PCS-061 | REQ-PCS-059 | Day sheet with unapproved records | View the day sheet header and the sheet list. | Count of records awaiting approval shown in both. | Pass |
+
+### 5.6 Section order, archiving and day-sheet control
+
+| ID | Verifies | Preconditions | Steps | Expected result | Result |
+|---|---|---|---|---|---|
+| TC-PCS-070 | REQ-PCS-060 | Day sheet open | Read the section headings top to bottom. | Day details, Machines, Shift details, Hourly readings, Shift sign-off, in that order. | Pass |
+| TC-PCS-071 | REQ-PCS-061 | Shift opened and signed off | Inspect where each field is captured. | Alloy and startup checks appear under Shift details; signatures and remarks under Shift sign-off; both belong to one shift record. | Pass |
+| TC-PCS-072 | REQ-PCS-062 | Saved day sheet, signed in as an administrator | Look for a delete control anywhere on the sheet. | No delete control exists. | Pass |
+| TC-PCS-073 | REQ-PCS-063 | Signed in with the archive permission | Archive the day sheet. | Sheet marked archived, recording who archived it and when. | Pass |
+| TC-PCS-074 | REQ-PCS-064 | Archived day sheet | Attempt to amend day details, machines, hourly readings and shift records. | All are read-only. | Pass |
+| TC-PCS-075 | REQ-PCS-065 | One archived and one live day sheet | Open the day sheet list. | Only the live sheet is listed; the archived one appears after choosing to show archived. | Pass |
+| TC-PCS-076 | REQ-PCS-063 | Archived day sheet | Restore it from the archive. | Sheet returns to the working list and becomes editable again. | Pass |
+| TC-PCS-077 | REQ-PCS-066 | Signed in as Shift Supervisor | Open a saved day sheet. | Day details are read-only, with the reason stated; other sections remain editable. | Pass |
+| TC-PCS-078 | REQ-PCS-066 | Signed in as Quality Manager | Open the same day sheet. | Day details are editable. | Pass |
+
+### 5.7 Machine remarks, shift lifecycle and sign-off
+
+| ID | Verifies | Preconditions | Steps | Expected result | Result |
+|---|---|---|---|---|---|
+| TC-PCS-080 | REQ-PCS-070, REQ-PCS-071 | Machine added at a slot inside the 1st Shift | View the 1st Shift sign-off. | A remark states that machine was added, giving its number and the time. | Pass |
+| TC-PCS-081 | REQ-PCS-070 | Machine stopped at a slot inside the 2nd Shift | View both shifts' sign-offs. | The stop is remarked against the 2nd Shift only. | Pass |
+| TC-PCS-082 | REQ-PCS-071 | Machine running from the start of the day | View the 1st Shift sign-off. | No "added" remark — the machine did not change during the shift. | Pass |
+| TC-PCS-083 | REQ-PCS-072 | Shift with generated remarks | Inspect the sign-off. | Generated remarks are labelled as such and offer no edit or delete control; a separate free-text remarks field is available. | Pass |
+| TC-PCS-084 | REQ-PCS-073 | Newly opened shift | Inspect its status. | Draft. | Pass |
+| TC-PCS-085 | REQ-PCS-074 | Recording the final slot of a shift, sign-off complete | Inspect the hourly section. | A control offering to save and send that shift for approval is present. | Pass |
+| TC-PCS-086 | REQ-PCS-074 | Recording a slot that is not the last of its shift | Inspect the hourly section. | No submit control is offered. | Pass |
+| TC-PCS-087 | REQ-PCS-075, REQ-PCS-076 | Shift with unrecorded slots and out-of-spec readings | Send the shift for approval. | Counts of empty slots and out-of-spec readings are stated before confirming; submission proceeds on confirmation. | Pass |
+| TC-PCS-088 | REQ-PCS-077 | Shift whose sign-off lacks the supervisor name | Attempt to send it for approval. | Submission refused, naming the missing sign-off fields. | Pass |
+| TC-PCS-089 | REQ-PCS-077 | Last slot recorded but no shift opened | Attempt to send for approval. | Submission refused, directing the user to open the shift and complete its sign-off. | Pass |
+| TC-PCS-090 | REQ-PCS-073, REQ-PCS-078 | Shift submitted | Inspect its status and attempt to edit it and its hourly readings. | Status Pending approval; shift and its readings are locked. | Pass |
+| TC-PCS-091 | REQ-PCS-079 | 1st Shift in draft, 2nd Shift then opened | Attempt to edit the 1st Shift. | Editing prevented; the shift is shown as closed. | Pass |
+| TC-PCS-092 | REQ-PCS-080 | Submitted or approved shift, user holds withdraw-approval | Reopen the shift. | Status returns to Draft and editing is permitted again. | Pass |
+| TC-PCS-093 | REQ-PCS-081 | Out-of-spec readings recorded during a shift | View that shift's sign-off. | Each is listed with its time slot, item, value and reason. | Pass |
+| TC-PCS-094 | REQ-PCS-081 | Shift with no out-of-spec readings | View its sign-off. | Stated explicitly that none were recorded. | Pass |
+
+### 5.8 Immediate out-of-spec indication and touch entry
+
+| ID | Verifies | Preconditions | Steps | Expected result | Result |
+|---|---|---|---|---|---|
+| TC-PCS-100 | REQ-PCS-024 | Matrix view, editable row | Type 850 into Melting Metal Temp. | The whole cell fills with the warning colour as the value is typed, before saving. | Pass |
+| TC-PCS-101 | REQ-PCS-024 | As above | Correct the value to 740. | The fill clears immediately. | Pass |
+| TC-PCS-102 | REQ-PCS-024, REQ-PCS-023 | Matrix row with rotor size 100mm and RPM 603 | Change rotor size to 190mm. | The RPM cell fills, the limits having moved to 350–400. | Pass |
+| TC-PCS-103 | REQ-PCS-024 | Form view | Enter an out-of-limit value. | The field fills and states the breach, before saving. | Pass |
+| TC-PCS-104 | REQ-PCS-031 | Out-of-spec cell displayed | Inspect it in the light theme and the dark theme. | Legible in both, meeting contrast requirements. | Pass |
+| TC-PCS-105 | REQ-PCS-032 | Out-of-spec cell displayed | View in greyscale. | The state remains distinguishable without colour. | Pass |
+| TC-PCS-106 | REQ-PCS-085 | Tablet, or a browser reporting a coarse pointer | Measure the input, button and row-action targets. | Each is at least 44 px in both dimensions. | Pass |
+| TC-PCS-107 | REQ-PCS-086 | Tablet | Select any numeric field. | The numeric keypad is offered, not the full keyboard. | Pass |
+| TC-PCS-108 | REQ-PCS-087 | Tablet | Work through the matrix and the machine and shift rows. | No control or information requires a hover to reach. | Pass |
+| TC-PCS-109 | REQ-PCS-085 | Tablet in landscape | Scroll the matrix horizontally. | The time column stays pinned while the parameter columns scroll. | Pass |
 
 ### 5.5 Persistence
 

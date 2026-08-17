@@ -15,6 +15,7 @@ let PCS_SESSION = null;
 const PCS_HOURLY_MODE_KEY = "bestcast_pcs_hourly_mode";
 let PCS_HOURLY_MODE = localStorage.getItem(PCS_HOURLY_MODE_KEY) || "matrix";
 let PCS_SHOW_ALL_SLOTS = false;
+let PCS_SHOW_ARCHIVED = false;
 let PCS_FORM_SLOT = null;
 
 // ---------- helpers -----------------------------------------------------
@@ -45,7 +46,10 @@ function fieldInputHtml(field, value, entry) {
     input = `<select data-key="${field.key}"><option value="">—</option>${opts}</select>`;
   } else {
     const step = field.step ? ` step="${field.step}"` : field.type === "number" ? ' step="any"' : "";
-    input = `<input type="${field.type}" data-key="${field.key}" value="${escapeHtml(v)}"${step}>`;
+    // inputmode opens the numeric keypad on a tablet rather than the full
+    // keyboard — these are entered on the line, not at a desk.
+    const mode = field.type === "number" ? ' inputmode="decimal"' : "";
+    input = `<input type="${field.type}" data-key="${field.key}" value="${escapeHtml(v)}"${step}${mode}>`;
   }
 
   return `
@@ -97,6 +101,44 @@ function paintValidation(container, entry, fields) {
   return result;
 }
 
+// Marks a single field out of spec as it is typed, rather than waiting for
+// the record to be saved — the operator should see it while the value is
+// still under their hand.
+function paintFieldOutOfSpec(fieldNode, field, entry) {
+  if (!fieldNode) return;
+  const issue = pcsValidate(entry, [field]).outOfSpec[0];
+  fieldNode.classList.toggle("oos", !!issue);
+  const err = fieldNode.querySelector(".field-error");
+  if (err) err.textContent = issue ? `Out of spec — ${issue.reason}` : "";
+}
+
+// Live out-of-spec feedback for a form built from fieldInputHtml.
+function wireLiveValidation(container, fields) {
+  fields.forEach((field) => {
+    const node = container.querySelector(`.field[data-field="${field.key}"]`);
+    const input = node?.querySelector(`[data-key="${field.key}"]`);
+    if (!input) return;
+
+    const check = () => {
+      // Fields whose limits depend on another field (rotor RPM on rotor
+      // size) need the whole form, not just their own value.
+      const entry = readForm(container, fields);
+      paintFieldOutOfSpec(node, field, entry);
+    };
+
+    input.addEventListener("input", check);
+    input.addEventListener("change", () => {
+      // A dependency change can move another field in or out of spec.
+      fields.forEach((f) => {
+        const n = container.querySelector(`.field[data-field="${f.key}"]`);
+        if (n) paintFieldOutOfSpec(n, f, readForm(container, fields));
+      });
+    });
+
+    if (input.value !== "") check();
+  });
+}
+
 function outOfSpecBanner(issues) {
   if (!issues.length) return "";
   const rows = issues
@@ -134,15 +176,22 @@ function reload(id) {
 // ---------- list --------------------------------------------------------
 
 function renderList(root) {
-  const records = pcsLoadAll().sort((a, b) => (b.date || "").localeCompare(a.date || ""));
+  const all = pcsLoadAll().sort((a, b) => (b.date || "").localeCompare(a.date || ""));
+  const archivedCount = all.filter(pcsIsArchived).length;
+  // Archived sheets are withdrawn from the working list rather than removed.
+  const records = PCS_SHOW_ARCHIVED ? all : all.filter((r) => !pcsIsArchived(r));
 
   const rows = records
     .map((r) => {
       const flags = pcsOutOfSpecCount(r);
       const pending = pcsPendingApprovalCount(r);
+      const archived = pcsIsArchived(r);
       return `
-        <tr>
-          <td><a href="#/sheet/${r.id}">${escapeHtml(r.date || "—")}</a></td>
+        <tr class="${archived ? "row-locked" : ""}">
+          <td>
+            <a href="#/sheet/${r.id}">${escapeHtml(r.date || "—")}</a>
+            ${archived ? ' <span class="archived-badge">Archived</span>' : ""}
+          </td>
           <td>${escapeHtml(r.line || "—")}</td>
           <td>${escapeHtml(r.furnaceNo || "—")}</td>
           <td>${(r.machines || []).length}</td>
@@ -164,6 +213,13 @@ function renderList(root) {
 
     <div class="btn-row" style="margin-bottom:22px;">
       ${pcsCan("action.pcs.sheet.create") ? '<a class="btn" href="#/new">+ New Day Sheet</a>' : '<span class="muted-xs">You do not have permission to create a day sheet.</span>'}
+      ${
+        archivedCount
+          ? `<button class="btn btn-secondary" id="toggle-archived">
+               ${PCS_SHOW_ARCHIVED ? "Hide archived" : `Show archived (${archivedCount})`}
+             </button>`
+          : ""
+      }
     </div>
 
     ${
@@ -181,6 +237,11 @@ function renderList(root) {
           </div>`
         : `<div class="card"><p>No day sheets yet. Create one to start recording.</p></div>`
     }`;
+
+  root.querySelector("#toggle-archived")?.addEventListener("click", () => {
+    PCS_SHOW_ARCHIVED = !PCS_SHOW_ARCHIVED;
+    renderList(root);
+  });
 }
 
 // ---------- new day sheet -----------------------------------------------
@@ -224,6 +285,7 @@ function renderSheet(root, id) {
 
   const flags = pcsOutOfSpecCount(record);
   const pending = pcsPendingApprovalCount(record);
+  const archived = pcsIsArchived(record);
 
   root.innerHTML = `
     <p class="breadcrumb"><a href="#/">Process Check Sheet</a> / ${escapeHtml(record.date || "")}</p>
@@ -236,36 +298,77 @@ function renderSheet(root, id) {
         </p>
       </div>
       <div class="sheet-status">
+        ${archived ? `<span class="archived-badge">Archived</span>` : ""}
         ${flags ? `<span class="flag-badge">${flags} out of spec</span>` : `<span class="ok-badge">In spec</span>`}
         ${pending ? `<span class="pending-badge">${pending} pending approval</span>` : `<span class="ok-badge">All approved</span>`}
       </div>
     </div>
 
+    ${
+      archived
+        ? `<div class="alert alert-ok" style="margin-bottom:18px;">
+             This day sheet was archived by ${escapeHtml(record.archivedBy || "an administrator")}
+             on ${escapeHtml(new Date(record.archivedAt).toLocaleString())}. It is read-only.
+           </div>`
+        : ""
+    }
+
     <section class="sheet-section" id="sec-header"></section>
     <section class="sheet-section" id="sec-machines"></section>
+    <section class="sheet-section" id="sec-shift-details"></section>
     <section class="sheet-section" id="sec-hourly"></section>
-    <section class="sheet-section" id="sec-shifts"></section>`;
+    <section class="sheet-section" id="sec-signoff"></section>`;
 
+  // Working order: set the day up, declare the machines, open the shift,
+  // record through the shift, then sign it off.
   renderHeaderSection(root.querySelector("#sec-header"), record);
   renderMachinesSection(root.querySelector("#sec-machines"), record);
+  renderShiftDetailsSection(root.querySelector("#sec-shift-details"), record);
   renderHourlySection(root.querySelector("#sec-hourly"), record);
-  renderShiftsSection(root.querySelector("#sec-shifts"), record);
+  renderShiftSignoffSection(root.querySelector("#sec-signoff"), record);
 }
 
 // --- header -------------------------------------------------------------
 
 function renderHeaderSection(panel, record) {
+  const archived = pcsIsArchived(record);
+  // Once saved, day details are amendable only by those holding the edit
+  // permission, and the sheet itself is never deletable — it is a
+  // production record. Administrators may archive it instead.
+  const canEdit = pcsCan("action.pcs.sheet.edit") && !archived;
+  const canArchive = pcsCan("action.pcs.sheet.archive");
+
   panel.innerHTML = `
     <details class="sheet-block">
       <summary><h2>Day details</h2><span class="muted-xs">Header — recorded once for the day</span></summary>
       <div class="card">
-        <div class="field-grid" id="daily-edit">
-          ${PCS_DAILY_FIELDS.map((f) => fieldInputHtml(f, record[f.key], record)).join("")}
-        </div>
+        <fieldset class="fieldset" style="border:none;padding:0;"${canEdit ? "" : " disabled"}>
+          <div class="field-grid" id="daily-edit">
+            ${PCS_DAILY_FIELDS.map((f) => fieldInputHtml(f, record[f.key], record)).join("")}
+          </div>
+        </fieldset>
         <div id="daily-edit-alert"></div>
+        ${
+          canEdit
+            ? ""
+            : `<p class="muted-xs" style="margin-top:12px;">${
+                archived
+                  ? "This sheet is archived and cannot be amended."
+                  : "You do not have permission to amend day details."
+              }</p>`
+        }
         <div class="btn-row" style="margin-top:18px;">
-          ${pcsCan("action.pcs.sheet.edit") ? '<button class="btn" id="update-daily">Save day details</button>' : ""}
-          ${pcsCan("action.pcs.sheet.delete") ? '<button class="btn btn-danger" id="delete-daily">Delete day sheet</button>' : ""}
+          ${canEdit ? '<button class="btn" id="update-daily">Save day details</button>' : ""}
+          ${
+            canArchive && !archived
+              ? '<button class="btn btn-secondary" id="archive-daily">Archive day sheet</button>'
+              : ""
+          }
+          ${
+            canArchive && archived
+              ? '<button class="btn btn-secondary" id="unarchive-daily">Restore from archive</button>'
+              : ""
+          }
         </div>
       </div>
     </details>`;
@@ -280,10 +383,15 @@ function renderHeaderSection(panel, record) {
     reload(record.id);
   });
 
-  panel.querySelector("#delete-daily")?.addEventListener("click", () => {
-    if (!confirm("Delete this day sheet and all its machines, hourly readings and shift records?")) return;
-    pcsDeleteDaily(record.id);
-    window.location.hash = "#/";
+  panel.querySelector("#archive-daily")?.addEventListener("click", () => {
+    if (!confirm("Archive this day sheet? It becomes read-only and is withdrawn from the working list. Nothing is deleted, and it can be restored.")) return;
+    pcsArchiveDaily(record.id, PCS_SESSION.userid);
+    reload(record.id);
+  });
+
+  panel.querySelector("#unarchive-daily")?.addEventListener("click", () => {
+    pcsUnarchiveDaily(record.id);
+    reload(record.id);
   });
 }
 
@@ -541,17 +649,18 @@ function renderHourlyMatrix(body, record, nearest) {
 
     const cells = PCS_HOURLY_FIELDS.map((f) => {
       const v = entry[f.key] ?? "";
+      const oos = issues.has(f.key);
       if (locked) {
-        return `<td class="${issues.has(f.key) ? "cell-bad" : ""}">${escapeHtml(v === "" ? "—" : v)}</td>`;
+        return `<td class="${oos ? "cell-oos" : ""}">${escapeHtml(v === "" ? "—" : v)}</td>`;
       }
       if (f.type === "select") {
         const opts = f.options
           .map((o) => `<option value="${escapeHtml(o)}"${String(v) === String(o) ? " selected" : ""}>${escapeHtml(o)}</option>`)
           .join("");
-        return `<td><select class="cell-input" data-slot="${i}" data-key="${f.key}"><option value="">—</option>${opts}</select></td>`;
+        return `<td class="${oos ? "has-oos" : ""}"><select class="cell-input${oos ? " cell-oos" : ""}" data-slot="${i}" data-key="${f.key}"><option value="">—</option>${opts}</select></td>`;
       }
       const step = f.step ? ` step="${f.step}"` : ' step="any"';
-      return `<td><input class="cell-input${issues.has(f.key) ? " cell-bad" : ""}" type="number" data-slot="${i}" data-key="${f.key}" value="${escapeHtml(v)}"${step}></td>`;
+      return `<td class="${oos ? "has-oos" : ""}"><input class="cell-input${oos ? " cell-oos" : ""}" type="number" inputmode="decimal" data-slot="${i}" data-key="${f.key}" value="${escapeHtml(v)}"${step}></td>`;
     }).join("");
 
     const dieCells = machines
@@ -559,8 +668,8 @@ function renderHourlyMatrix(body, record, nearest) {
         if (!pcsMachineRunningAt(m, i)) return `<td class="cell-na">NA</td>`;
         const v = (entry.dieTemps || {})[m.id] ?? "";
         const bad = v !== "" && pcsValidate({ dieTemp: v }, [PCS_MACHINE_HOURLY_FIELD]).outOfSpec.length;
-        if (locked) return `<td class="${bad ? "cell-bad" : ""}">${escapeHtml(v === "" ? "—" : v)}</td>`;
-        return `<td><input class="cell-input${bad ? " cell-bad" : ""}" type="number" data-slot="${i}" data-die="${m.id}" value="${escapeHtml(v)}" step="any"></td>`;
+        if (locked) return `<td class="${bad ? "cell-oos" : ""}">${escapeHtml(v === "" ? "—" : v)}</td>`;
+        return `<td class="${bad ? "has-oos" : ""}"><input class="cell-input${bad ? " cell-oos" : ""}" type="number" inputmode="decimal" data-slot="${i}" data-die="${m.id}" value="${escapeHtml(v)}" step="any"></td>`;
       })
       .join("");
 
@@ -585,9 +694,17 @@ function renderHourlyMatrix(body, record, nearest) {
       </tr>`);
   }
 
+  // The last slot of a shift is where that shift is sent for approval.
+  const submitTarget = pcsMatrixSubmitTarget(record, lastSlot);
+
   body.innerHTML = `
     <div class="btn-row" style="margin-bottom:12px;">
       ${pcsCan("action.pcs.hourly.record") ? '<button class="btn" id="save-matrix">Save changes</button>' : '<span class="muted-xs">Read-only — recording hourly readings is not permitted for your role.</span>'}
+      ${
+        submitTarget && pcsCan("action.pcs.hourly.record")
+          ? `<button class="btn" id="save-send-matrix">Save &amp; Send ${escapeHtml(submitTarget.shift)} for Approval</button>`
+          : ""
+      }
       <button class="btn btn-secondary" id="toggle-slots">
         ${PCS_SHOW_ALL_SLOTS ? "Show up to current slot" : "Show all 48 slots"}
       </button>
@@ -603,7 +720,9 @@ function renderHourlyMatrix(body, record, nearest) {
     reload(record.id);
   });
 
-  body.querySelector("#save-matrix")?.addEventListener("click", () => {
+  wireMatrixLiveValidation(body, record);
+
+  function saveMatrix() {
     const bySlot = {};
     body.querySelectorAll(".cell-input").forEach((input) => {
       const slot = Number(input.dataset.slot);
@@ -613,7 +732,6 @@ function renderHourlyMatrix(body, record, nearest) {
       else bySlot[slot].fields[input.dataset.key] = value;
     });
 
-    const allIssues = [];
     let saved = 0;
     Object.keys(bySlot)
       .map(Number)
@@ -630,15 +748,13 @@ function renderHourlyMatrix(body, record, nearest) {
 
         pcsSaveHourly(record.id, slot, { ...fields, dieTemps: merged });
         saved++;
-        allIssues.push(
-          ...pcsValidate(fields, PCS_HOURLY_FIELDS).outOfSpec.map((x) => ({
-            ...x,
-            label: `${PCS_TIME_SLOTS[slot]} — ${x.label}`,
-          }))
-        );
       });
 
-    if (!saved) {
+    return saved;
+  }
+
+  body.querySelector("#save-matrix")?.addEventListener("click", () => {
+    if (!saveMatrix()) {
       body.querySelector("#matrix-alert").innerHTML =
         `<div class="alert alert-ok">Nothing to save — no values entered.</div>`;
       return;
@@ -646,7 +762,113 @@ function renderHourlyMatrix(body, record, nearest) {
     reload(record.id);
   });
 
+  body.querySelector("#save-send-matrix")?.addEventListener("click", () => {
+    saveMatrix();
+    submitShiftForApproval(record.id, submitTarget.shift);
+  });
+
   wireApprovalButtons(body, record);
+}
+
+// The shift eligible for submission from the matrix: the one whose final
+// slot is on screen and still in draft.
+function pcsMatrixSubmitTarget(record, lastVisibleSlot) {
+  for (let s = PCS_SHIFTS.length - 1; s >= 0; s--) {
+    const shift = PCS_SHIFTS[s];
+    const range = pcsShiftSlotRange(shift);
+    if (range.last > lastVisibleSlot) continue;
+    const shiftRecord = pcsShiftRecordFor(record, shift);
+    if (!shiftRecord) return { shift, shiftRecord: null };
+    if (pcsShiftStatus(shiftRecord) === PCS_SHIFT_STATUS.DRAFT) return { shift, shiftRecord };
+    return null; // most recent complete shift already submitted
+  }
+  return null;
+}
+
+// Live out-of-spec fill for the matrix. The whole cell changes as the value
+// is typed, so a bad reading is obvious before the operator moves on.
+function wireMatrixLiveValidation(body, record) {
+  const repaint = (input) => {
+    const cell = input.closest("td");
+    const row = input.closest("tr");
+    if (!cell || !row) return;
+
+    let issue;
+    if (input.dataset.die) {
+      const v = input.value.trim();
+      issue = v === "" ? null : pcsValidate({ dieTemp: v }, [PCS_MACHINE_HOURLY_FIELD]).outOfSpec[0];
+    } else {
+      const field = PCS_HOURLY_FIELDS.find((f) => f.key === input.dataset.key);
+      if (!field) return;
+      // Read the whole row so dependent limits (rotor RPM on rotor size)
+      // are evaluated against what is actually entered.
+      const rowEntry = {};
+      row.querySelectorAll(".cell-input[data-key]").forEach((i) => {
+        rowEntry[i.dataset.key] = i.value.trim();
+      });
+      issue = rowEntry[field.key] === "" ? null : pcsValidate(rowEntry, [field]).outOfSpec[0];
+    }
+
+    cell.classList.toggle("has-oos", !!issue);
+    input.classList.toggle("cell-oos", !!issue);
+    if (issue) input.title = `Out of spec — ${issue.reason}`;
+    else input.removeAttribute("title");
+  };
+
+  body.querySelectorAll(".cell-input").forEach((input) => {
+    input.addEventListener("input", () => repaint(input));
+    // Rotor size moves the RPM limits, so repaint the whole row on change.
+    input.addEventListener("change", () => {
+      const row = input.closest("tr");
+      row?.querySelectorAll(".cell-input").forEach(repaint);
+    });
+  });
+}
+
+// Sends a shift for approval, showing what is being submitted first. Gaps
+// are reported rather than blocking: a slot can legitimately have no
+// reading, and refusing would strand the shift.
+function submitShiftForApproval(recordId, shiftName) {
+  const record = pcsGet(recordId);
+  const shiftRecord = pcsShiftRecordFor(record, shiftName);
+
+  if (!shiftRecord) {
+    alert(
+      `${shiftName} has not been opened yet.\n\n` +
+        "Open the shift under Shift details and complete its sign-off before sending it for approval — " +
+        "the sign-off carries the operator and supervisor names."
+    );
+    return;
+  }
+
+  const missingSignoff = PCS_SHIFT_SIGNOFF_FIELDS.filter((f) => f.required && !shiftRecord[f.key]);
+  if (missingSignoff.length) {
+    alert(
+      `${shiftName} cannot be sent for approval yet.\n\n` +
+        `Complete the sign-off first — missing: ${missingSignoff.map((f) => f.label).join(", ")}.`
+    );
+    return;
+  }
+
+  const missing = pcsMissingSlotsForShift(record, shiftName);
+  const oos = pcsOutOfSpecForShift(record, shiftName);
+
+  let message = `Send ${shiftName} for approval?\n\n`;
+  if (missing.length) {
+    message += `${missing.length} of 16 slots have no reading: ${missing
+      .slice(0, 6)
+      .map((i) => PCS_TIME_SLOTS[i])
+      .join(", ")}${missing.length > 6 ? "…" : ""}\n\n`;
+  }
+  if (oos.length) {
+    message += `${oos.length} out-of-spec reading${oos.length === 1 ? "" : "s"} will be signed for as they stand.\n\n`;
+  }
+  message += "The shift locks for editing once submitted.";
+
+  if (!confirm(message)) return;
+
+  pcsSubmitShift(recordId, shiftName, PCS_SESSION.userid);
+  reload(recordId);
 }
 
 // Form: one slot at a time, defaulting to the nearest completed slot.
@@ -703,6 +925,11 @@ function renderHourlyForm(body, record, nearest) {
       <div class="btn-row" style="margin-top:18px;">
         <button class="btn" id="save-hourly"${locked ? " disabled" : ""}>Save reading</button>
         ${
+          pcsIsLastSlotOfShift(slot) && !locked
+            ? `<button class="btn" id="save-send-hourly">Save &amp; Send ${escapeHtml(pcsShiftForSlotIndex(slot))} for Approval</button>`
+            : ""
+        }
+        ${
           entry.id && !entry.approval && pcsCan("action.pcs.approve")
             ? `<button class="btn btn-secondary" data-approve="hourly:${entry.id}">Approve</button>`
             : ""
@@ -716,45 +943,81 @@ function renderHourlyForm(body, record, nearest) {
     reload(record.id);
   });
 
+  const form = body.querySelector("#hourly-form");
+  if (form && !locked) {
+    wireLiveValidation(form, PCS_HOURLY_FIELDS);
+
+    // Die Temp inputs sit outside the generated field grid, so they get
+    // the same live check wired directly.
+    body.querySelectorAll("[data-die]").forEach((input) => {
+      const node = input.closest(".field");
+      const check = () => {
+        const v = input.value.trim();
+        const issue = v === "" ? null : pcsValidate({ dieTemp: v }, [PCS_MACHINE_HOURLY_FIELD]).outOfSpec[0];
+        node?.classList.toggle("oos", !!issue);
+        const err = node?.querySelector(".field-error");
+        if (err) err.textContent = issue ? `Out of spec — ${issue.reason}` : "";
+      };
+      input.addEventListener("input", check);
+      if (input.value !== "") check();
+    });
+  }
+
+  function saveHourlyForm() {
+    const data = readForm(form, PCS_HOURLY_FIELDS);
+    const result = paintValidation(form, data, PCS_HOURLY_FIELDS);
+    body.querySelector("#form-alert").innerHTML = outOfSpecBanner(result.outOfSpec);
+    if (result.missing.length) return false;
+
+    const dieTemps = { ...(entry.dieTemps || {}) };
+    body.querySelectorAll("[data-die]").forEach((input) => {
+      const v = input.value.trim();
+      if (v === "") delete dieTemps[input.dataset.die];
+      else dieTemps[input.dataset.die] = v;
+    });
+
+    pcsSaveHourly(record.id, slot, { ...data, dieTemps });
+    return true;
+  }
+
   const saveBtn = body.querySelector("#save-hourly");
   if (saveBtn && !locked) {
     saveBtn.addEventListener("click", () => {
-      const form = body.querySelector("#hourly-form");
-      const data = readForm(form, PCS_HOURLY_FIELDS);
-      const result = paintValidation(form, data, PCS_HOURLY_FIELDS);
-      body.querySelector("#form-alert").innerHTML = outOfSpecBanner(result.outOfSpec);
-      if (result.missing.length) return;
-
-      const dieTemps = { ...(entry.dieTemps || {}) };
-      body.querySelectorAll("[data-die]").forEach((input) => {
-        const v = input.value.trim();
-        if (v === "") delete dieTemps[input.dataset.die];
-        else dieTemps[input.dataset.die] = v;
-      });
-
-      pcsSaveHourly(record.id, slot, { ...data, dieTemps });
-      reload(record.id);
+      if (saveHourlyForm()) reload(record.id);
     });
   }
+
+  body.querySelector("#save-send-hourly")?.addEventListener("click", () => {
+    if (!saveHourlyForm()) return;
+    submitShiftForApproval(record.id, pcsShiftForSlotIndex(slot));
+  });
 
   wireApprovalButtons(body, record);
 }
 
-// --- shifts -------------------------------------------------------------
+// --- shift details (before the hourly readings) -------------------------
+// The shift record is one record presented in two parts: the details set up
+// when the shift opens, and the sign-off completed when it closes. This is
+// the first part.
 
-function renderShiftsSection(panel, record) {
-  const entries = [...(record.shifts || [])].sort(
+function renderShiftDetailsSection(panel, record) {
+  const archived = pcsIsArchived(record);
+  const recorded = [...(record.shifts || [])].sort(
     (a, b) => PCS_SHIFTS.indexOf(a.shift) - PCS_SHIFTS.indexOf(b.shift)
   );
+  const remaining = PCS_SHIFTS.filter((s) => !recorded.some((r) => r.shift === s));
 
-  const cards = entries
+  const cards = recorded
     .map((e) => {
-      const issues = pcsValidate(e, PCS_SHIFT_FIELDS).outOfSpec;
+      const locked = pcsShiftLocked(record, e);
+      const status = pcsShiftStatus(e);
+      const issues = pcsValidate(e, PCS_SHIFT_DETAIL_FIELDS).outOfSpec;
       const bad = new Set(issues.map((i) => i.key));
-      const details = PCS_SHIFT_FIELDS.filter((f) => f.key !== "shift")
+
+      const details = PCS_SHIFT_DETAIL_FIELDS.filter((f) => f.key !== "shift")
         .map(
           (f) =>
-            `<div class="kv ${bad.has(f.key) ? "cell-bad" : ""}">
+            `<div class="kv ${bad.has(f.key) ? "cell-oos" : ""}">
               <span>${escapeHtml(f.label)}</span><strong>${escapeHtml(e[f.key] ?? "—")}</strong>
             </div>`
         )
@@ -768,21 +1031,32 @@ function renderShiftsSection(panel, record) {
 
       return `
         <div class="card">
-          <h2>${escapeHtml(e.shift)} ${issues.length ? `<span class="flag-badge">${issues.length} out of spec</span>` : ""} ${approvalBadge(e)}</h2>
+          <h2>
+            ${escapeHtml(e.shift)}
+            <span class="${status === "approved" ? "ok-badge" : status === "pending" ? "pending-badge" : "archived-badge"}">
+              ${escapeHtml(PCS_SHIFT_STATUS_LABEL[status] || status)}
+            </span>
+            ${issues.length ? `<span class="flag-badge">${issues.length} out of spec</span>` : ""}
+          </h2>
           <div class="kv-grid">${details}</div>
           <div class="pin-row"><span class="muted-xs">Core pin verification (cavity 1–10):</span> ${pins}</div>
           <div class="btn-row" style="margin-top:14px;">
-            ${pcsCan("action.pcs.shift.record") ? `<button class="link-btn" data-edit-shift="${e.id}">Edit</button>` : ""}
             ${
-              e.approval
-                ? pcsCan("action.pcs.unapprove")
-                  ? `<button class="link-btn" data-unapprove="shifts:${e.id}">Unapprove</button>`
-                  : ""
-                : pcsCan("action.pcs.approve")
-                ? `<button class="link-btn" data-approve="shifts:${e.id}">Approve</button>`
+              pcsCan("action.pcs.shift.record") && !locked
+                ? `<button class="link-btn" data-edit-detail="${e.id}">Edit details</button>`
+                : `<span class="muted-xs">${
+                    archived
+                      ? "Archived — read-only."
+                      : locked
+                      ? "Locked — this shift has closed."
+                      : "No permission to amend."
+                  }</span>`
+            }
+            ${
+              pcsCan("action.pcs.shift.delete") && !locked && status === PCS_SHIFT_STATUS.DRAFT
+                ? `<button class="link-btn danger" data-del-shift="${e.id}">Remove shift</button>`
                 : ""
             }
-            ${pcsCan("action.pcs.shift.delete") ? `<button class="link-btn danger" data-del-shift="${e.id}">Delete</button>` : ""}
           </div>
         </div>`;
     })
@@ -790,30 +1064,51 @@ function renderShiftsSection(panel, record) {
 
   panel.innerHTML = `
     <details class="sheet-block" open>
-      <summary><h2>Shift sign-off</h2><span class="muted-xs">${entries.length} of 3 shifts recorded</span></summary>
+      <summary>
+        <h2>Shift details</h2>
+        <span class="muted-xs">Opened at the start of the shift — alloy in use and die-preparation startup checks</span>
+      </summary>
       <div class="btn-row" style="margin:0 0 14px;">
-        ${pcsCan("action.pcs.shift.record") ? '<button class="btn" id="add-shift">+ Add shift entry</button>' : ""}
+        ${
+          pcsCan("action.pcs.shift.record") && remaining.length && !archived
+            ? `<button class="btn" id="open-shift">+ Open shift</button>`
+            : ""
+        }
+        <span class="muted-xs">${recorded.length} of ${PCS_SHIFTS.length} shifts opened</span>
       </div>
-      ${entries.length ? `<div class="cards">${cards}</div>` : `<div class="card"><p>No shift entries recorded yet.</p></div>`}
+      ${
+        recorded.length
+          ? `<div class="cards">${cards}</div>`
+          : `<div class="card"><p>No shift opened yet. Open a shift before recording hourly readings against it.</p></div>`
+      }
     </details>`;
 
-  panel.querySelector("#add-shift")?.addEventListener("click", () => openShiftModal(record, null));
-  panel.querySelectorAll("[data-edit-shift]").forEach((b) =>
-    b.addEventListener("click", () => openShiftModal(record, b.dataset.editShift))
+  panel.querySelector("#open-shift")?.addEventListener("click", () =>
+    openShiftDetailModal(record, null, remaining)
+  );
+  panel.querySelectorAll("[data-edit-detail]").forEach((b) =>
+    b.addEventListener("click", () => openShiftDetailModal(record, b.dataset.editDetail, remaining))
   );
   panel.querySelectorAll("[data-del-shift]").forEach((b) =>
     b.addEventListener("click", () => {
-      if (!confirm("Delete this shift entry?")) return;
+      if (!confirm("Remove this shift? Only a shift still in draft can be removed; its hourly readings are not affected.")) return;
       pcsDeleteChild(record.id, "shifts", b.dataset.delShift);
       reload(record.id);
     })
   );
-  wireApprovalButtons(panel, record);
 }
 
-function openShiftModal(record, shiftId) {
+function openShiftDetailModal(record, shiftId, remaining) {
   const existing = shiftId ? (record.shifts || []).find((s) => s.id === shiftId) : null;
   const entry = existing || {};
+
+  // An existing record keeps its own shift; a new one may only take a shift
+  // not already opened, so a shift cannot be recorded twice.
+  const shiftField = {
+    ...PCS_SHIFT_DETAIL_FIELDS[0],
+    options: existing ? [existing.shift] : remaining,
+  };
+  const fields = [shiftField, ...PCS_SHIFT_DETAIL_FIELDS.slice(1)];
 
   const corePinHtml = `
     <div class="field core-pin-field">
@@ -836,41 +1131,235 @@ function openShiftModal(record, shiftId) {
   const modal = el(`
     <div class="modal-backdrop">
       <div class="modal">
-        <h2>${shiftId ? "Edit" : "Add"} shift entry</h2>
-        <div class="field-grid" id="shift-form">
-          ${PCS_SHIFT_FIELDS.map((f) => fieldInputHtml(f, entry[f.key], entry)).join("")}
+        <h2>${shiftId ? "Edit" : "Open"} shift details</h2>
+        <div class="field-grid" id="shift-detail-form">
+          ${fields.map((f) => fieldInputHtml(f, entry[f.key], entry)).join("")}
           ${corePinHtml}
         </div>
-        <div id="shift-alert"></div>
+        <div id="shift-detail-alert"></div>
         <div class="btn-row" style="margin-top:18px;">
-          <button class="btn" id="save-shift">Save</button>
-          <button class="btn btn-secondary" id="cancel-shift">Cancel</button>
+          <button class="btn" id="save-shift-detail">Save</button>
+          <button class="btn btn-secondary" id="cancel-shift-detail">Cancel</button>
         </div>
       </div>
     </div>`);
 
   document.body.appendChild(modal);
-  const form = modal.querySelector("#shift-form");
+  const form = modal.querySelector("#shift-detail-form");
+  wireLiveValidation(form, fields);
 
-  modal.querySelector("#cancel-shift").addEventListener("click", () => modal.remove());
+  modal.querySelector("#cancel-shift-detail").addEventListener("click", () => modal.remove());
   modal.addEventListener("click", (e) => {
     if (e.target === modal) modal.remove();
   });
 
-  modal.querySelector("#save-shift").addEventListener("click", () => {
-    const data = readForm(form, PCS_SHIFT_FIELDS);
+  modal.querySelector("#save-shift-detail").addEventListener("click", () => {
+    const data = readForm(form, fields);
     data.corePins = {};
     form.querySelectorAll("[data-pin]").forEach((sel) => {
       if (sel.value) data.corePins[sel.dataset.pin] = sel.value;
     });
 
-    const result = paintValidation(form, data, PCS_SHIFT_FIELDS);
-    modal.querySelector("#shift-alert").innerHTML = outOfSpecBanner(result.outOfSpec);
+    const result = paintValidation(form, data, fields);
+    modal.querySelector("#shift-detail-alert").innerHTML = outOfSpecBanner(result.outOfSpec);
     if (result.missing.length) return;
 
     if (shiftId) pcsUpdateChild(record.id, "shifts", shiftId, data);
-    else pcsAddChild(record.id, "shifts", { ...data, approval: null });
+    else pcsAddChild(record.id, "shifts", { ...data, status: PCS_SHIFT_STATUS.DRAFT, approval: null });
 
+    modal.remove();
+    reload(record.id);
+  });
+}
+
+// --- shift sign-off (after the hourly readings) -------------------------
+
+function renderShiftSignoffSection(panel, record) {
+  const archived = pcsIsArchived(record);
+  const recorded = [...(record.shifts || [])].sort(
+    (a, b) => PCS_SHIFTS.indexOf(a.shift) - PCS_SHIFTS.indexOf(b.shift)
+  );
+
+  const cards = recorded
+    .map((e) => {
+      const status = pcsShiftStatus(e);
+      const locked = pcsShiftLocked(record, e);
+      const autoRemarks = pcsMachineRemarksForShift(record, e.shift);
+      const oos = pcsOutOfSpecForShift(record, e.shift);
+
+      const signoffValues = PCS_SHIFT_SIGNOFF_FIELDS.map(
+        (f) => `<div class="kv"><span>${escapeHtml(f.label)}</span><strong>${escapeHtml(e[f.key] ?? "—")}</strong></div>`
+      ).join("");
+
+      // Machine changes during the shift are derived from each machine's
+      // running window, so the remark always matches the sheet.
+      const remarksHtml = autoRemarks.length
+        ? autoRemarks
+            .map(
+              (r) =>
+                `<div class="remark-auto"><span class="remark-tag">Auto</span><span>${escapeHtml(r.text)}</span></div>`
+            )
+            .join("")
+        : `<p class="muted-xs">No machine was added or stopped during this shift.</p>`;
+
+      const oosHtml = oos.length
+        ? `<div class="alert alert-danger" style="margin-top:12px;">
+             <p><strong>${oos.length} out-of-spec reading${oos.length === 1 ? "" : "s"} recorded during this shift.</strong>
+             These are being signed for as they stand.</p>
+             <ul class="oos-summary">
+               ${oos
+                 .map(
+                   (i) =>
+                     `<li><strong>${escapeHtml(i.timeSlot)}</strong> — ${escapeHtml(i.label)}: ${escapeHtml(i.value)} (${escapeHtml(i.reason)})</li>`
+                 )
+                 .join("")}
+             </ul>
+           </div>`
+        : `<div class="alert alert-ok" style="margin-top:12px;">No out-of-spec readings recorded during this shift.</div>`;
+
+      const canSign = pcsCan("action.pcs.shift.record") && !archived && status === PCS_SHIFT_STATUS.DRAFT;
+
+      return `
+        <div class="card">
+          <h2>
+            ${escapeHtml(e.shift)} sign-off
+            <span class="${status === "approved" ? "ok-badge" : status === "pending" ? "pending-badge" : "archived-badge"}">
+              ${escapeHtml(PCS_SHIFT_STATUS_LABEL[status] || status)}
+            </span>
+          </h2>
+
+          ${
+            e.submittedAt
+              ? `<p class="muted-xs">Submitted by ${escapeHtml(e.submittedBy || "—")} on ${escapeHtml(new Date(e.submittedAt).toLocaleString())}.</p>`
+              : ""
+          }
+          ${e.approval ? `<p class="muted-xs">Approved by ${escapeHtml(e.approval.by)} on ${escapeHtml(new Date(e.approval.at).toLocaleString())}.</p>` : ""}
+
+          <div class="kv-grid" style="margin-top:10px;">${signoffValues}</div>
+
+          <h3 style="font-size:13px;margin:14px 0 8px;">Machine changes during this shift</h3>
+          ${remarksHtml}
+
+          ${oosHtml}
+
+          <div class="btn-row" style="margin-top:14px;">
+            ${canSign ? `<button class="link-btn" data-edit-signoff="${e.id}">Complete sign-off</button>` : ""}
+            ${
+              status === PCS_SHIFT_STATUS.PENDING && pcsCan("action.pcs.approve")
+                ? `<button class="link-btn" data-approve="shifts:${e.id}">Approve shift</button>`
+                : ""
+            }
+            ${
+              status !== PCS_SHIFT_STATUS.DRAFT && pcsCan("action.pcs.unapprove") && !archived
+                ? `<button class="link-btn" data-reopen-shift="${escapeHtml(e.shift)}">Reopen</button>`
+                : ""
+            }
+          </div>
+        </div>`;
+    })
+    .join("");
+
+  panel.innerHTML = `
+    <details class="sheet-block" open>
+      <summary>
+        <h2>Shift sign-off</h2>
+        <span class="muted-xs">Completed at the end of the shift — signatures, machine changes and the exceptions being signed for</span>
+      </summary>
+      ${
+        recorded.length
+          ? `<div class="cards">${cards}</div>`
+          : `<div class="card"><p>No shift opened yet. Shift sign-off appears once a shift has been opened above.</p></div>`
+      }
+    </details>`;
+
+  panel.querySelectorAll("[data-edit-signoff]").forEach((b) =>
+    b.addEventListener("click", () => openSignoffModal(record, b.dataset.editSignoff))
+  );
+  panel.querySelectorAll("[data-reopen-shift]").forEach((b) =>
+    b.addEventListener("click", () => {
+      if (!confirm(`Reopen ${b.dataset.reopenShift} for editing? This withdraws its submission or approval.`)) return;
+      pcsReopenShift(record.id, b.dataset.reopenShift);
+      reload(record.id);
+    })
+  );
+  wireApprovalButtons(panel, record);
+}
+
+function openSignoffModal(record, shiftId) {
+  const entry = (record.shifts || []).find((s) => s.id === shiftId) || {};
+  const autoRemarks = pcsMachineRemarksForShift(record, entry.shift);
+  const oos = pcsOutOfSpecForShift(record, entry.shift);
+
+  const modal = el(`
+    <div class="modal-backdrop">
+      <div class="modal">
+        <h2>${escapeHtml(entry.shift || "")} sign-off</h2>
+
+        ${
+          autoRemarks.length
+            ? `<div style="margin-bottom:16px;">
+                 <label style="display:block;font-size:11.5px;text-transform:uppercase;letter-spacing:0.8px;color:var(--content-mute);margin-bottom:6px;">
+                   Machine changes during this shift — recorded automatically
+                 </label>
+                 ${autoRemarks
+                   .map(
+                     (r) =>
+                       `<div class="remark-auto"><span class="remark-tag">Auto</span><span>${escapeHtml(r.text)}</span></div>`
+                   )
+                   .join("")}
+               </div>`
+            : ""
+        }
+
+        ${
+          oos.length
+            ? `<div class="alert alert-danger" style="margin-top:0;margin-bottom:16px;">
+                 <p><strong>You are signing for ${oos.length} out-of-spec reading${oos.length === 1 ? "" : "s"}.</strong></p>
+                 <ul class="oos-summary">
+                   ${oos
+                     .map(
+                       (i) =>
+                         `<li><strong>${escapeHtml(i.timeSlot)}</strong> — ${escapeHtml(i.label)}: ${escapeHtml(i.value)} (${escapeHtml(i.reason)})</li>`
+                     )
+                     .join("")}
+                 </ul>
+               </div>`
+            : ""
+        }
+
+        <div class="field-grid" id="signoff-form">
+          ${PCS_SHIFT_SIGNOFF_FIELDS.map((f) => fieldInputHtml(f, entry[f.key], entry)).join("")}
+        </div>
+        <div id="signoff-alert"></div>
+        <div class="btn-row" style="margin-top:18px;">
+          <button class="btn" id="save-signoff">Save sign-off</button>
+          <button class="btn btn-secondary" id="cancel-signoff">Cancel</button>
+        </div>
+      </div>
+    </div>`);
+
+  document.body.appendChild(modal);
+  const form = modal.querySelector("#signoff-form");
+  wireLiveValidation(form, PCS_SHIFT_SIGNOFF_FIELDS);
+
+  modal.querySelector("#cancel-signoff").addEventListener("click", () => modal.remove());
+  modal.addEventListener("click", (e) => {
+    if (e.target === modal) modal.remove();
+  });
+
+  modal.querySelector("#save-signoff").addEventListener("click", () => {
+    const data = readForm(form, PCS_SHIFT_SIGNOFF_FIELDS);
+    const result = paintValidation(form, data, PCS_SHIFT_SIGNOFF_FIELDS);
+    modal.querySelector("#signoff-alert").innerHTML = outOfSpecBanner(result.outOfSpec);
+    if (result.missing.length) return;
+
+    // The generated remarks are stored with the record so the sheet remains
+    // readable if a machine window is later corrected.
+    pcsUpdateChild(record.id, "shifts", shiftId, {
+      ...data,
+      machineRemarks: autoRemarks,
+      outOfSpecAtSignoff: oos.length,
+    });
     modal.remove();
     reload(record.id);
   });

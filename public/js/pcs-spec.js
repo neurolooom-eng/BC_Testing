@@ -274,7 +274,17 @@ const PCS_HOURLY_FIELDS = [
 const PCS_SHIFTS = ["1st Shift", "2nd Shift", "3rd Shift"];
 const PCS_CORE_PIN_CAVITIES = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
 
-const PCS_SHIFT_FIELDS = [
+// A shift is one record, recorded in two parts at two points in the day:
+//
+//   Shift Details   set up when the shift starts, before hourly readings —
+//                   which shift, the alloy in use, and the die-preparation
+//                   startup checks the paper sheet groups at the top
+//   Shift Sign-off  completed when the shift ends, after hourly readings —
+//                   signatures, remarks, and the exceptions being signed for
+//
+// Split so the day sheet can present each part where it belongs in the
+// working order, while both remain one shift record.
+const PCS_SHIFT_DETAIL_FIELDS = [
   { key: "shift", label: "Shift", type: "select", options: PCS_SHIFTS, required: true },
   { key: "dpt", label: "DPT", type: "select", options: OK_NOT_OK, required: true },
   {
@@ -290,6 +300,10 @@ const PCS_SHIFT_FIELDS = [
   },
   { key: "bestCastAlloy", label: "Best Cast Alloy", type: "select", options: ["YES", "NO"], required: true },
   { key: "otherAlloy", label: "Other Alloy", type: "select", options: ["YES", "NO"], required: true },
+  { key: "corePinComment", label: "Core Pin replacement comment", type: "text" },
+];
+
+const PCS_SHIFT_SIGNOFF_FIELDS = [
   { key: "operatorSign", label: "Operator Sign", type: "text", required: true },
   {
     key: "shiftSupervisorSign",
@@ -298,8 +312,25 @@ const PCS_SHIFT_FIELDS = [
     options: ["VIMAL", "BHARATHI", "MOHAN", "NAVEEN", "ASHOK"],
     required: true,
   },
-  { key: "corePinComment", label: "Core Pin replacement comment", type: "text" },
+  { key: "signoffRemarks", label: "Remarks", type: "text" },
 ];
+
+// Everything on the shift record, for validation and reporting across both
+// parts.
+const PCS_SHIFT_FIELDS = [...PCS_SHIFT_DETAIL_FIELDS, ...PCS_SHIFT_SIGNOFF_FIELDS];
+
+// --- Shift status lifecycle ---------------------------------------------
+//   draft     being recorded; editable
+//   pending   submitted from the last hourly reading of the shift, awaiting
+//             approval; locked
+//   approved  signed off; locked until reopened
+const PCS_SHIFT_STATUS = { DRAFT: "draft", PENDING: "pending", APPROVED: "approved" };
+
+const PCS_SHIFT_STATUS_LABEL = {
+  draft: "Draft",
+  pending: "Pending approval",
+  approved: "Approved",
+};
 
 // --- Time slots ---------------------------------------------------------
 // 30-minute slots from 6:30am through 6:00am the next day (48 slots), split
@@ -326,8 +357,23 @@ function pcsTimeSlots() {
 
 const PCS_TIME_SLOTS = pcsTimeSlots();
 
+const PCS_SLOTS_PER_SHIFT = 16;
+
 function pcsShiftForSlotIndex(index) {
-  return PCS_SHIFTS[Math.floor(index / 16)];
+  return PCS_SHIFTS[Math.floor(index / PCS_SLOTS_PER_SHIFT)];
+}
+
+// Inclusive slot range covered by a shift, e.g. 1st Shift → {first:0, last:15}.
+function pcsShiftSlotRange(shiftName) {
+  const i = PCS_SHIFTS.indexOf(shiftName);
+  if (i === -1) return null;
+  return { first: i * PCS_SLOTS_PER_SHIFT, last: (i + 1) * PCS_SLOTS_PER_SHIFT - 1 };
+}
+
+// True when this slot is the final one of its shift — the point at which the
+// shift can be sent for approval.
+function pcsIsLastSlotOfShift(index) {
+  return index % PCS_SLOTS_PER_SHIFT === PCS_SLOTS_PER_SHIFT - 1;
 }
 
 // The slot whose 30-minute window has most recently closed, relative to now.

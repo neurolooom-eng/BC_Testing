@@ -47,7 +47,7 @@ function rbacSeed() {
   const actions = [
     { id: "action.pcs.sheet.create", label: "Create day sheet", group: "Process Check Sheet", description: "Start a new day sheet." },
     { id: "action.pcs.sheet.edit", label: "Edit day details", group: "Process Check Sheet", description: "Amend the day sheet header." },
-    { id: "action.pcs.sheet.delete", label: "Delete day sheet", group: "Process Check Sheet", description: "Remove a day sheet and all its children." },
+    { id: "action.pcs.sheet.archive", label: "Archive day sheet", group: "Process Check Sheet", description: "Withdraw a day sheet from the working list and make it read-only. Reversible; nothing is deleted." },
     { id: "action.pcs.machine.manage", label: "Add / edit machine", group: "Process Check Sheet", description: "Maintain the machines on the line." },
     { id: "action.pcs.machine.stop", label: "Start / stop machine", group: "Process Check Sheet", description: "Set a machine's running window mid-shift." },
     { id: "action.pcs.machine.delete", label: "Delete machine", group: "Process Check Sheet", description: "Remove a machine and its Die Temp readings." },
@@ -134,10 +134,12 @@ function rbacSeed() {
       system: false,
       permissions: {
         page: grant("page", ["page.overview", "page.production_records", "page.process_check_sheet"]),
+        // Opens the day and records against it, but cannot amend the day
+        // header once saved — that is deliberately a narrower group.
         action: grant("action", [
-          "action.pcs.sheet.create", "action.pcs.sheet.edit", "action.pcs.machine.manage",
+          "action.pcs.sheet.create", "action.pcs.machine.manage",
           "action.pcs.machine.stop", "action.pcs.hourly.record", "action.pcs.shift.record",
-          "action.pcs.approve",
+          "action.pcs.shift.delete", "action.pcs.approve",
         ]),
         exec_link: {},
         sheet_link: grant("sheet_link", ["sheet.tolerances"], ["view", "open"]),

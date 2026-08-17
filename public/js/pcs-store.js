@@ -100,8 +100,19 @@ function pcsUpdateDaily(id, data) {
   return records[idx];
 }
 
-function pcsDeleteDaily(id) {
-  pcsSaveAll(pcsLoadAll().filter((r) => r.id !== id));
+// A day sheet is never deleted — it is a production record. Administrators
+// may archive it, which withdraws it from the working list and makes it
+// read-only throughout, and may reverse that.
+function pcsArchiveDaily(id, userid) {
+  return pcsUpdateDaily(id, { archivedAt: new Date().toISOString(), archivedBy: userid });
+}
+
+function pcsUnarchiveDaily(id) {
+  return pcsUpdateDaily(id, { archivedAt: null, archivedBy: null });
+}
+
+function pcsIsArchived(record) {
+  return !!record?.archivedAt;
 }
 
 // --- Child collections --------------------------------------------------
@@ -214,9 +225,153 @@ function pcsLatestRecordedSlot(record) {
 // possible while an entry is still the most recent one but not after the
 // operator has moved on. Approval locks a row outright.
 function pcsHourlyLocked(record, slotIndex) {
+  if (pcsIsArchived(record)) return true;
   const entry = pcsHourlyFor(record, slotIndex);
   if (entry && entry.approval) return true;
+
+  // A submitted or approved shift closes its slots along with it.
+  const shiftRecord = pcsShiftRecordFor(record, pcsShiftForSlotIndex(slotIndex));
+  if (shiftRecord && pcsShiftStatus(shiftRecord) !== PCS_SHIFT_STATUS.DRAFT) return true;
+
   return slotIndex < pcsLatestRecordedSlot(record);
+}
+
+// --- Shifts -------------------------------------------------------------
+
+function pcsShiftRecordFor(record, shiftName) {
+  return (record.shifts || []).find((s) => s.shift === shiftName) || null;
+}
+
+function pcsShiftStatus(shiftRecord) {
+  if (!shiftRecord) return null;
+  if (shiftRecord.approval) return PCS_SHIFT_STATUS.APPROVED;
+  return shiftRecord.status || PCS_SHIFT_STATUS.DRAFT;
+}
+
+// A shift stops being editable once it has been submitted or approved, or
+// once a later shift has been started — the same principle applied to
+// hourly readings: correct the shift you are on, not the ones behind it.
+function pcsShiftLocked(record, shiftRecord) {
+  if (!shiftRecord) return false;
+  if (pcsIsArchived(record)) return true;
+  const status = pcsShiftStatus(shiftRecord);
+  if (status !== PCS_SHIFT_STATUS.DRAFT) return true;
+
+  const myIndex = PCS_SHIFTS.indexOf(shiftRecord.shift);
+  if (myIndex === -1) return false;
+
+  // A later shift has begun if it has a record of its own, or if any hourly
+  // reading has been taken in its slots.
+  const laterHasRecord = (record.shifts || []).some(
+    (s) => PCS_SHIFTS.indexOf(s.shift) > myIndex
+  );
+  const laterHasReading = (record.hourly || []).some(
+    (h) => Math.floor((h.slotIndex ?? 0) / PCS_SLOTS_PER_SHIFT) > myIndex
+  );
+  return laterHasRecord || laterHasReading;
+}
+
+// Submits a shift for approval. Called from the hourly section when the
+// last reading of the shift is saved.
+function pcsSubmitShift(dailyId, shiftName, userid) {
+  return pcsMutate(dailyId, (record) => {
+    const shiftRecord = (record.shifts || []).find((s) => s.shift === shiftName);
+    if (!shiftRecord) return null;
+    shiftRecord.status = PCS_SHIFT_STATUS.PENDING;
+    shiftRecord.submittedBy = userid;
+    shiftRecord.submittedAt = new Date().toISOString();
+    return shiftRecord;
+  });
+}
+
+function pcsReopenShift(dailyId, shiftName) {
+  return pcsMutate(dailyId, (record) => {
+    const shiftRecord = (record.shifts || []).find((s) => s.shift === shiftName);
+    if (!shiftRecord) return null;
+    shiftRecord.status = PCS_SHIFT_STATUS.DRAFT;
+    shiftRecord.approval = null;
+    shiftRecord.submittedBy = null;
+    shiftRecord.submittedAt = null;
+    return shiftRecord;
+  });
+}
+
+// Slots of a shift with no reading recorded. Surfaced when submitting, so
+// the supervisor sees what is missing rather than being blocked outright —
+// a slot can legitimately have no reading.
+function pcsMissingSlotsForShift(record, shiftName) {
+  const range = pcsShiftSlotRange(shiftName);
+  if (!range) return [];
+  const missing = [];
+  for (let i = range.first; i <= range.last; i++) {
+    if (!pcsHourlyFor(record, i)) missing.push(i);
+  }
+  return missing;
+}
+
+// --- Machine changes during a shift (generated remarks) -----------------
+// Derived from each machine's running window rather than typed, so the
+// remark cannot drift from what the sheet actually records.
+function pcsMachineRemarksForShift(record, shiftName) {
+  const range = pcsShiftSlotRange(shiftName);
+  if (!range) return [];
+  const remarks = [];
+
+  (record.machines || []).forEach((m) => {
+    const start = m.startSlot ?? 0;
+    // A machine starting at slot 0 was there from the top of the day, so
+    // only a start inside the shift counts as a change.
+    if (start >= range.first && start <= range.last && !(start === 0 && range.first === 0)) {
+      remarks.push({
+        type: "machine-added",
+        machineId: m.id,
+        slotIndex: start,
+        text: `M/C ${m.machineNo ?? "?"} added at ${PCS_TIME_SLOTS[start]}`,
+      });
+    }
+    const stop = m.stopSlot;
+    if (stop !== null && stop !== undefined && stop >= range.first && stop <= range.last) {
+      remarks.push({
+        type: "machine-stopped",
+        machineId: m.id,
+        slotIndex: stop,
+        text: `M/C ${m.machineNo ?? "?"} stopped after ${PCS_TIME_SLOTS[stop]}`,
+      });
+    }
+  });
+
+  return remarks.sort((a, b) => a.slotIndex - b.slotIndex);
+}
+
+// Out-of-spec readings recorded during a shift, so they are in front of the
+// supervisor at sign-off rather than only at the moment of entry.
+function pcsOutOfSpecForShift(record, shiftName) {
+  const range = pcsShiftSlotRange(shiftName);
+  if (!range) return [];
+  const issues = [];
+
+  (record.hourly || [])
+    .filter((h) => h.slotIndex >= range.first && h.slotIndex <= range.last)
+    .sort((a, b) => a.slotIndex - b.slotIndex)
+    .forEach((h) => {
+      pcsValidate(h, PCS_HOURLY_FIELDS).outOfSpec.forEach((issue) =>
+        issues.push({ ...issue, slotIndex: h.slotIndex, timeSlot: PCS_TIME_SLOTS[h.slotIndex] })
+      );
+      (record.machines || []).forEach((m) => {
+        const value = pcsDieTempFor(h, m, h.slotIndex);
+        if (value === "" || value === PCS_NA) return;
+        pcsValidate({ dieTemp: value }, [PCS_MACHINE_HOURLY_FIELD]).outOfSpec.forEach((issue) =>
+          issues.push({
+            ...issue,
+            label: `Die Temp — M/C ${m.machineNo}`,
+            slotIndex: h.slotIndex,
+            timeSlot: PCS_TIME_SLOTS[h.slotIndex],
+          })
+        );
+      });
+    });
+
+  return issues;
 }
 
 // --- Approvals ----------------------------------------------------------

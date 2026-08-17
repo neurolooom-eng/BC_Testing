@@ -4,6 +4,65 @@ Version numbers follow semver — see `VERSIONING.md` at the repo root.
 Build number and build date shown in the site footer are generated
 automatically per deploy and are not tracked here.
 
+## 1.7.0 — 2026-08-16
+
+Process Check Sheet refinements T1–T7, plus the shift split.
+
+**Shift split into two sections**
+- A shift is still one record, but is now captured in two parts where each
+  belongs in the working day: **Shift Details** (which shift, alloy, and
+  the die-preparation startup checks) before the hourly readings, and
+  **Shift Sign-off** (signatures, remarks, exceptions) after them
+
+**T1 — Day sheet order**
+- Day Details → Machines → Shift Details → Hourly Details → Shift Sign-off
+
+**T2 — Day details controlled once saved**
+- **Delete removed entirely.** A day sheet is a production record
+- **Archive** added for those holding the permission: the sheet becomes
+  read-only throughout and leaves the working list, behind a "Show
+  archived" toggle. Reversible; nothing is destroyed
+- Amending day details now requires `action.pcs.sheet.edit`, which Shift
+  Supervisor no longer holds — they open the day and record against it,
+  but amending the header is a narrower group
+
+**T3 — Machine changes as shift remarks**
+- A machine started or stopped mid-shift is remarked automatically against
+  that shift's sign-off, with machine number and time
+- Remarks are derived from each machine's running window rather than typed,
+  so they cannot contradict the sheet; they are labelled and cannot be
+  edited away. A separate free-text remarks field sits alongside
+
+**T4 — Shift sent for approval from the hourly section**
+- Shift status lifecycle added: **Draft → Pending approval → Approved**,
+  with reopen for genuine corrections
+- On the final slot of a shift, hourly entry offers **Save & Send for
+  Approval** — in both the matrix and form layouts
+- Before submitting, states how many slots have no reading and how many
+  out-of-spec readings are being signed for. Gaps do not block submission
+  (a slot can legitimately have no reading); an incomplete sign-off does,
+  since submission asserts it
+
+**T5 — Older shifts locked**
+- A shift locks once submitted, approved, or once a later shift has been
+  opened or has readings — mirroring the hourly rule. Its hourly slots
+  lock with it
+
+**T6 — Out-of-spec highlighting on entry**
+- The **whole cell** now fills as the value is typed, rather than tinting
+  text on save. Separate colour pairs for light and dark, and an added `!`
+  marker so the state survives greyscale and colour-blind viewing
+- Dependent limits repaint live — changing rotor size immediately re-checks
+  the RPM cell against the new band
+- Every out-of-spec reading from the shift is listed in its sign-off, so
+  the supervisor signs with the exceptions in front of them
+
+**T7 — Tablet and touch entry**
+- Where the pointer is coarse, every target grows to at least 44 px and the
+  matrix relaxes — density is worth less than hitting the right cell
+- Numeric fields open the numeric keypad
+- Row actions stay visible rather than sitting behind hover
+
 ## 1.6.0 — 2026-08-16
 
 **Configuration module — users, roles and access control**
