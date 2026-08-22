@@ -228,7 +228,9 @@ Removed alongside the accounts:
 3. Remove `pcsDemoControls()`, `pcsDemoModePicker()`, `wireDemoControls()`
    and `PCS_DEMO_MODE` from `public/js/pcs.js`, and the five
    `wireDemoControls(panel, record)` calls and the `data-demo` controls in
-   each section.
+   each section. Also remove `pcsAutoFillForm()`, `pcsAutoFillDieTemps()`,
+   `pcsAutoFillMatrix()`, `pcsAutoFillButton()` and every
+   `data-autofill` control and its click handler.
 4. Remove the `action.pcs.demo.fill` permission from `public/js/rbac.js`,
    and the `.demo-bar` / `.demo-controls` / `.demo-tag` rules from
    `public/css/pcs.css`.
