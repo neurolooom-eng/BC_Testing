@@ -10,7 +10,7 @@ one case covers it.
 
 **Result key:** `Pass` · `Fail` · `Blocked` · `Not run`
 
-Last executed against **v1.8.0**.
+Last executed against **v1.9.0**.
 
 ---
 
@@ -270,6 +270,16 @@ All cases below are blocked pending the Shift Master and its siblings
 | TC-FIX-012 | REQ-FIX-010 | Signed in as `operator` | Inspect every section of the day sheet. | No generation control is present. | Pass |
 | TC-FIX-013 | REQ-FIX-010 | Signed in as `administrator` | Inspect every section of the day sheet. | A generation control is present in each. | Pass |
 | TC-FIX-014 | REQ-FIX-011 | Signed in as `administrator` | Look at the generation controls beside the working controls. | Visibly set apart and labelled as test data. | Pass |
+| TC-FIX-015 | REQ-FIX-012 | New day sheet form | Click Auto-fill. | Inputs populated with plausible values; record not yet saved. | Pass |
+| TC-FIX-016 | REQ-FIX-012 | Day details edit (header section) | Click Auto-fill. | Inputs populated; Save still required to commit. | Pass |
+| TC-FIX-017 | REQ-FIX-012 | Machine modal (add or edit) | Click Auto-fill. | Machine fields populated; modal still open for review. | Pass |
+| TC-FIX-018 | REQ-FIX-012 | Shift detail modal | Click Auto-fill. | Shift detail fields populated (shift selector unchanged); modal open. | Pass |
+| TC-FIX-019 | REQ-FIX-012 | Sign-off modal | Click Auto-fill. | Sign-off fields populated; modal open for review. | Pass |
+| TC-FIX-020 | REQ-FIX-013 | Any form with auto-fill | Click Auto-fill and inspect OOS highlighting. | Fields that breach limits show OOS highlighting immediately. | Pass |
+| TC-FIX-021 | REQ-FIX-014 | Hourly form with a machine stopped before the selected slot | Click Auto-fill. | Running machines get a Die Temp; stopped machines stay NA. | Pass |
+| TC-FIX-022 | REQ-FIX-015 | Hourly matrix with editable rows | Click Auto-fill matrix. | Every editable row filled; locked rows unchanged; values unsaved. | Pass |
+| TC-FIX-023 | REQ-FIX-016 | Signed in as `operator` | Open any form or modal. | No Auto-fill button is present. | Pass |
+| TC-FIX-024 | REQ-FIX-016 | Signed in as `administrator` | Open any form or modal. | Auto-fill button is present alongside the working controls. | Pass |
 
 ## 9. Developer Documentation
 

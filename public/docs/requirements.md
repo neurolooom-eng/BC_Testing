@@ -254,6 +254,11 @@ describes — see the Backlog cleanup.
 | REQ-FIX-009 | Generated data shall omit a Die Temp reading for any machine not running in that time slot. | A generated reading for an idle machine would contradict the NA rule. | Test | Implemented |
 | REQ-FIX-010 | Data generation shall be offered only to users holding the test-data permission. | Generation must never be reachable by someone recording real readings. | Test | Implemented |
 | REQ-FIX-011 | Data generation controls shall be presented so as to be distinguishable from the working controls of the sheet. | A generator that looks like part of the form invites a mistake. | Inspection | Implemented |
+| REQ-FIX-012 | The system shall provide an auto-fill control on each form and modal that populates visible inputs without saving the record. | The operator must be able to review and adjust generated values before committing them. | Test | Implemented |
+| REQ-FIX-013 | Auto-fill shall fire input and change events on each populated field so that live validation and dependent spec hints repaint. | Values that appear without validation feedback would not match the behaviour of typed values. | Test | Implemented |
+| REQ-FIX-014 | Auto-fill in the hourly form shall populate Die Temp inputs only for machines running in the selected slot. | Filling a Die Temp for an idle machine would contradict the NA rule. | Test | Implemented |
+| REQ-FIX-015 | Auto-fill in the hourly matrix shall populate every editable row on screen without saving. | The matrix covers many slots at once; each must be filled and repainted. | Test | Implemented |
+| REQ-FIX-016 | Auto-fill controls shall be gated behind the same test-data permission as the direct-to-storage generators. | Auto-fill is a test fixture and must not appear to operators recording real data. | Test | Implemented |
 
 ## 9. Developer Documentation (DEV)
 
