@@ -294,8 +294,9 @@ describes — see the Backlog cleanup.
 
 | ID | Requirement | Rationale | Verification | Status |
 |---|---|---|---|---|
-| REQ-PRT-001 | The system shall provide a printable HTML view of a PCS day sheet that matches the layout of QC FMT 038. | Operators need a paper-compatible output for filing and audit. | Inspection | Implemented |
-| REQ-PRT-002 | The print view shall include: header, machines table, per-shift blocks (shift details, core pin verification, hourly readings matrix with Die Temp per machine, sign-off, out-of-spec summary), and a generated footer. | Every section of the paper form must be represented. | Inspection | Implemented |
+| REQ-PRT-001 | The system shall provide a printable HTML view of a PCS day sheet rendered as a single 55-column table matching the exact layout of QC FMT 038 in landscape A4 orientation. | Operators need a paper-compatible output for filing and audit; the layout must be identical to the Excel template. | Inspection | Implemented |
+| REQ-PRT-002 | The print view shall include: company header, line/furnace/date/grade row, shift headers, holding furnace charges, 12 hourly parameter rows (including combined Gas Checking km/vc), machine headers with degassing killing time, Die Temp per machine per slot, core pin verification with 3 shift sections, error proofs, die preparation, instructions, and signature rows. | Every section of the paper form must be represented in the correct row/column position. | Inspection | Implemented |
+| REQ-PRT-006 | The print view shall use 47 time-slot columns (skipping the 12:00 am slot at index 35) to match the paper form column count. | The Excel template has 47 time columns, not 48. | Inspection | Implemented |
 | REQ-PRT-003 | Out-of-spec values shall be highlighted in the print view and the highlighting shall survive greyscale printing. | The supervisor must be able to spot exceptions on a printout. | Inspection | Implemented |
 | REQ-PRT-004 | The print view shall hide navigation and application chrome when printed. | Print output must contain only the record. | Test | Implemented |
 | REQ-PRT-005 | The Print button shall be gated behind the `action.pcs.sheet.print` permission. | Only authorised roles may produce printable outputs. | Test | Implemented |
