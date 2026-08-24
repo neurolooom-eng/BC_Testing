@@ -207,49 +207,142 @@ body.light-theme .tag { color: #1d6b56; border-color: #1d6b56; }
 .tpl-detail-header .detail-meta h2 { font-size: 18px; margin-bottom: 4px; }
 .tpl-detail-header .detail-meta p { font-size: 12.5px; color: var(--content-mute); line-height: 1.5; }
 
-/* Print preview */
+/* Print preview — container */
 .print-preview {
   background: #fff;
   color: #000;
-  padding: 32px;
+  padding: 24px 12px;
   border-radius: 8px;
   margin-top: 18px;
-  font-size: 11px;
-  line-height: 1.4;
+  font-size: 8px;
+  line-height: 1.25;
   overflow-x: auto;
 }
 
-.print-preview table {
+/* QC FMT 038 table */
+.fmt038 {
   width: 100%;
   border-collapse: collapse;
+  table-layout: fixed;
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: 7.5px;
 }
 
-.print-preview th,
-.print-preview td {
+.fmt038 td {
   border: 1px solid #333;
-  padding: 4px 6px;
-  font-size: 10.5px;
-  vertical-align: top;
+  padding: 2px 3px;
+  vertical-align: middle;
+  text-align: center;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  word-break: break-word;
 }
 
-.print-preview th {
-  background: #eee;
-  font-weight: 600;
+/* Utility classes */
+.fmt038 .bl { font-weight: 700; }
+.fmt038 .al { text-align: left; }
+.fmt038 .ac { text-align: center; }
+.fmt038 .f14 { font-size: 14px; }
+.fmt038 .f18 { font-size: 18px; font-weight: 700; }
+.fmt038 .f12 { font-size: 12px; }
+
+/* Description cells — left-aligned, slightly larger */
+.fmt038 .desc {
   text-align: left;
+  font-size: 7px;
+  padding: 2px 4px;
+  line-height: 1.2;
 }
 
-.print-preview h3 {
-  font-size: 13px;
-  margin: 16px 0 6px;
+/* Data cells */
+.fmt038 .dc {
+  font-size: 7.5px;
+  text-align: center;
 }
 
-.print-preview .oos { background: #fce4e4; color: #c62828; }
+/* Time slot header — rotated text */
+.fmt038 .slot {
+  font-size: 7px;
+  writing-mode: vertical-rl;
+  text-orientation: mixed;
+  transform: rotate(180deg);
+  padding: 3px 1px;
+  white-space: nowrap;
+  height: 52px;
+}
+
+/* Shift header band */
+.fmt038 .shdr {
+  font-size: 10px;
+  background: #eee;
+}
+
+/* Machine header cells */
+.fmt038 .mh {
+  font-size: 6.5px;
+  writing-mode: vertical-rl;
+  text-orientation: mixed;
+  transform: rotate(180deg);
+  padding: 3px 1px;
+  height: 62px;
+  white-space: nowrap;
+}
+
+/* Die Temp vertical label */
+.fmt038 .die-lbl {
+  writing-mode: vertical-rl;
+  text-orientation: mixed;
+  transform: rotate(180deg);
+  font-size: 7px;
+  padding: 3px 1px;
+}
+
+/* OOS highlight */
+.fmt038 .oos { background: #fce4e4; color: #c62828; }
+
+/* Signature cells */
+.fmt038 .sign {
+  min-height: 28px;
+  height: 28px;
+}
+
+/* Error proofs / instructions */
+.fmt038 .err,
+.fmt038 .inst {
+  font-size: 7px;
+  text-align: left;
+  padding: 3px 6px;
+  line-height: 1.35;
+}
+
+/* Core pin comment cells */
+.fmt038 .cp-cmt {
+  font-size: 6px;
+}
+
+/* Time-header row */
+.fmt038 .th-row td {
+  background: #f5f5f5;
+}
+
+/* ---------- Print ---------- */
+@page { size: A4 landscape; margin: 6mm; }
 
 @media print {
   .topbar, .build-footer, .btn-row, .no-print { display: none !important; }
   body { background: #fff !important; color: #000 !important; }
-  .content { padding: 0 !important; }
-  .print-preview { padding: 0; border-radius: 0; margin: 0; box-shadow: none; }
-  .print-preview th { background: #eee !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-  .print-preview .oos { background: #fce4e4 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  .content { max-width: none !important; padding: 0 !important; margin: 0 !important; }
+  .print-preview { padding: 0; border-radius: 0; margin: 0; box-shadow: none; overflow: visible; }
+  .fmt038 { font-size: 7px; }
+  .fmt038 .shdr,
+  .fmt038 .th-row td {
+    background: #eee !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+  .fmt038 .oos {
+    background: #fce4e4 !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
 }

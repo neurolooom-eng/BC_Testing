@@ -4,6 +4,26 @@ Version numbers follow semver — see `VERSIONING.md` at the repo root.
 Build number and build date shown in the site footer are generated
 automatically per deploy and are not tracked here.
 
+## 2.0.3 — 2026-08-24
+
+**QC FMT 038 print view — exact Excel replica**
+
+- Rewrote the PCS print view to render as a single 55-column HTML table
+  that exactly matches the QC FMT 038 Excel template layout
+- Landscape A4 orientation with `@page { size: A4 landscape }` for
+  correct paper output
+- 47 time-slot columns (skips 12:00 am / slot index 35) matching the
+  paper form
+- All 38 rows reproduced: company header, line/furnace/date,
+  grade/shifts/alloy, holding furnace charges, DESCRIPTION + time
+  headers, 12 hourly parameter rows (Gas Checking shown as km/vc),
+  machine headers with degassing killing time, Die Temp per machine per
+  slot, core pin verification (3 shifts with cavities + comment), error
+  proofs, die preparation, instructions, and signature rows
+- Out-of-spec highlighting preserved in print via `print-color-adjust`
+- Compact CSS (7-8 px font) with rotated text for time slot and machine
+  headers
+
 ## 2.0.2 — 2026-08-24
 
 **Print button on the day sheet list view**

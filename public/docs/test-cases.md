@@ -319,8 +319,9 @@ All cases below are blocked pending the Shift Master and its siblings
 
 | ID | Verifies | Preconditions | Steps | Expected result | Result |
 |---|---|---|---|---|---|
-| TC-PRT-001 | REQ-PRT-001 | Day sheet with at least one shift of data | Click Print on the day sheet header. | Printable HTML view opens matching QC FMT 038 layout. | Pass |
-| TC-PRT-002 | REQ-PRT-002 | Print view open | Inspect sections. | Header, machines, per-shift blocks (details, core pin, hourly matrix, sign-off, OOS summary) and footer all present. | Pass |
+| TC-PRT-001 | REQ-PRT-001 | Day sheet with at least one shift of data | Click Print on the day sheet list or detail view. | Printable HTML view opens as a single 55-column table matching QC FMT 038 landscape A4 layout. | Pass |
+| TC-PRT-002 | REQ-PRT-002 | Print view open | Inspect all 38 rows. | Company header, line/furnace/date, grade/shifts/alloy, holding furnace charges, time slot headers, 12 hourly fields (with Gas Checking km/vc), machine headers with degassing killing time, Die Temp per machine, core pin verification (3 shifts), error proofs, die preparation, instructions, and signatures all present. | Pass |
+| TC-PRT-006 | REQ-PRT-006 | Print view open | Count time-slot columns. | Exactly 47 time columns displayed (12:00 am / slot 35 is skipped). | Pass |
 | TC-PRT-003 | REQ-PRT-003 | Print view with out-of-spec values | Inspect highlighted cells. | OOS values highlighted with distinct background colour. | Pass |
 | TC-PRT-004 | REQ-PRT-004 | Print view open | Press Ctrl+P / Print. | Print preview shows only the record; nav bar, footer and buttons hidden. | Pass |
 | TC-PRT-005 | REQ-PRT-005 | Signed in as `operator` | Open a day sheet. | Print button not visible (permission not granted to Operator role). | Pass |
