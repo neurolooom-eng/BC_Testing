@@ -4,6 +4,19 @@ Version numbers follow semver — see `VERSIONING.md` at the repo root.
 Build number and build date shown in the site footer are generated
 automatically per deploy and are not tracked here.
 
+## 2.0.1 — 2026-08-24
+
+**Shift approval auto-approves hourly readings; hourly unlock for rework**
+
+- Approving a shift now automatically approves all hourly readings in
+  that shift's slot range, so each reading does not need individual
+  approval once the shift is signed off
+- A locked hourly reading can be **unlocked for rework** by a user
+  holding the unapprove permission (🔓 button in the matrix, "Unlock for
+  rework" link in the form view)
+- An unlocked slot becomes editable again; saving it clears the unlocked
+  state so it re-locks normally once a later slot is recorded
+
 ## 2.0.0 — 2026-08-24
 
 **Templates module + PCS print view**

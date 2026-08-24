@@ -156,6 +156,9 @@ Digital implementation of form QC FMT 038 for the Mando model line.
 | REQ-PCS-095 | The matrix layout shall provide a control to display any other shift of the day. | Earlier shifts must be reviewable without leaving the sheet. | Test | Implemented |
 | REQ-PCS-096 | The matrix layout shall display a shift other than the one in progress in full. | A completed shift has no "current slot" to stop at. | Test | Implemented |
 | REQ-PCS-097 | The matrix layout shall provide, for the shift in progress, a control to display that shift's remaining slots. | Occasionally a reading is entered ahead of its slot closing. | Test | Implemented |
+| REQ-PCS-098 | Approving a shift shall automatically approve all hourly readings within that shift's time slot range. | Once a shift is signed off, individual hourly approvals should not remain pending. | Test | Implemented |
+| REQ-PCS-099 | A locked hourly reading shall be unlockable for rework by a user holding the unapprove permission. | Corrections to a past reading must be possible without requiring a full shift reopen. | Test | Implemented |
+| REQ-PCS-100 | Saving a reworked (unlocked) reading shall re-lock it under the normal locking rules. | The unlock is for a single correction, not a permanent exemption. | Test | Implemented |
 | REQ-PCS-055 | The module shall prevent modification of an hourly reading once a reading for a later time slot has been recorded. | Correcting the entry just made is legitimate; revising superseded history is not. | Test | Implemented |
 | REQ-PCS-056 | The module shall permit an authorised user to approve a machine, hourly or shift record. | Supervisory sign-off is required on recorded process data. | Test | Implemented |
 | REQ-PCS-057 | The module shall record the identity of the approver and the time of approval against each approved record. | Sign-off must be attributable. | Test | Implemented |

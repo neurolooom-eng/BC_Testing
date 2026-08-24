@@ -141,6 +141,11 @@ Last executed against **v1.9.1**.
 | TC-PCS-128 | REQ-PCS-095 | Matrix layout | Inspect the shift control. | All three shifts are offered, and the shift in progress is identified as current. | Pass |
 | TC-PCS-129 | REQ-PCS-097 | Matrix layout showing the shift in progress | Choose to display the whole shift. | All 16 slots of that shift are shown, including those not yet completed. | Pass |
 | TC-PCS-130 | REQ-PCS-096 | Matrix layout showing a completed shift | Look for the whole-shift control. | Not offered — the shift is already shown in full. | Pass |
+| TC-PCS-131 | REQ-PCS-098 | Shift with unapproved hourly readings | Approve the shift. | All hourly readings within the shift's slot range are also marked as approved. | Pass |
+| TC-PCS-132 | REQ-PCS-099 | Matrix view, locked hourly row | Click the unlock (🔓) button. | The row becomes editable; inputs are enabled. | Pass |
+| TC-PCS-133 | REQ-PCS-099 | Form view, locked slot | Click "Unlock for rework". | The slot becomes editable; save button enabled. | Pass |
+| TC-PCS-134 | REQ-PCS-099 | Signed in as `operator` (no unapprove permission) | View a locked row in the matrix. | No unlock button visible. | Pass |
+| TC-PCS-135 | REQ-PCS-100 | Unlocked slot, values amended | Save the reading. | The reading is saved and the unlocked flag clears; the slot re-locks under normal rules. | Pass |
 | TC-PCS-056 | REQ-PCS-055 | Reading recorded for slot 0 only | Attempt to edit slot 0. | Editing permitted; it is still the most recent reading. | Pass |
 | TC-PCS-057 | REQ-PCS-055 | Readings recorded for slots 0 and 1 | Attempt to edit slot 0. | Editing prevented; the row is shown as locked. | Pass |
 | TC-PCS-058 | REQ-PCS-056, REQ-PCS-057 | Hourly reading recorded | Approve it. | Marked approved, recording the approver's identity and the time. | Pass |

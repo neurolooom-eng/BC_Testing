@@ -210,7 +210,7 @@ function pcsSaveHourly(dailyId, slotIndex, entry) {
       record.hourly.push({ ...payload, id: pcsNewId(), approval: null });
       return record.hourly[record.hourly.length - 1];
     }
-    record.hourly[idx] = { ...record.hourly[idx], ...payload };
+    record.hourly[idx] = { ...record.hourly[idx], ...payload, unlocked: false };
     return record.hourly[idx];
   });
 }
@@ -227,6 +227,7 @@ function pcsLatestRecordedSlot(record) {
 function pcsHourlyLocked(record, slotIndex) {
   if (pcsIsArchived(record)) return true;
   const entry = pcsHourlyFor(record, slotIndex);
+  if (entry && entry.unlocked) return false;
   if (entry && entry.approval) return true;
 
   // A submitted or approved shift closes its slots along with it.
@@ -390,6 +391,33 @@ function pcsApproveHourlySlot(dailyId, slotIndex, userid) {
   return pcsMutate(dailyId, (record) => {
     const entry = (record.hourly || []).find((h) => h.slotIndex === slotIndex);
     if (entry) entry.approval = { by: userid, at: new Date().toISOString() };
+    return entry;
+  });
+}
+
+function pcsApproveShiftHourly(dailyId, shiftName, userid) {
+  return pcsMutate(dailyId, (record) => {
+    const range = pcsShiftSlotRange(shiftName);
+    if (!range) return 0;
+    const now = new Date().toISOString();
+    let count = 0;
+    (record.hourly || []).forEach((h) => {
+      if (h.slotIndex >= range.first && h.slotIndex <= range.last && !h.approval) {
+        h.approval = { by: userid, at: now };
+        count++;
+      }
+    });
+    return count;
+  });
+}
+
+function pcsUnlockHourly(dailyId, slotIndex) {
+  return pcsMutate(dailyId, (record) => {
+    const entry = (record.hourly || []).find((h) => h.slotIndex === slotIndex);
+    if (entry) {
+      entry.approval = null;
+      entry.unlocked = true;
+    }
     return entry;
   });
 }
