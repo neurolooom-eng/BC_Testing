@@ -10,7 +10,7 @@ one case covers it.
 
 **Result key:** `Pass` · `Fail` · `Blocked` · `Not run`
 
-Last executed against **v1.9.0**.
+Last executed against **v1.9.1**.
 
 ---
 
@@ -280,6 +280,8 @@ All cases below are blocked pending the Shift Master and its siblings
 | TC-FIX-022 | REQ-FIX-015 | Hourly matrix with editable rows | Click Auto-fill matrix. | Every editable row filled; locked rows unchanged; values unsaved. | Pass |
 | TC-FIX-023 | REQ-FIX-016 | Signed in as `operator` | Open any form or modal. | No Auto-fill button is present. | Pass |
 | TC-FIX-024 | REQ-FIX-016 | Signed in as `administrator` | Open any form or modal. | Auto-fill button is present alongside the working controls. | Pass |
+| TC-FIX-025 | REQ-FIX-017 | Stored config from before v1.8.0 (no `action.pcs.demo.fill`) | Load the app as `administrator`. | The `action.pcs.demo.fill` resource and its Administrator grant are added to the stored config; Fill and Auto-fill buttons appear. | Pass |
+| TC-FIX-026 | REQ-FIX-017 | Stored config with a resource whose grant was reassigned in Configuration | Load the app after a build adds a new resource. | The new resource is admitted; the reassigned grant on the existing resource is not overwritten. | Pass |
 
 ## 9. Developer Documentation
 

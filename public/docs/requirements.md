@@ -259,6 +259,7 @@ describes — see the Backlog cleanup.
 | REQ-FIX-014 | Auto-fill in the hourly form shall populate Die Temp inputs only for machines running in the selected slot. | Filling a Die Temp for an idle machine would contradict the NA rule. | Test | Implemented |
 | REQ-FIX-015 | Auto-fill in the hourly matrix shall populate every editable row on screen without saving. | The matrix covers many slots at once; each must be filled and repainted. | Test | Implemented |
 | REQ-FIX-016 | Auto-fill controls shall be gated behind the same test-data permission as the direct-to-storage generators. | Auto-fill is a test fixture and must not appear to operators recording real data. | Test | Implemented |
+| REQ-FIX-017 | Loading a stored access configuration shall admit resources defined in the current build but absent from the stored configuration, including their role grants. | A resource added in a newer build must be reachable by the roles the build assigns it to, even on a device whose stored config predates the resource. | Test | Implemented |
 
 ## 9. Developer Documentation (DEV)
 

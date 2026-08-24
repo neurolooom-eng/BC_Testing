@@ -28,6 +28,7 @@ not deleted — the history is the point.
 | BUG-008 | Navigation scrolled horizontally instead of wrapping | Major | Fixed | 1.4.0 |
 | BUG-009 | Saving an hourly reading appeared to do nothing | Major | Fixed | 1.7.1 |
 | BUG-010 | Stated Rotor RPM limits did not follow the selected rotor size | Major | Fixed | 1.7.1 |
+| BUG-011 | Test data and auto-fill buttons missing on devices with stored config from before v1.8.0 | Major | Fixed | 1.9.1 |
 
 No defects are currently open. BUG-006 is a deferred design decision and
 BUG-007 has been reclassified as an enhancement; both are tracked in the
@@ -303,3 +304,28 @@ is the only item whose limits depend on another field.
 **Correction.** Fields declaring a dependent range now have their stated
 limits recomputed alongside their validation, so hint and verdict are always
 derived from the same evaluation.
+
+## BUG-011 — Test data and auto-fill buttons missing on devices with stored config from before v1.8.0
+
+- **Severity:** Major
+- **Status:** Fixed
+- **Fixed in:** 1.9.1
+- **Affects:** REQ-FIX-010, REQ-FIX-016
+- **Covered by:** TC-FIX-012, TC-FIX-013, TC-FIX-023, TC-FIX-024
+
+**Symptom.** On a browser that had used the app before v1.8.0, the "Fill"
+(test data) and "Auto-fill" buttons never appeared — even when signed in as
+an administrator who should hold the `action.pcs.demo.fill` permission.
+Clearing localStorage or using a fresh browser made them appear.
+
+**Root cause.** `rbacLoad()` reconciled missing user accounts on load (added
+in v1.8.0) but did not reconcile missing resources. A stored access
+configuration from before v1.8.0 had no `action.pcs.demo.fill` entry, so
+`rbacCanDo` could not find it and returned false. Every control gated behind
+that permission stayed hidden.
+
+**Correction.** `rbacLoad()` now merges any seed resources whose id is
+absent from the stored config, and copies the matching role grants from the
+seed so the resource is reachable by the roles that should hold it. Existing
+entries and grants are left alone, preserving any reassignments made in
+Configuration.

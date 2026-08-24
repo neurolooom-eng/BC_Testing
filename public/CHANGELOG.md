@@ -4,6 +4,20 @@ Version numbers follow semver — see `VERSIONING.md` at the repo root.
 Build number and build date shown in the site footer are generated
 automatically per deploy and are not tracked here.
 
+## 1.9.1 — 2026-08-24
+
+**BUG-011 fixed — auto-fill and test data buttons missing on devices with
+a stored access configuration from before v1.8.0**
+
+- `rbacLoad()` reconciled missing user accounts but not missing resources.
+  A browser whose stored config predated the `action.pcs.demo.fill`
+  permission (added in v1.8.0) never learned about it, so `rbacCanDo`
+  returned false and every button gated behind it stayed hidden.
+- `rbacLoad()` now merges any seed resources whose id is absent from the
+  stored list, and copies the matching role grants so the resource is
+  reachable by the roles that should hold it. Existing entries and grants
+  are left alone.
+
 ## 1.9.0 — 2026-08-22
 
 **Auto-fill forms — test fixture, see BACKLOG.md**
