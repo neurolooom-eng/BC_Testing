@@ -224,6 +224,42 @@ function rbacLoad() {
       u.roleIds = u.roleIds || [];
     });
 
+    // Resources added in a newer build must appear in a stored config,
+    // otherwise permissions that gate them evaluate to false and controls
+    // backed by those permissions stay hidden. Merge any seed resources
+    // whose id is absent from the stored list; existing entries (whose
+    // label or description may have been edited) are left alone.
+    const seed = rbacSeed();
+    let resourcesAdded = false;
+    RBAC_TYPE_KEYS.forEach((t) => {
+      const stored = config.resources[t];
+      (seed.resources[t] || []).forEach((sr) => {
+        if (stored.some((r) => r.id === sr.id)) return;
+        stored.push(sr);
+        resourcesAdded = true;
+      });
+    });
+    // New resources also need their grants seeded into the roles that
+    // should hold them — otherwise the resource exists but no role can
+    // reach it. Copy grants from the seed role for each resource that was
+    // just admitted, without touching grants already stored.
+    if (resourcesAdded) {
+      (config.roles || []).forEach((role) => {
+        const seedRole = (seed.roles || []).find((r) => r.id === role.id);
+        if (!seedRole) return;
+        role.grants = role.grants || {};
+        RBAC_TYPE_KEYS.forEach((t) => {
+          role.grants[t] = role.grants[t] || {};
+          const seedGrants = (seedRole.grants || {})[t] || {};
+          Object.keys(seedGrants).forEach((resId) => {
+            if (role.grants[t][resId] !== undefined) return;
+            role.grants[t][resId] = seedGrants[resId];
+          });
+        });
+      });
+      rbacSave(config);
+    }
+
     // An account that can sign in but has no access record would be locked
     // out of everything, so accounts added to the sign-in list after this
     // configuration was stored are admitted here with their own role.
