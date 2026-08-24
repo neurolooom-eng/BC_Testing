@@ -87,14 +87,23 @@ with a database trigger or Edge Function on insert into `pcs_hourly` /
 `pcs_shift`. Until then the UI says plainly that no alert was sent, rather
 than implying one was.
 
-### Check sheet printing
+### Check sheet printing — partially done (v2.0.0)
 The tolerances sheet notes: *"Per day 3 times shift wise submission from
 shift supervisors, all datas should be printed in check sheet documents."*
 
-The submission half is done as of v1.7.0: each shift is submitted for
-approval from its last hourly reading and locks on submission. **Printing
-is not** — it still needs a print or PDF view laid out like the paper
-QC FMT 038 form, so a signed shift can be filed as a document.
+The submission half is done as of v1.7.0. **HTML print view** is done as
+of v2.0.0: the day sheet has a Print button that opens a printable layout
+matching QC FMT 038, with `@media print` rules and a Print/Save PDF
+button. **Still deferred:** Excel download (filling a real .xlsx template
+with data requires a server-side conversion step — see Templates below).
+
+### Templates — file processing deferred
+The Templates page (v2.0.0) stores metadata, placeholders and field
+mappings. Uploaded file blobs are held in IndexedDB as interim storage.
+**Deferred:** server-side extraction of placeholders from uploaded Word /
+Excel files, and server-side generation of filled documents (Excel
+download). Both require the Supabase backend or an equivalent processing
+service.
 
 ## 3. Masters (deferred)
 

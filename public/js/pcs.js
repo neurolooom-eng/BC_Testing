@@ -7,6 +7,7 @@
 //   #/            day sheets, to pick or create
 //   #/new         create a day sheet
 //   #/sheet/:id   the Day Sheet — the single working view
+//   #/print/:id   printable view of a day sheet (QC FMT 038)
 
 let PCS_SESSION = null;
 
@@ -519,6 +520,7 @@ function renderHeaderSection(panel, record) {
         }
         <div class="btn-row" style="margin-top:18px;">
           ${canEdit ? '<button class="btn" id="update-daily">Save day details</button>' : ""}
+          ${pcsCan("action.pcs.sheet.print") ? `<a class="btn btn-secondary" href="#/print/${record.id}">Print</a>` : ""}
           ${canEdit ? pcsAutoFillButton("day", "Auto-fill") : ""}
           ${canEdit ? pcsDemoControls("day details", "day") : ""}
           ${
@@ -1624,6 +1626,11 @@ function pcsRoute() {
   const hash = window.location.hash || "#/";
 
   if (hash === "#/new") renderNew(root);
+  else if (hash.startsWith("#/print/")) {
+    const record = pcsGet(hash.slice("#/print/".length));
+    if (record && typeof pcsPrintOpen === "function") pcsPrintOpen(record);
+    else renderList(root);
+  }
   else if (hash.startsWith("#/sheet/")) renderSheet(root, hash.slice("#/sheet/".length));
   else renderList(root);
 }
