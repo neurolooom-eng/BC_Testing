@@ -670,6 +670,10 @@ function wireApprovalButtons(panel, record) {
     b.addEventListener("click", () => {
       const [kind, id] = b.dataset.approve.split(":");
       pcsApprove(record.id, kind, id, PCS_SESSION.userid);
+      if (kind === "shifts") {
+        const shift = (record.shifts || []).find((s) => s.id === id);
+        if (shift) pcsApproveShiftHourly(record.id, shift.shift, PCS_SESSION.userid);
+      }
       reload(record.id);
     })
   );
@@ -677,6 +681,13 @@ function wireApprovalButtons(panel, record) {
     b.addEventListener("click", () => {
       const [kind, id] = b.dataset.unapprove.split(":");
       pcsUnapprove(record.id, kind, id);
+      reload(record.id);
+    })
+  );
+  panel.querySelectorAll("[data-unlock]").forEach((b) =>
+    b.addEventListener("click", () => {
+      const slot = Number(b.dataset.unlock);
+      pcsUnlockHourly(record.id, slot);
       reload(record.id);
     })
   );
@@ -880,7 +891,7 @@ function renderHourlyMatrix(body, record, nearest) {
       <tr class="${locked ? "row-locked" : ""}${i === latestRecorded ? " row-latest" : ""}">
         <td class="sticky-col">
           <strong>${escapeHtml(PCS_TIME_SLOTS[i])}</strong>
-          ${locked ? '<span class="lock-mark" title="Locked — a later slot has been recorded">🔒</span>' : ""}
+          ${locked ? `<span class="lock-mark" title="Locked">🔒</span>${pcsCan("action.pcs.unapprove") ? ` <button class="link-btn unlock-btn" data-unlock="${i}" title="Unlock for rework">🔓</button>` : ""}` : ""}
           <br><span class="muted-xs">${escapeHtml(pcsShiftForSlotIndex(i))}</span>
         </td>
         ${cells}${dieCells}
@@ -1126,7 +1137,7 @@ function renderHourlyForm(body, record, nearest) {
         <div class="field">
           <label>Time slot <span class="spec-hint">defaults to nearest completed</span></label>
           <select id="form-slot">${slotOptions(slot)}</select>
-          <p class="field-note">${locked ? "Locked — a later slot has been recorded, or this row is approved." : "Open for entry."}</p>
+          <p class="field-note">${locked ? `Locked — a later slot has been recorded, or this row is approved.${pcsCan("action.pcs.unapprove") ? ` <button class="link-btn unlock-btn" data-unlock="${slot}" title="Unlock for rework">Unlock for rework</button>` : ""}` : "Open for entry."}</p>
         </div>
       </div>
 
