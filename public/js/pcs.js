@@ -354,6 +354,7 @@ function renderList(root) {
           <td>${(r.shifts || []).length} / 3</td>
           <td>${flags ? `<span class="flag-badge">${flags} out of spec</span>` : `<span class="ok-badge">In spec</span>`}</td>
           <td>${pending ? `<span class="pending-badge">${pending} pending</span>` : `<span class="ok-badge">Approved</span>`}</td>
+          ${pcsCan("action.pcs.sheet.print") ? `<td><a class="btn btn-secondary btn-sm" href="#/print/${r.id}">Print</a></td>` : ""}
         </tr>`;
     })
     .join("");
@@ -385,6 +386,7 @@ function renderList(root) {
                 <tr>
                   <th>Date</th><th>Line</th><th>Furnace</th><th>Machines</th>
                   <th>Hourly</th><th>Shifts</th><th>Spec</th><th>Approval</th>
+                  ${pcsCan("action.pcs.sheet.print") ? "<th></th>" : ""}
                 </tr>
               </thead>
               <tbody>${rows}</tbody>

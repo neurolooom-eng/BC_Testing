@@ -4,6 +4,16 @@ Version numbers follow semver — see `VERSIONING.md` at the repo root.
 Build number and build date shown in the site footer are generated
 automatically per deploy and are not tracked here.
 
+## 2.0.2 — 2026-08-24
+
+**Print button on the day sheet list view**
+
+- Added a **Print** button to each row in the Process Check Sheet list,
+  so users can print a day sheet directly from the list without opening
+  it first
+- Button respects `action.pcs.sheet.print` permission — hidden for roles
+  without that grant
+
 ## 2.0.1 — 2026-08-24
 
 **Shift approval auto-approves hourly readings; hourly unlock for rework**
