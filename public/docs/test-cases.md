@@ -295,7 +295,32 @@ All cases below are blocked pending the Shift Master and its siblings
 | TC-DEV-006 | REQ-DEV-004 | Bugs open | Review each entry with status Fixed. | Each states symptom, root cause, correction applied, and the version the correction shipped in. | Pass |
 | TC-DEV-007 | REQ-DEV-006 | A merged change that altered behaviour | Inspect that change's contents. | Requirements and Test Cases were updated within the same change. | Pass |
 
-## 10. Deployment
+## 10. Templates
+
+| ID | Verifies | Preconditions | Steps | Expected result | Result |
+|---|---|---|---|---|---|
+| TC-TPL-001 | REQ-TPL-001 | Signed in as `administrator` | Navigate to the Templates page via the top bar. | Page loads; nav item highlighted. | Pass |
+| TC-TPL-002 | REQ-TPL-001 | Signed in as `operator` | Inspect the top bar navigation. | Templates link not shown (permission denied). | Pass |
+| TC-TPL-003 | REQ-TPL-002 | On the Templates page | Click "Upload Template" and select a .xlsx file. | Upload zone accepts the file; preview card appears. | Pass |
+| TC-TPL-004 | REQ-TPL-002 | On the Templates page | Drag and drop a .docx file onto the upload zone. | File accepted; preview shows name, size, type. | Pass |
+| TC-TPL-005 | REQ-TPL-002 | On the Templates page | Attempt to upload a .pdf file. | File rejected with an error message. | Pass |
+| TC-TPL-006 | REQ-TPL-003, REQ-TPL-004 | Upload a template | Save the template. | Template appears in the list with correct metadata. Blob present in IndexedDB. | Pass |
+| TC-TPL-007 | REQ-TPL-005 | On template detail page | Type a placeholder token and press Enter. | Tag appears. Backspace removes last tag. | Pass |
+| TC-TPL-008 | REQ-TPL-006, REQ-TPL-007 | Template has placeholders | Open field mapping. | Each placeholder has a dropdown grouped by PCS section. Select a field; click Save Mappings. | Pass |
+| TC-TPL-009 | REQ-TPL-008 | Signed in as `viewer` | Navigate directly to `templates.html#/new`. | Upload form not shown; permission message displayed. | Pass |
+| TC-TPL-010 | REQ-TPL-010 | On template detail page with delete permission | Click Delete Template. | Confirmation prompt appears. Confirm → template removed from list and IndexedDB. | Pass |
+
+## 11. Print View
+
+| ID | Verifies | Preconditions | Steps | Expected result | Result |
+|---|---|---|---|---|---|
+| TC-PRT-001 | REQ-PRT-001 | Day sheet with at least one shift of data | Click Print on the day sheet header. | Printable HTML view opens matching QC FMT 038 layout. | Pass |
+| TC-PRT-002 | REQ-PRT-002 | Print view open | Inspect sections. | Header, machines, per-shift blocks (details, core pin, hourly matrix, sign-off, OOS summary) and footer all present. | Pass |
+| TC-PRT-003 | REQ-PRT-003 | Print view with out-of-spec values | Inspect highlighted cells. | OOS values highlighted with distinct background colour. | Pass |
+| TC-PRT-004 | REQ-PRT-004 | Print view open | Press Ctrl+P / Print. | Print preview shows only the record; nav bar, footer and buttons hidden. | Pass |
+| TC-PRT-005 | REQ-PRT-005 | Signed in as `operator` | Open a day sheet. | Print button not visible (permission not granted to Operator role). | Pass |
+
+## 12. Deployment
 
 | ID | Verifies | Preconditions | Steps | Expected result | Result |
 |---|---|---|---|---|---|

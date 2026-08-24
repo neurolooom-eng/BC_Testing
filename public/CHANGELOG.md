@@ -4,6 +4,38 @@ Version numbers follow semver — see `VERSIONING.md` at the repo root.
 Build number and build date shown in the site footer are generated
 automatically per deploy and are not tracked here.
 
+## 2.0.0 — 2026-08-24
+
+**Templates module + PCS print view**
+
+**Templates page**
+- New **Templates** page between Reports and Team in the navigation, with
+  its own hash router (`#/`, `#/new`, `#/template/:id`)
+- Upload Word (.docx, .doc) or Excel (.xlsx, .xls) templates via drag-and-
+  drop or file picker; uploaded files are stored in IndexedDB, metadata in
+  localStorage
+- Metadata card shows file name, size, type and upload date
+- **Placeholder editor** — add tokens from the template as tags; remove
+  individually or with Backspace
+- **Field mapping** — connect each placeholder to a PCS data field via
+  grouped dropdowns covering Day Details, Machine, Hourly, Shift Detail,
+  Shift Sign-off and computed fields
+- Gated behind `page.templates` (Administrator and Quality Manager),
+  with `action.templates.upload`, `action.templates.edit` and
+  `action.templates.delete` permissions
+
+**PCS print view**
+- **Print** button on the day sheet header opens a printable HTML view
+  matching the QC FMT 038 paper form layout
+- Header, machines table, per-shift blocks (shift details, core pin
+  verification, hourly readings matrix with Die Temp per machine, sign-off,
+  out-of-spec summary) and a generated footer
+- Out-of-spec values highlighted in the print layout
+- `@media print` rules hide navigation and chrome, force white background,
+  and preserve highlight colours
+- Gated behind `action.pcs.sheet.print` (Administrator, Quality Manager,
+  Shift Supervisor)
+
 ## 1.9.1 — 2026-08-24
 
 **BUG-011 fixed — auto-fill and test data buttons missing on devices with

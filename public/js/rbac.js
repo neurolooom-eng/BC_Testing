@@ -40,6 +40,7 @@ function rbacSeed() {
     { id: "page.reports", label: "Reports", path: "#", group: "Production", description: "Reporting (not yet built)." },
     { id: "page.team", label: "Team", path: "#", group: "People", description: "Team area." },
     { id: "page.roster", label: "Roster", path: "#", group: "People", description: "Personnel roster (not yet built)." },
+    { id: "page.templates", label: "Templates", path: "templates.html", group: "Production", description: "Document templates and field mappings for printable records." },
     { id: "page.configuration", label: "Configuration", path: "configuration.html", group: "Administration", description: "Users, roles and access control." },
     { id: "page.dev", label: "Dev", path: "dev.html", group: "Administration", description: "Requirements, test cases, bugs, backlog." },
   ];
@@ -57,6 +58,10 @@ function rbacSeed() {
     { id: "action.pcs.approve", label: "Approve records", group: "Approval", description: "Approve machine, hourly and shift records." },
     { id: "action.pcs.unapprove", label: "Withdraw approval", group: "Approval", description: "Reopen an approved record for editing." },
     { id: "action.pcs.demo.fill", label: "Fill test data", group: "Testing", description: "Generate plausible readings to exercise the module. Test fixture — removed with the rest of the scaffolding, see BACKLOG.md." },
+    { id: "action.templates.upload", label: "Upload template", group: "Templates", description: "Upload a new document template." },
+    { id: "action.templates.edit", label: "Edit template", group: "Templates", description: "Modify template metadata, placeholders and field mappings." },
+    { id: "action.templates.delete", label: "Delete template", group: "Templates", description: "Remove a template and its uploaded file." },
+    { id: "action.pcs.sheet.print", label: "Print day sheet", group: "Process Check Sheet", description: "Open the printable view of a day sheet." },
     { id: "action.config.users.manage", label: "Manage users", group: "Administration", description: "Create and amend users and their role assignments." },
     { id: "action.config.roles.manage", label: "Manage roles", group: "Administration", description: "Create roles and set their permissions." },
     { id: "action.config.access.override", label: "Grant per-user access", group: "Administration", description: "Add or deny access for one user outside their roles." },
@@ -117,11 +122,12 @@ function rbacSeed() {
       description: "Reviews and approves production records; reads configuration but does not change access.",
       system: false,
       permissions: {
-        page: grant("page", ["page.overview", "page.production_records", "page.process_check_sheet", "page.reports", "page.team", "page.roster"]),
+        page: grant("page", ["page.overview", "page.production_records", "page.process_check_sheet", "page.reports", "page.team", "page.roster", "page.templates"]),
         action: grant("action", [
           "action.pcs.sheet.create", "action.pcs.sheet.edit", "action.pcs.machine.manage",
           "action.pcs.machine.stop", "action.pcs.hourly.record", "action.pcs.shift.record",
-          "action.pcs.approve", "action.pcs.unapprove",
+          "action.pcs.approve", "action.pcs.unapprove", "action.pcs.sheet.print",
+          "action.templates.upload", "action.templates.edit", "action.templates.delete",
         ]),
         exec_link: grant("exec_link", ["exec.oos_report"]),
         sheet_link: grant("sheet_link", ["sheet.tolerances", "sheet.pcs_master"], ["view", "open"]),
@@ -140,7 +146,7 @@ function rbacSeed() {
         action: grant("action", [
           "action.pcs.sheet.create", "action.pcs.machine.manage",
           "action.pcs.machine.stop", "action.pcs.hourly.record", "action.pcs.shift.record",
-          "action.pcs.shift.delete", "action.pcs.approve",
+          "action.pcs.shift.delete", "action.pcs.approve", "action.pcs.sheet.print",
         ]),
         exec_link: {},
         sheet_link: grant("sheet_link", ["sheet.tolerances"], ["view", "open"]),

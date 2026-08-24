@@ -272,7 +272,32 @@ describes — see the Backlog cleanup.
 | REQ-DEV-005 | Each requirement shall be traceable to at least one test case. | Demonstrates coverage. | Analysis | Implemented |
 | REQ-DEV-006 | The Requirements and Test Cases documents shall be updated in the same change that alters the behaviour they describe. | Documentation drifts if updated separately. | Inspection | Implemented |
 
-## 10. Deployment (DEP)
+## 10. Templates (TPL)
+
+| ID | Requirement | Rationale | Verification | Status |
+|---|---|---|---|---|
+| REQ-TPL-001 | The system shall provide a Templates page accessible from the main navigation. | Templates are a first-class concept alongside production records. | Test | Implemented |
+| REQ-TPL-002 | The system shall accept uploads of Word (.docx, .doc) and Excel (.xlsx, .xls) files as templates. | These are the document formats used on the shop floor. | Test | Implemented |
+| REQ-TPL-003 | The system shall store the uploaded file blob in IndexedDB and its metadata in localStorage. | File blobs would exceed localStorage limits; metadata needs synchronous access. | Test | Implemented |
+| REQ-TPL-004 | The system shall record template metadata: name, description, file type, file name, file size, upload timestamp, and uploader. | Full provenance for each template. | Inspection | Implemented |
+| REQ-TPL-005 | The system shall allow the user to define placeholder tokens for a template. | Placeholders identify the points in the template where data will be inserted. | Test | Implemented |
+| REQ-TPL-006 | The system shall allow the user to map each placeholder to a PCS data field. | The mapping connects the template to the data model. | Test | Implemented |
+| REQ-TPL-007 | The field mapping dropdown shall group fields by PCS section (Day Details, Machine, Hourly, Shift Detail, Sign-off, Computed). | Grouping makes the field catalogue navigable. | Inspection | Implemented |
+| REQ-TPL-008 | Template upload shall be gated behind the `action.templates.upload` permission. | Only authorised users may add templates. | Test | Implemented |
+| REQ-TPL-009 | Template editing shall be gated behind the `action.templates.edit` permission. | Only authorised users may modify mappings. | Test | Implemented |
+| REQ-TPL-010 | Template deletion shall be gated behind the `action.templates.delete` permission and shall require confirmation. | Destructive action guarded by both access control and a confirmation step. | Test | Implemented |
+
+## 11. Print View (PRT)
+
+| ID | Requirement | Rationale | Verification | Status |
+|---|---|---|---|---|
+| REQ-PRT-001 | The system shall provide a printable HTML view of a PCS day sheet that matches the layout of QC FMT 038. | Operators need a paper-compatible output for filing and audit. | Inspection | Implemented |
+| REQ-PRT-002 | The print view shall include: header, machines table, per-shift blocks (shift details, core pin verification, hourly readings matrix with Die Temp per machine, sign-off, out-of-spec summary), and a generated footer. | Every section of the paper form must be represented. | Inspection | Implemented |
+| REQ-PRT-003 | Out-of-spec values shall be highlighted in the print view and the highlighting shall survive greyscale printing. | The supervisor must be able to spot exceptions on a printout. | Inspection | Implemented |
+| REQ-PRT-004 | The print view shall hide navigation and application chrome when printed. | Print output must contain only the record. | Test | Implemented |
+| REQ-PRT-005 | The Print button shall be gated behind the `action.pcs.sheet.print` permission. | Only authorised roles may produce printable outputs. | Test | Implemented |
+
+## 12. Deployment (DEP)
 
 | ID | Requirement | Rationale | Verification | Status |
 |---|---|---|---|---|
