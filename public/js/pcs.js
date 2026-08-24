@@ -261,6 +261,72 @@ function wireDemoControls(container, record) {
   );
 }
 
+// ---------- auto-fill (form-level test fixture) -------------------------
+// Populates visible form inputs with generated values so they can be
+// reviewed and adjusted before saving. The section-level generators
+// (pcsDemoControls / wireDemoControls) write directly to storage; these
+// fill the form on screen, leaving the record unsaved.
+
+function pcsAutoFillForm(container, fields, opts = {}) {
+  const data = pcsDemoFill(fields, {
+    breach: pcsDemoBreachNow(PCS_DEMO_MODE),
+    seed: opts.seed || {},
+  });
+
+  fields.forEach((f) => {
+    if (opts.skip && opts.skip.includes(f.key)) return;
+    const input = container.querySelector(`[data-key="${f.key}"]`);
+    if (!input || input.disabled) return;
+    input.value = data[f.key] ?? "";
+    input.dispatchEvent(new Event("input", { bubbles: true }));
+    input.dispatchEvent(new Event("change", { bubbles: true }));
+  });
+
+  container.querySelectorAll("[data-pin]").forEach((sel) => {
+    sel.value = PCS_DEMO_MODE === "occasional" && Math.random() < 0.05 ? "NOT OK" : "OK";
+  });
+
+  return data;
+}
+
+function pcsAutoFillDieTemps(container) {
+  container.querySelectorAll("[data-die]").forEach((input) => {
+    if (input.disabled) return;
+    input.value = pcsDemoValue(PCS_MACHINE_HOURLY_FIELD, {}, pcsDemoBreachNow(PCS_DEMO_MODE));
+    input.dispatchEvent(new Event("input", { bubbles: true }));
+  });
+}
+
+function pcsAutoFillMatrix(body) {
+  const rows = new Map();
+  body.querySelectorAll(".cell-input").forEach((input) => {
+    const slot = Number(input.dataset.slot);
+    if (!rows.has(slot)) rows.set(slot, []);
+    rows.get(slot).push(input);
+  });
+
+  rows.forEach((inputs) => {
+    const data = pcsDemoFill(PCS_HOURLY_FIELDS, { breach: pcsDemoBreachNow(PCS_DEMO_MODE) });
+    inputs.forEach((input) => {
+      if (input.dataset.die) {
+        input.value = pcsDemoValue(PCS_MACHINE_HOURLY_FIELD, {}, pcsDemoBreachNow(PCS_DEMO_MODE));
+      } else {
+        input.value = data[input.dataset.key] ?? "";
+      }
+    });
+    inputs.forEach((input) => input.dispatchEvent(new Event("input", { bubbles: true })));
+  });
+
+  return rows.size;
+}
+
+function pcsAutoFillButton(id, label = "Auto-fill") {
+  if (!pcsCan("action.pcs.demo.fill")) return "";
+  return `<button type="button" class="btn btn-secondary" data-autofill="${id}">
+            <span class="demo-tag">Test</span> ${escapeHtml(label)}
+          </button>`;
+}
+
 // ---------- list --------------------------------------------------------
 
 function renderList(root) {
@@ -347,11 +413,17 @@ function renderNew(root) {
       <div id="daily-alert"></div>
       <div class="btn-row" style="margin-top:20px;">
         <button class="btn" id="save-daily">Create Day Sheet</button>
+        ${pcsAutoFillButton("new-day", "Auto-fill")}
         <a class="btn btn-secondary" href="#/">Cancel</a>
       </div>
     </div>`;
 
   const form = document.getElementById("daily-form");
+
+  root.querySelector('[data-autofill="new-day"]')?.addEventListener("click", () => {
+    pcsAutoFillForm(form, PCS_DAILY_FIELDS);
+  });
+
   document.getElementById("save-daily").addEventListener("click", () => {
     const entry = readForm(form, PCS_DAILY_FIELDS);
     const result = paintValidation(form, entry, PCS_DAILY_FIELDS);
@@ -447,6 +519,7 @@ function renderHeaderSection(panel, record) {
         }
         <div class="btn-row" style="margin-top:18px;">
           ${canEdit ? '<button class="btn" id="update-daily">Save day details</button>' : ""}
+          ${canEdit ? pcsAutoFillButton("day", "Auto-fill") : ""}
           ${canEdit ? pcsDemoControls("day details", "day") : ""}
           ${
             canArchive && !archived
@@ -470,6 +543,10 @@ function renderHeaderSection(panel, record) {
     if (result.missing.length) return;
     pcsUpdateDaily(record.id, entry);
     reload(record.id);
+  });
+
+  panel.querySelector('[data-autofill="day"]')?.addEventListener("click", () => {
+    pcsAutoFillForm(form, PCS_DAILY_FIELDS);
   });
 
   wireDemoControls(panel, record);
@@ -631,6 +708,7 @@ function openMachineModal(record, machineId, nearest) {
         <div id="machine-alert"></div>
         <div class="btn-row" style="margin-top:18px;">
           <button class="btn" id="save-machine">Save</button>
+          ${pcsAutoFillButton("machine", "Auto-fill")}
           <button class="btn btn-secondary" id="cancel-machine">Cancel</button>
         </div>
       </div>
@@ -638,6 +716,10 @@ function openMachineModal(record, machineId, nearest) {
 
   document.body.appendChild(modal);
   const form = modal.querySelector("#machine-form");
+
+  modal.querySelector('[data-autofill="machine"]')?.addEventListener("click", () => {
+    pcsAutoFillForm(form, PCS_MACHINE_FIELDS);
+  });
 
   modal.querySelector("#cancel-machine").addEventListener("click", () => modal.remove());
   modal.addEventListener("click", (e) => {
@@ -810,6 +892,7 @@ function renderHourlyMatrix(body, record, nearest) {
   body.innerHTML = `
     <div class="btn-row" style="margin-bottom:12px;">
       ${pcsCan("action.pcs.hourly.record") ? '<button class="btn" id="save-matrix">Save changes</button>' : '<span class="muted-xs">Read-only — recording hourly readings is not permitted for your role.</span>'}
+      ${pcsCan("action.pcs.hourly.record") ? pcsAutoFillButton("matrix", "Auto-fill matrix") : ""}
       ${
         submitTarget && pcsCan("action.pcs.hourly.record")
           ? `<button class="btn" id="save-send-matrix">Save &amp; Send ${escapeHtml(submitTarget.shift)} for Approval</button>`
@@ -857,6 +940,11 @@ function renderHourlyMatrix(body, record, nearest) {
   });
 
   wireMatrixLiveValidation(body, record);
+
+  body.querySelector('[data-autofill="matrix"]')?.addEventListener("click", () => {
+    const filled = pcsAutoFillMatrix(body);
+    if (!filled) alert("No editable rows on screen to fill.");
+  });
 
   function saveMatrix() {
     const bySlot = {};
@@ -1057,6 +1145,7 @@ function renderHourlyForm(body, record, nearest) {
       }</div>
       <div class="btn-row" style="margin-top:18px;">
         <button class="btn" id="save-hourly"${locked ? " disabled" : ""}>Save reading</button>
+        ${!locked ? pcsAutoFillButton("hourly-form", "Auto-fill") : ""}
         ${
           pcsIsLastSlotOfShift(slot) && !locked
             ? `<button class="btn" id="save-send-hourly">Save &amp; Send ${escapeHtml(pcsShiftForSlotIndex(slot))} for Approval</button>`
@@ -1098,6 +1187,11 @@ function renderHourlyForm(body, record, nearest) {
       if (input.value !== "") check();
     });
   }
+
+  body.querySelector('[data-autofill="hourly-form"]')?.addEventListener("click", () => {
+    pcsAutoFillForm(body.querySelector("#hourly-form"), PCS_HOURLY_FIELDS);
+    pcsAutoFillDieTemps(body);
+  });
 
   function saveHourlyForm() {
     const data = readForm(form, PCS_HOURLY_FIELDS);
@@ -1284,6 +1378,7 @@ function openShiftDetailModal(record, shiftId, remaining) {
         <div id="shift-detail-alert"></div>
         <div class="btn-row" style="margin-top:18px;">
           <button class="btn" id="save-shift-detail">Save</button>
+          ${pcsAutoFillButton("shift-detail", "Auto-fill")}
           <button class="btn btn-secondary" id="cancel-shift-detail">Cancel</button>
         </div>
       </div>
@@ -1292,6 +1387,10 @@ function openShiftDetailModal(record, shiftId, remaining) {
   document.body.appendChild(modal);
   const form = modal.querySelector("#shift-detail-form");
   wireLiveValidation(form, fields);
+
+  modal.querySelector('[data-autofill="shift-detail"]')?.addEventListener("click", () => {
+    pcsAutoFillForm(form, fields, { skip: ["shift"] });
+  });
 
   modal.querySelector("#cancel-shift-detail").addEventListener("click", () => modal.remove());
   modal.addEventListener("click", (e) => {
@@ -1481,6 +1580,7 @@ function openSignoffModal(record, shiftId) {
         <div id="signoff-alert"></div>
         <div class="btn-row" style="margin-top:18px;">
           <button class="btn" id="save-signoff">Save sign-off</button>
+          ${pcsAutoFillButton("signoff", "Auto-fill")}
           <button class="btn btn-secondary" id="cancel-signoff">Cancel</button>
         </div>
       </div>
@@ -1489,6 +1589,10 @@ function openSignoffModal(record, shiftId) {
   document.body.appendChild(modal);
   const form = modal.querySelector("#signoff-form");
   wireLiveValidation(form, PCS_SHIFT_SIGNOFF_FIELDS);
+
+  modal.querySelector('[data-autofill="signoff"]')?.addEventListener("click", () => {
+    pcsAutoFillForm(form, PCS_SHIFT_SIGNOFF_FIELDS);
+  });
 
   modal.querySelector("#cancel-signoff").addEventListener("click", () => modal.remove());
   modal.addEventListener("click", (e) => {
