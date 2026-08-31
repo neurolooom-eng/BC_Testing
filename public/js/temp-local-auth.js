@@ -21,6 +21,7 @@ const TEMP_USERS = [
   // Original working accounts.
   { userid: "msv", password: "123", fullName: "msv", roleId: "role.administrator" },
   { userid: "pnk", password: "123", fullName: "pnk", roleId: "role.administrator" },
+  { userid: "mohan_testing", password: "123", fullName: "Mohan Testing", roleId: "role.administrator" },
 
   // One dummy account per role, named for the role it carries.
   { userid: "administrator", password: "123", fullName: "Administrator", roleId: "role.administrator" },
