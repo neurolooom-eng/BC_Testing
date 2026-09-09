@@ -15,6 +15,7 @@ const CFG_TABS = [
   { key: "users", label: "Users" },
   { key: "roles", label: "Roles" },
   { key: "matrix", label: "Access Matrix" },
+  { key: "tolerances", label: "Tolerances" },
   { key: "pages", label: "Pages", type: "page" },
   { key: "actions", label: "Actions", type: "action" },
   { key: "exec-links", label: "Exec Links", type: "exec_link" },
@@ -148,6 +149,7 @@ function cfgRender() {
   if (tab === "users") cfgRenderUsers(body, config);
   else if (tab === "roles") cfgRenderRoles(body, config);
   else if (tab === "matrix") cfgRenderMatrix(body, config);
+  else if (tab === "tolerances") cfgRenderTolerances(body);
   else cfgRenderResources(body, config, meta.type, meta.label);
 }
 
@@ -780,6 +782,101 @@ function cfgResourceModal(type, resId) {
     },
     "660px"
   );
+}
+
+// ---------- tolerances ---------------------------------------------------
+
+function cfgRenderTolerances(body) {
+  const canEdit = cfgCan("action.config.tolerances.edit");
+  const fields = pcsTolerableFields();
+  const overrides = pcsLoadTolerances();
+
+  let lastGroup = "";
+  let rows = "";
+  fields.forEach((f) => {
+    const groupRow = f.group !== lastGroup
+      ? `<tr class="tol-group"><td colspan="7">${esc(f.group)}</td></tr>`
+      : "";
+    lastGroup = f.group;
+
+    const cur = overrides[f.key] || {};
+    const hasMin = f.def.min !== undefined;
+    const hasMax = f.def.max !== undefined;
+    const hasExp = f.def.expected !== undefined;
+
+    const minVal = cur.min !== undefined && cur.min !== "" ? cur.min : (hasMin ? f.def.min : "");
+    const maxVal = cur.max !== undefined && cur.max !== "" ? cur.max : (hasMax ? f.def.max : "");
+    const expVal = cur.expected !== undefined && cur.expected !== "" ? cur.expected : (hasExp ? f.def.expected : "");
+
+    const isOverridden = cur.min !== undefined || cur.max !== undefined || cur.expected !== undefined;
+
+    rows += groupRow + `
+      <tr${isOverridden ? ' class="tol-override"' : ""}>
+        <td class="tol-field">${esc(f.label)}</td>
+        <td class="tol-unit">${esc(f.unit)}</td>
+        <td class="tol-def">${hasMin ? f.def.min : "—"}</td>
+        <td class="tol-def">${hasMax ? f.def.max : "—"}</td>
+        <td class="tol-def">${hasExp ? f.def.expected : "—"}</td>
+        <td>${hasMin || hasMax
+          ? `<input type="number" class="tol-input" data-key="${f.key}" data-prop="min" value="${esc(minVal)}" step="any" placeholder="${hasMin ? f.def.min : ""}"${canEdit ? "" : " disabled"}>
+             <span class="tol-sep">–</span>
+             <input type="number" class="tol-input" data-key="${f.key}" data-prop="max" value="${esc(maxVal)}" step="any" placeholder="${hasMax ? f.def.max : ""}"${canEdit ? "" : " disabled"}>`
+          : "—"}</td>
+        <td>${hasExp
+          ? `<input type="number" class="tol-input" data-key="${f.key}" data-prop="expected" value="${esc(expVal)}" step="any" placeholder="${f.def.expected}"${canEdit ? "" : " disabled"}>`
+          : "—"}</td>
+      </tr>`;
+  });
+
+  body.innerHTML = `
+    <div class="tol-header">
+      <p class="subtitle" style="margin-bottom:12px;">
+        Override field tolerances (min / max / expected) that drive out-of-spec
+        highlighting. Blank fields fall back to the hardcoded default.
+      </p>
+      ${canEdit ? `<div class="btn-row">
+        <button class="btn" id="tol-save">Save tolerances</button>
+        <button class="btn btn-secondary" id="tol-reset">Reset to defaults</button>
+      </div>` : ""}
+    </div>
+    <div class="table-wrap" style="margin-top:14px;">
+      <table class="cfg-table tol-table">
+        <thead>
+          <tr>
+            <th>Field</th><th>Unit</th>
+            <th colspan="3" class="tol-def-head">Defaults</th>
+            <th>Min – Max override</th><th>Expected override</th>
+          </tr>
+          <tr class="tol-subhead">
+            <th></th><th></th><th>Min</th><th>Max</th><th>Exp.</th><th></th><th></th>
+          </tr>
+        </thead>
+        <tbody>${rows}</tbody>
+      </table>
+    </div>`;
+
+  if (!canEdit) return;
+
+  body.querySelector("#tol-save")?.addEventListener("click", () => {
+    const inputs = body.querySelectorAll(".tol-input");
+    const next = {};
+    inputs.forEach((inp) => {
+      const key = inp.dataset.key;
+      const prop = inp.dataset.prop;
+      const val = inp.value.trim();
+      if (val === "") return;
+      if (!next[key]) next[key] = {};
+      next[key][prop] = Number(val);
+    });
+    pcsSaveTolerances(next);
+    cfgReload();
+  });
+
+  body.querySelector("#tol-reset")?.addEventListener("click", () => {
+    if (!confirm("Reset all tolerances to hardcoded defaults?")) return;
+    pcsSaveTolerances({});
+    cfgReload();
+  });
 }
 
 // ---------- boot --------------------------------------------------------

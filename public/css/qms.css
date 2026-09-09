@@ -1,0 +1,106 @@
+/* QMS Documents page styles */
+
+.qms-search {
+  padding: 8px 14px;
+  background: var(--input-bg);
+  border: 1px solid var(--input-border);
+  border-radius: 9px;
+  color: var(--content-fg);
+  font-family: inherit;
+  font-size: 13px;
+  width: 260px;
+  max-width: 100%;
+}
+
+.qms-search:focus { border-color: var(--teal); outline: none; }
+
+.qms-stats {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 24px;
+}
+
+.qms-stat {
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
+  border-radius: 10px;
+  padding: 12px 18px;
+  text-align: center;
+  min-width: 72px;
+}
+
+.qms-stat-count {
+  display: block;
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--teal);
+}
+
+.qms-stat-label {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  color: var(--content-mute);
+}
+
+.qms-category {
+  margin-bottom: 28px;
+}
+
+.qms-category h2 {
+  font-size: 15px;
+  font-weight: 600;
+  margin-bottom: 10px;
+  color: var(--content-fg);
+}
+
+.actions-cell { white-space: nowrap; }
+.actions-cell .btn { margin-left: 4px; }
+
+.empty-state {
+  text-align: center;
+  color: var(--content-mute);
+  padding: 40px 0;
+  font-size: 14px;
+}
+
+/* Upload / edit form */
+.qms-form {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  max-width: 520px;
+}
+
+.qms-form label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.qms-form input,
+.qms-form select,
+.qms-form textarea {
+  padding: 8px 12px;
+  background: var(--input-bg);
+  border: 1px solid var(--input-border);
+  border-radius: 8px;
+  color: var(--content-fg);
+  font-family: inherit;
+  font-size: 13px;
+}
+
+.qms-form input:focus,
+.qms-form select:focus,
+.qms-form textarea:focus { border-color: var(--teal); outline: none; }
+
+.qms-form textarea { resize: vertical; }
+
+@media (max-width: 640px) {
+  .qms-search { width: 100%; }
+  .qms-stat { min-width: 56px; padding: 8px 12px; }
+  .qms-stat-count { font-size: 18px; }
+}

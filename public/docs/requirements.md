@@ -301,7 +301,40 @@ describes — see the Backlog cleanup.
 | REQ-PRT-004 | The print view shall hide navigation and application chrome when printed. | Print output must contain only the record. | Test | Implemented |
 | REQ-PRT-005 | The Print button shall be gated behind the `action.pcs.sheet.print` permission. | Only authorised roles may produce printable outputs. | Test | Implemented |
 
-## 12. Deployment (DEP)
+## 12. Editable Tolerances (TOL)
+
+| ID | Requirement | Rationale | Verification | Status |
+|---|---|---|---|---|
+| REQ-TOL-001 | The system shall provide a Tolerances tab in Configuration where administrators can override field tolerance ranges (min, max, expected). | Tolerances may change without a code release. | Test | Implemented |
+| REQ-TOL-002 | Tolerance overrides shall persist in localStorage and apply immediately to OOS highlighting. | Overrides must survive page reloads. | Test | Implemented |
+| REQ-TOL-003 | Blank override fields shall fall back to the hardcoded default values in pcs-spec.js. | Defaults remain the safety net. | Test | Implemented |
+| REQ-TOL-004 | Editing tolerances shall be gated behind the `action.config.tolerances.edit` permission. | Only administrators should change spec ranges. | Test | Implemented |
+
+## 13. Display Simulator (SIM)
+
+| ID | Requirement | Rationale | Verification | Status |
+|---|---|---|---|---|
+| REQ-SIM-001 | The Dev page shall provide a Display Simulator tab that renders any application page in an iframe at a user-selected viewport size. | Developers and QA need to test responsive layouts without physical devices. | Demonstration | Implemented |
+| REQ-SIM-002 | The simulator shall offer presets for tablet, laptop, desktop, and mobile device sizes. | Common devices must be testable in one click. | Inspection | Implemented |
+
+## 14. Knowledge Base (KB)
+
+| ID | Requirement | Rationale | Verification | Status |
+|---|---|---|---|---|
+| REQ-KB-001 | The system shall provide a Knowledge Base page with how-to articles for the team. | New users need onboarding documentation inside the application. | Inspection | Implemented |
+| REQ-KB-002 | The Knowledge Base shall be visible to all roles (Operator and above). | Everyone should be able to read the help guides. | Test | Implemented |
+| REQ-KB-003 | Articles shall cover: getting started, PCS workflow, tolerances, roles & permissions, configuration, and QMS documents. | The core workflows must be documented. | Inspection | Implemented |
+
+## 15. QMS Documents (QMS)
+
+| ID | Requirement | Rationale | Verification | Status |
+|---|---|---|---|---|
+| REQ-QMS-001 | The system shall provide a QMS Documents page for registering quality management system documents. | The team needs a single place to find current QMS documents. | Inspection | Implemented |
+| REQ-QMS-002 | Each document shall carry metadata: document number, title, category (SOP/WI/FMT/REF/MANUAL), revision, description, and uploaded file. | Metadata is required for searching and auditing. | Test | Implemented |
+| REQ-QMS-003 | Upload, edit, and delete actions shall be gated behind `action.qms.upload`, `action.qms.edit`, and `action.qms.delete` permissions. | Only authorised roles may manage QMS documents. | Test | Implemented |
+| REQ-QMS-004 | The QMS Documents page shall support searching by document number, title, or category. | Users must be able to find documents quickly. | Test | Implemented |
+
+## 16. Deployment (DEP)
 
 | ID | Requirement | Rationale | Verification | Status |
 |---|---|---|---|---|

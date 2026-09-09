@@ -41,6 +41,8 @@ function rbacSeed() {
     { id: "page.team", label: "Team", path: "#", group: "People", description: "Team area." },
     { id: "page.roster", label: "Roster", path: "#", group: "People", description: "Personnel roster (not yet built)." },
     { id: "page.templates", label: "Templates", path: "templates.html", group: "Production", description: "Document templates and field mappings for printable records." },
+    { id: "page.knowledge", label: "Knowledge Base", path: "knowledge.html", group: "General", description: "How-to guides and application documentation for the team." },
+    { id: "page.qms_documents", label: "QMS Documents", path: "qms-documents.html", group: "Quality", description: "Quality Management System document registry." },
     { id: "page.configuration", label: "Configuration", path: "configuration.html", group: "Administration", description: "Users, roles and access control." },
     { id: "page.dev", label: "Dev", path: "dev.html", group: "Administration", description: "Requirements, test cases, bugs, backlog." },
   ];
@@ -62,12 +64,17 @@ function rbacSeed() {
     { id: "action.templates.edit", label: "Edit template", group: "Templates", description: "Modify template metadata, placeholders and field mappings." },
     { id: "action.templates.delete", label: "Delete template", group: "Templates", description: "Remove a template and its uploaded file." },
     { id: "action.pcs.sheet.print", label: "Print day sheet", group: "Process Check Sheet", description: "Open the printable view of a day sheet." },
+    { id: "action.qms.upload", label: "Upload QMS document", group: "QMS", description: "Upload a document to the QMS registry." },
+    { id: "action.qms.edit", label: "Edit QMS document", group: "QMS", description: "Modify QMS document metadata." },
+    { id: "action.qms.delete", label: "Delete QMS document", group: "QMS", description: "Remove a document from the QMS registry." },
+    { id: "action.knowledge.edit", label: "Edit knowledge articles", group: "Knowledge Base", description: "Create and edit knowledge base articles." },
     { id: "action.config.users.manage", label: "Manage users", group: "Administration", description: "Create and amend users and their role assignments." },
     { id: "action.config.roles.manage", label: "Manage roles", group: "Administration", description: "Create roles and set their permissions." },
     { id: "action.config.access.override", label: "Grant per-user access", group: "Administration", description: "Add or deny access for one user outside their roles." },
     { id: "action.config.access.clone", label: "Clone user access", group: "Administration", description: "Copy one user's access to another." },
     { id: "action.config.resources.manage", label: "Manage resources", group: "Administration", description: "Maintain pages, actions, links and variables." },
     { id: "action.config.variables.edit", label: "Edit variable values", group: "Administration", description: "Change configuration variable values." },
+    { id: "action.config.tolerances.edit", label: "Edit tolerances", group: "Administration", description: "Override PCS field tolerance ranges (min/max/expected)." },
   ];
 
   const execLinks = [
@@ -122,7 +129,7 @@ function rbacSeed() {
       description: "Reviews and approves production records; reads configuration but does not change access.",
       system: false,
       permissions: {
-        page: grant("page", ["page.overview", "page.production_records", "page.process_check_sheet", "page.reports", "page.team", "page.roster", "page.templates"]),
+        page: grant("page", ["page.overview", "page.production_records", "page.process_check_sheet", "page.reports", "page.team", "page.roster", "page.templates", "page.knowledge", "page.qms_documents"]),
         action: grant("action", [
           "action.pcs.sheet.create", "action.pcs.sheet.edit", "action.pcs.machine.manage",
           "action.pcs.machine.stop", "action.pcs.hourly.record", "action.pcs.shift.record",
@@ -140,9 +147,7 @@ function rbacSeed() {
       description: "Records and approves their shift's data.",
       system: false,
       permissions: {
-        page: grant("page", ["page.overview", "page.production_records", "page.process_check_sheet"]),
-        // Opens the day and records against it, but cannot amend the day
-        // header once saved — that is deliberately a narrower group.
+        page: grant("page", ["page.overview", "page.production_records", "page.process_check_sheet", "page.knowledge", "page.qms_documents"]),
         action: grant("action", [
           "action.pcs.sheet.create", "action.pcs.machine.manage",
           "action.pcs.machine.stop", "action.pcs.hourly.record", "action.pcs.shift.record",
@@ -159,7 +164,7 @@ function rbacSeed() {
       description: "Records hourly readings and machine status. Cannot approve.",
       system: false,
       permissions: {
-        page: grant("page", ["page.overview", "page.production_records", "page.process_check_sheet"]),
+        page: grant("page", ["page.overview", "page.production_records", "page.process_check_sheet", "page.knowledge"]),
         action: grant("action", ["action.pcs.hourly.record", "action.pcs.machine.stop"]),
         exec_link: {},
         sheet_link: grant("sheet_link", ["sheet.tolerances"], ["view"]),
@@ -172,7 +177,7 @@ function rbacSeed() {
       description: "Read-only across production records.",
       system: false,
       permissions: {
-        page: grant("page", ["page.overview", "page.production_records", "page.process_check_sheet", "page.reports"]),
+        page: grant("page", ["page.overview", "page.production_records", "page.process_check_sheet", "page.reports", "page.knowledge"]),
         action: {},
         exec_link: {},
         sheet_link: {},
