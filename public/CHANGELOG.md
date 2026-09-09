@@ -4,6 +4,14 @@ Version numbers follow semver — see `VERSIONING.md` at the repo root.
 Build number and build date shown in the site footer are generated
 automatically per deploy and are not tracked here.
 
+## 2.1.1 — 2026-09-09
+
+**Bug fix — Tolerances tab empty on Configuration page**
+
+- Added missing `pcs-spec.js` script include to `configuration.html`;
+  without it the tolerance defaults, field list, and load/save helpers
+  were undefined, so the Tolerances tab rendered blank
+
 ## 2.1.0 — 2026-09-09
 
 **Editable tolerances, display simulator, Knowledge Base, QMS Documents**
