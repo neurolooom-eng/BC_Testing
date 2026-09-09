@@ -44,6 +44,7 @@
       { key: "test-cases", label: "Test Cases", src: "docs/test-cases.md" },
       { key: "bugs", label: "Bugs", src: "docs/bugs.md" },
       { key: "backlog", label: "Backlog", src: "docs/backlog.md" },
+      { key: "simulator", label: "Display Simulator", custom: true },
     ];
 
     const info = window.BUILD_INFO || {};
@@ -65,9 +66,115 @@
       ).join("");
     }
 
+    const SIM_PRESETS = [
+      { label: "iPad 10.2\"", w: 810, h: 1080 },
+      { label: "iPad Pro 11\"", w: 834, h: 1194 },
+      { label: "Laptop 14\" (1366×768)", w: 1366, h: 768 },
+      { label: "Laptop 15\" (1920×1080)", w: 1920, h: 1080 },
+      { label: "Desktop (2560×1440)", w: 2560, h: 1440 },
+      { label: "iPhone SE", w: 375, h: 667 },
+      { label: "iPhone 14", w: 390, h: 844 },
+      { label: "iPhone 14 Pro Max", w: 430, h: 932 },
+      { label: "Samsung Galaxy S21", w: 360, h: 800 },
+      { label: "Samsung Galaxy Tab S8", w: 800, h: 1280 },
+    ];
+
+    function renderSimulator() {
+      const pages = [
+        { label: "Dashboard", url: "dashboard.html" },
+        { label: "Production Records", url: "production-records.html" },
+        { label: "Process Check Sheet", url: "process-check-sheet.html" },
+        { label: "Templates", url: "templates.html" },
+        { label: "Configuration", url: "configuration.html" },
+        { label: "Knowledge Base", url: "knowledge.html" },
+        { label: "QMS Documents", url: "qms-documents.html" },
+      ];
+      bodyEl.innerHTML = `
+        <div class="sim-controls">
+          <div class="sim-row">
+            <label>Preset:</label>
+            <select id="sim-preset">
+              <option value="">Custom</option>
+              ${SIM_PRESETS.map((p, i) => `<option value="${i}">${p.label} (${p.w}×${p.h})</option>`).join("")}
+            </select>
+          </div>
+          <div class="sim-row">
+            <label>Width:</label>
+            <input type="number" id="sim-w" value="1366" min="200" max="3840" step="1">
+            <label>Height:</label>
+            <input type="number" id="sim-h" value="768" min="200" max="2160" step="1">
+            <label>Scale:</label>
+            <select id="sim-scale">
+              <option value="1">100%</option>
+              <option value="0.75">75%</option>
+              <option value="0.5" selected>50%</option>
+              <option value="0.35">35%</option>
+              <option value="0.25">25%</option>
+            </select>
+          </div>
+          <div class="sim-row">
+            <label>Page:</label>
+            <select id="sim-page">
+              ${pages.map((p) => `<option value="${p.url}">${p.label}</option>`).join("")}
+            </select>
+            <button class="btn btn-sm" id="sim-go">Load</button>
+            <label style="margin-left:12px;"><input type="checkbox" id="sim-rotate"> Landscape</label>
+          </div>
+        </div>
+        <div class="sim-viewport" id="sim-viewport">
+          <div class="sim-label" id="sim-label">1366 × 768</div>
+          <iframe id="sim-frame" src="dashboard.html"></iframe>
+        </div>`;
+
+      const wIn = bodyEl.querySelector("#sim-w");
+      const hIn = bodyEl.querySelector("#sim-h");
+      const scaleIn = bodyEl.querySelector("#sim-scale");
+      const presetIn = bodyEl.querySelector("#sim-preset");
+      const frame = bodyEl.querySelector("#sim-frame");
+      const viewport = bodyEl.querySelector("#sim-viewport");
+      const labelEl = bodyEl.querySelector("#sim-label");
+      const rotateIn = bodyEl.querySelector("#sim-rotate");
+
+      function applySize() {
+        let w = parseInt(wIn.value) || 1366;
+        let h = parseInt(hIn.value) || 768;
+        if (rotateIn.checked) { const t = w; w = h; h = t; }
+        const s = parseFloat(scaleIn.value) || 0.5;
+        frame.style.width = w + "px";
+        frame.style.height = h + "px";
+        frame.style.transform = `scale(${s})`;
+        frame.style.transformOrigin = "top left";
+        viewport.style.width = (w * s) + "px";
+        viewport.style.height = (h * s) + "px";
+        labelEl.textContent = `${w} × ${h} @ ${Math.round(s * 100)}%`;
+      }
+
+      presetIn.addEventListener("change", () => {
+        const idx = parseInt(presetIn.value);
+        if (!isNaN(idx)) {
+          wIn.value = SIM_PRESETS[idx].w;
+          hIn.value = SIM_PRESETS[idx].h;
+          applySize();
+        }
+      });
+      wIn.addEventListener("change", applySize);
+      hIn.addEventListener("change", applySize);
+      scaleIn.addEventListener("change", applySize);
+      rotateIn.addEventListener("change", applySize);
+      bodyEl.querySelector("#sim-go").addEventListener("click", () => {
+        frame.src = bodyEl.querySelector("#sim-page").value;
+      });
+      applySize();
+    }
+
     async function renderDoc() {
       renderTabs();
       const doc = DOCS.find((d) => d.key === activeKey());
+      if (doc.custom) {
+        if (doc.key === "simulator") return renderSimulator();
+        bodyEl.innerHTML = "";
+        return;
+      }
       bodyEl.innerHTML = "Loading…";
       try {
         const res = await fetch(doc.src, { cache: "no-cache" });

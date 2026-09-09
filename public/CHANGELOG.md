@@ -4,6 +4,41 @@ Version numbers follow semver — see `VERSIONING.md` at the repo root.
 Build number and build date shown in the site footer are generated
 automatically per deploy and are not tracked here.
 
+## 2.1.0 — 2026-09-09
+
+**Editable tolerances, display simulator, Knowledge Base, QMS Documents**
+
+### Editable Tolerances (Configuration)
+- New **Tolerances** tab in Configuration to override PCS field tolerance
+  ranges (min / max / expected) without code changes
+- Overrides stored in localStorage, applied at startup and on save
+- `action.config.tolerances.edit` permission gates editing; blank fields
+  fall back to the hardcoded default; "Reset to defaults" clears all
+
+### Display Simulator (Dev Page)
+- New **Display Simulator** tab on the Dev page to preview the application
+  at different viewport sizes
+- Presets for iPad, laptops (14"/15"), desktop, and mobile devices
+  (iPhone SE/14/14 Pro Max, Galaxy S21, Galaxy Tab S8)
+- Custom width/height, adjustable scale (25%–100%), landscape toggle
+- Loads any page in an iframe at the selected resolution
+
+### Knowledge Base
+- New **Knowledge Base** page with how-to guides for the team
+- Articles: Getting Started, Process Check Sheet workflow, Tolerances &
+  OOS, Roles & Permissions, Configuration Guide, QMS Documents overview
+- Card grid landing, breadcrumb article view
+- Visible to all roles (Operator and above)
+
+### QMS Documents
+- New **QMS Documents** page — quality management system document registry
+- Upload, edit, and delete documents with metadata (doc number, title,
+  revision, category, description)
+- Categories: SOP, WI, FMT, REF, MANUAL with count badges
+- File blobs stored in IndexedDB; metadata in localStorage
+- Search/filter by document number, title, or category
+- Permission-gated: `action.qms.upload`, `action.qms.edit`, `action.qms.delete`
+
 ## 2.0.3 — 2026-08-24
 
 **QC FMT 038 print view — exact Excel replica**

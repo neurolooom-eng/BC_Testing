@@ -82,7 +82,55 @@ a.tab { text-decoration: none; display: inline-block; }
 
 .modal .table-wrap { max-height: 340px; overflow: auto; }
 
+/* Tolerances tab */
+.tol-header { margin-bottom: 8px; }
+
+.tol-table th { font-size: 11px; }
+
+.tol-subhead th {
+  font-size: 10px;
+  color: var(--content-mute);
+  font-weight: 400;
+  padding-top: 0;
+}
+
+.tol-def-head { text-align: center; }
+
+.tol-group td {
+  font-weight: 700;
+  font-size: 12px;
+  padding: 12px 8px 6px;
+  border-bottom: 2px solid var(--teal);
+  color: var(--teal);
+}
+
+.tol-field { font-weight: 500; white-space: nowrap; }
+.tol-unit { color: var(--content-mute); font-size: 11.5px; }
+.tol-def { color: var(--content-mute); text-align: center; font-size: 11px; }
+
+.tol-input {
+  width: 72px;
+  padding: 4px 6px;
+  background: var(--input-bg);
+  border: 1px solid var(--input-border);
+  border-radius: 6px;
+  color: var(--content-fg);
+  font-family: inherit;
+  font-size: 12px;
+  text-align: center;
+}
+
+.tol-input:focus { border-color: var(--teal); outline: none; }
+.tol-input:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.tol-sep { color: var(--content-mute); margin: 0 3px; }
+
+.tol-override { background: rgba(47,167,135,0.06); }
+
+body.light-theme .tol-override { background: rgba(47,167,135,0.08); }
+
 @media (max-width: 640px) {
   .op-select { max-width: 78px; font-size: 10.5px; }
   .legend { font-size: 10.5px; }
+  .tol-input { width: 56px; font-size: 11px; }
 }

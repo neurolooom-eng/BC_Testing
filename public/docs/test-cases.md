@@ -326,7 +326,41 @@ All cases below are blocked pending the Shift Master and its siblings
 | TC-PRT-004 | REQ-PRT-004 | Print view open | Press Ctrl+P / Print. | Print preview shows only the record; nav bar, footer and buttons hidden. | Pass |
 | TC-PRT-005 | REQ-PRT-005 | Signed in as `operator` | Open a day sheet. | Print button not visible (permission not granted to Operator role). | Pass |
 
-## 12. Deployment
+## 12. Editable Tolerances
+
+| ID | Verifies | Preconditions | Steps | Expected result | Result |
+|---|---|---|---|---|---|
+| TC-TOL-001 | REQ-TOL-001 | Signed in as Administrator | Navigate to Configuration → Tolerances. | Tolerances tab renders with all PCS fields grouped by category, showing min/max/expected inputs. | Pass |
+| TC-TOL-002 | REQ-TOL-002 | On Tolerances tab | Change a field's min value and click Save. Reload the page. | Override persists and OOS highlighting uses the new value. | Pass |
+| TC-TOL-003 | REQ-TOL-003 | Override saved for a field | Clear the override input and save. | Field reverts to hardcoded default; OOS highlighting uses the default. | Pass |
+| TC-TOL-004 | REQ-TOL-004 | Signed in as Operator | Navigate to Configuration. | Tolerances tab input fields are disabled (not editable). | Pass |
+| TC-TOL-005 | REQ-TOL-001 | Overrides exist | Click "Reset to defaults". | All overrides cleared; all fields show default values. | Pass |
+
+## 13. Display Simulator
+
+| ID | Verifies | Preconditions | Steps | Expected result | Result |
+|---|---|---|---|---|---|
+| TC-SIM-001 | REQ-SIM-001 | Signed in as Administrator, on Dev page | Click "Display Simulator" tab. | Simulator renders with iframe, resolution controls, and presets. | Pass |
+| TC-SIM-002 | REQ-SIM-002 | Simulator open | Select "iPhone 14" preset. | Iframe resizes to 390×844 and page renders at that viewport. | Pass |
+
+## 14. Knowledge Base
+
+| ID | Verifies | Preconditions | Steps | Expected result | Result |
+|---|---|---|---|---|---|
+| TC-KB-001 | REQ-KB-001 | Signed in | Navigate to Knowledge Base. | Page loads with article cards. | Pass |
+| TC-KB-002 | REQ-KB-002 | Signed in as Operator | Navigate to Knowledge Base. | Page is accessible (not hidden by RBAC). | Pass |
+| TC-KB-003 | REQ-KB-003 | On Knowledge Base | Click each article card. | Article content renders with breadcrumb navigation. | Pass |
+
+## 15. QMS Documents
+
+| ID | Verifies | Preconditions | Steps | Expected result | Result |
+|---|---|---|---|---|---|
+| TC-QMS-001 | REQ-QMS-001 | Signed in as Quality Manager | Navigate to QMS Documents. | Page loads with category summary and document table. | Pass |
+| TC-QMS-002 | REQ-QMS-002 | On QMS Documents | Click "Upload Document", fill all fields, attach a file, submit. | Document saved with metadata; appears in the correct category table. | Pass |
+| TC-QMS-003 | REQ-QMS-003 | Signed in as Operator | Navigate to QMS Documents. | Upload/Edit/Delete buttons not visible. | Pass |
+| TC-QMS-004 | REQ-QMS-004 | Documents exist | Type a search term. | Table filters to matching documents by number, title, or category. | Pass |
+
+## 16. Deployment
 
 | ID | Verifies | Preconditions | Steps | Expected result | Result |
 |---|---|---|---|---|---|

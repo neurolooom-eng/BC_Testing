@@ -449,6 +449,66 @@ function pcsValidate(entry, fields) {
   return { ok: outOfSpec.length === 0 && missing.length === 0, outOfSpec, missing };
 }
 
+// --- Tolerance overrides -------------------------------------------------
+// Stored in localStorage as { fieldKey: { min?, max?, expected? } }.
+// Applied on top of the hardcoded defaults above so the paper-form spec
+// remains the fallback when no override exists.
+const PCS_TOLERANCE_KEY = "bestcast_tolerances";
+
+function pcsLoadTolerances() {
+  try { return JSON.parse(localStorage.getItem(PCS_TOLERANCE_KEY) || "{}"); }
+  catch { return {}; }
+}
+
+function pcsSaveTolerances(overrides) {
+  localStorage.setItem(PCS_TOLERANCE_KEY, JSON.stringify(overrides));
+  pcsApplyToleranceOverrides();
+}
+
+const PCS_TOLERANCE_DEFAULTS = {};
+
+function pcsSnapshotDefaults() {
+  const all = [...PCS_MACHINE_FIELDS, PCS_MACHINE_HOURLY_FIELD, ...PCS_HOURLY_FIELDS, ...PCS_SHIFT_DETAIL_FIELDS];
+  for (const f of all) {
+    if (f.min !== undefined || f.max !== undefined || f.expected !== undefined) {
+      PCS_TOLERANCE_DEFAULTS[f.key] = { min: f.min, max: f.max, expected: f.expected };
+    }
+  }
+}
+pcsSnapshotDefaults();
+
+function pcsApplyToleranceOverrides() {
+  const overrides = pcsLoadTolerances();
+  const all = [...PCS_MACHINE_FIELDS, PCS_MACHINE_HOURLY_FIELD, ...PCS_HOURLY_FIELDS, ...PCS_SHIFT_DETAIL_FIELDS];
+  for (const f of all) {
+    const def = PCS_TOLERANCE_DEFAULTS[f.key];
+    if (!def) continue;
+    const o = overrides[f.key];
+    f.min = o && o.min !== undefined && o.min !== null && o.min !== "" ? Number(o.min) : def.min;
+    f.max = o && o.max !== undefined && o.max !== null && o.max !== "" ? Number(o.max) : def.max;
+    f.expected = o && o.expected !== undefined && o.expected !== null && o.expected !== "" ? Number(o.expected) : def.expected;
+  }
+}
+pcsApplyToleranceOverrides();
+
+function pcsTolerableFields() {
+  const groups = [
+    { group: "Hourly Parameters", fields: PCS_HOURLY_FIELDS },
+    { group: "Machine Fields", fields: PCS_MACHINE_FIELDS },
+    { group: "Die Temp (per machine per slot)", fields: [PCS_MACHINE_HOURLY_FIELD] },
+    { group: "Shift Details", fields: PCS_SHIFT_DETAIL_FIELDS },
+  ];
+  const result = [];
+  for (const g of groups) {
+    for (const f of g.fields) {
+      const def = PCS_TOLERANCE_DEFAULTS[f.key];
+      if (!def) continue;
+      result.push({ key: f.key, label: f.label, unit: f.unit || "", group: g.group, def });
+    }
+  }
+  return result;
+}
+
 // Human-readable spec hint for a field, e.g. "700–800 °C".
 function pcsSpecHint(field, entry) {
   if (field.expected !== undefined) return `${field.expected}${field.unit ? " " + field.unit : ""}`;
