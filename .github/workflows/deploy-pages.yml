@@ -49,6 +49,35 @@ jobs:
           cat > public/js/build-info.js <<EOF
           window.BUILD_INFO = { version: "${VERSION}", buildNumber: ${BUILD_NUMBER}, buildDate: "${BUILD_DATE}" };
           EOF
+      - name: Smoke test — validate HTML and JS references
+        run: |
+          ERRORS=0
+          for f in public/*.html; do
+            # Every HTML file must have a closing </html> tag
+            if ! grep -q '</html>' "$f"; then
+              echo "::error file=$f::Missing </html> closing tag"
+              ERRORS=$((ERRORS + 1))
+            fi
+            # Every referenced JS file must exist
+            for js in $(grep -oP 'src="js/[^"]+' "$f" | sed 's/src="//'); do
+              if [ ! -f "public/$js" ]; then
+                echo "::error file=$f::Referenced script public/$js does not exist"
+                ERRORS=$((ERRORS + 1))
+              fi
+            done
+            # Every referenced CSS file must exist
+            for css in $(grep -oP 'href="css/[^"]+' "$f" | sed 's/href="//'); do
+              if [ ! -f "public/$css" ]; then
+                echo "::error file=$f::Referenced stylesheet public/$css does not exist"
+                ERRORS=$((ERRORS + 1))
+              fi
+            done
+          done
+          if [ "$ERRORS" -gt 0 ]; then
+            echo "::error::Smoke test failed with $ERRORS error(s)"
+            exit 1
+          fi
+          echo "All HTML files pass smoke test."
       - uses: actions/upload-pages-artifact@v3
         with:
           path: public

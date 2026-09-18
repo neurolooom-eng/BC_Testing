@@ -75,6 +75,7 @@ function rbacSeed() {
     { id: "action.config.resources.manage", label: "Manage resources", group: "Administration", description: "Maintain pages, actions, links and variables." },
     { id: "action.config.variables.edit", label: "Edit variable values", group: "Administration", description: "Change configuration variable values." },
     { id: "action.config.tolerances.edit", label: "Edit tolerances", group: "Administration", description: "Override PCS field tolerance ranges (min/max/expected)." },
+    { id: "action.config.masters.edit", label: "Edit masters", group: "Administration", description: "Manage dropdown options (lines, furnaces, alloys, supervisors, etc.)." },
   ];
 
   const execLinks = [

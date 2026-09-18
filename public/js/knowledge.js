@@ -213,10 +213,8 @@ function kbRender() {
     </div>`;
 }
 
-function kbEsc(v) {
-  return String(v ?? "").replace(/[&<>"']/g, (c) =>
-    ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
-}
+// esc() lives in util.js — loaded before this file.
+const kbEsc = esc;
 
 document.addEventListener("DOMContentLoaded", () => {
   const session = renderTopbar("knowledge");

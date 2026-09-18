@@ -25,7 +25,10 @@ Last executed against **v1.9.1**.
 | TC-AUTH-005 | REQ-AUTH-005 | Signed out | Request `dashboard.html` directly by URL. | Sign-in page displayed instead. | Pass |
 | TC-AUTH-006 | REQ-AUTH-005 | Signed out | Request `process-check-sheet.html` directly by URL. | Sign-in page displayed instead. | Pass |
 | TC-AUTH-007 | REQ-AUTH-006 | Signed in | Open the profile menu. Select Log out. | Session ended; sign-in page displayed; back navigation does not restore access. | Pass |
-| TC-AUTH-008 | REQ-AUTH-007 | Signed in | Close the browser tab. Reopen the site. | Sign-in page displayed. | Pass |
+| TC-AUTH-008 | REQ-AUTH-007 | Signed in without "Remember me" | Close the browser tab. Reopen the site. | Sign-in page displayed. | Pass |
+| TC-AUTH-010 | REQ-AUTH-010 | Signed out | Sign in with "Remember me" checked. Close and reopen the browser. | Session persists; dashboard displayed without re-signing in. | Not run |
+| TC-AUTH-011 | REQ-AUTH-009 | Signed in, session older than 8 hours | Wait or manually set `expiresAt` to the past. Reload. | Session expired; sign-in page displayed. | Not run |
+| TC-AUTH-012 | REQ-AUTH-007, REQ-AUTH-010 | Signed in without "Remember me" | Open a second tab. | Session shared via sessionStorage. Close ALL tabs, reopen. | Sign-in page displayed. | Not run |
 | TC-AUTH-009 | REQ-AUTH-008 | Signed out | Inspect page source for credential values. | Credentials are not present in client-side code. | Fail — see BUG-006 (Deferred) |
 
 ## 2. Navigation and Shell
@@ -243,19 +246,20 @@ Last executed against **v1.9.1**.
 
 ## 7. Masters
 
-All cases below are blocked pending the Shift Master and its siblings
-(ENH-001 and the Masters section of the Backlog).
+Shift timing masters (start/end times, sequence) remain deferred pending
+the backend (ENH-001). Dropdown option masters are now configurable via
+Configuration → Masters.
 
 | ID | Verifies | Preconditions | Steps | Expected result | Result |
 |---|---|---|---|---|---|
-| TC-MST-001 | REQ-MST-001 | Signed in as an administrator | Open the Shift Master. | Each shift lists a code, display name, start time, end time and sequence. | Blocked — deferred |
+| TC-MST-001 | REQ-MST-001 | Signed in as an administrator | Open Configuration → Masters → Shifts. | Shift names listed; editable. Start/end times not yet available (deferred). | Partial — names only |
 | TC-MST-002 | REQ-MST-002 | Shift Master defined | Record entries at times spanning a shift boundary. | Each entry is attributed to the shift whose timings contain it. | Blocked — deferred |
 | TC-MST-003 | REQ-MST-003 | A shift marked inactive in the master | Open any shift selector. | The inactive shift is not offered. | Blocked — deferred |
-| TC-MST-004 | REQ-MST-004 | Signed in as an administrator | Open the masters area. | Masters exist for line, furnace, alloy grade, machine, personnel, rotor size and acceptance limits. | Blocked — deferred |
-| TC-MST-005 | REQ-MST-005 | Line master maintained | Add a production line to the master; open the check sheet form. | The new line is offered without any code change or redeployment. | Blocked — deferred |
-| TC-MST-006 | REQ-MST-005 | Tolerance master maintained | Alter an acceptance limit; record a value against the former limit. | Validation applies the new limit. | Blocked — deferred |
-| TC-MST-007 | REQ-MST-006 | Signed in as a non-administrator | Attempt to open a master for maintenance. | Access refused. | Blocked — deferred |
-| TC-MST-008 | REQ-MST-007 | Historic record referencing a master value | Deactivate that value; reopen the historic record. | The record still displays the value it was recorded against. | Blocked — deferred |
+| TC-MST-004 | REQ-MST-004 | Signed in as an administrator | Open Configuration → Masters. | Masters exist for line, furnace, alloy grade, cooling times, rotor size, shifts, supervisors, and core pin cavities. | Not run |
+| TC-MST-005 | REQ-MST-005 | Line master maintained | Add a production line to the master; open the check sheet form. | The new line is offered without any code change or redeployment. | Not run |
+| TC-MST-006 | REQ-MST-005 | Supervisor master maintained | Add a name; open the shift sign-off modal. | The new name appears in the supervisor dropdown. | Not run |
+| TC-MST-007 | REQ-MST-006 | Signed in as a non-administrator | Navigate to Configuration → Masters. | Edit buttons not shown; values are read-only. | Not run |
+| TC-MST-008 | REQ-MST-007 | Historic record referencing a master value | Remove that value from the master; reopen the historic record. | The record still displays the value it was recorded against. | Not run |
 
 ## 8. Test Fixtures
 
@@ -370,3 +374,29 @@ All cases below are blocked pending the Shift Master and its siblings
 | TC-DEP-004 | REQ-DEP-004 | Brand mark absent | Publish. | Workflow completes and emits a warning. | Pass |
 | TC-DEP-005 | REQ-DEP-005 | Brand mark absent | View the sign-in page and the navigation bar on each page. | A monogram placeholder is shown in place of the logo; no broken or empty image appears. | Pass |
 | TC-DEP-006 | REQ-DEP-005 | Brand mark absent | View the Process Check Sheet page, where the bar is built after the document load pass. | Monogram shown in the bar, as on statically authored pages. | Pass |
+| TC-DEP-007 | REQ-DEP-006 | HTML file referencing a non-existent JS file | Run the deploy workflow. | Smoke test fails with an error naming the missing file. | Not run |
+
+## 17. Data Export / Import
+
+| ID | Verifies | Preconditions | Steps | Expected result | Result |
+|---|---|---|---|---|---|
+| TC-DATA-001 | REQ-DATA-001 | Data present in localStorage | Configuration → Data → Export all data. | JSON file downloaded containing all localStorage keys and IndexedDB blobs. | Not run |
+| TC-DATA-002 | REQ-DATA-002, REQ-DATA-004 | Exported JSON file available | Configuration → Data → Import data. Confirm the overwrite prompt. | Data restored; page shows success message with source version and date. | Not run |
+| TC-DATA-003 | REQ-DATA-003 | Templates and QMS documents uploaded | Export, then clear browser data, then import. | Template and QMS file blobs restored in IndexedDB. | Not run |
+| TC-DATA-004 | REQ-DATA-004 | Import initiated | User presented with confirmation dialog. Decline. | No data overwritten. | Not run |
+
+## 18. Error Handling
+
+| ID | Verifies | Preconditions | Steps | Expected result | Result |
+|---|---|---|---|---|---|
+| TC-ERR-001 | REQ-ERR-001 | Any page loaded | Trigger `throw new Error("test")` from the console. | Red error banner appears at the bottom of the page showing the error message. | Not run |
+| TC-ERR-002 | REQ-ERR-002 | Error banner visible | Click the close button on the banner. | Banner dismissed. | Not run |
+
+## 19. Accessibility
+
+| ID | Verifies | Preconditions | Steps | Expected result | Result |
+|---|---|---|---|---|---|
+| TC-A11Y-001 | REQ-A11Y-001 | Any modal open | Inspect the modal element. | `role="dialog"` and `aria-modal="true"` attributes present. | Not run |
+| TC-A11Y-002 | REQ-A11Y-002 | Modal open | Press Tab repeatedly. | Focus cycles within the modal; does not escape to background content. | Not run |
+| TC-A11Y-003 | REQ-A11Y-003 | Modal opened from a specific button | Close the modal. | Focus returns to the button that opened it. | Not run |
+| TC-A11Y-004 | REQ-A11Y-004 | Modal open | Press Escape. | Modal closes. | Not run |

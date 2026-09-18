@@ -5,9 +5,7 @@
 function pcsPrintView(record) {
   if (!record) return "<p>No record to print.</p>";
 
-  const esc = (v) =>
-    String(v ?? "").replace(/[&<>"']/g, (c) =>
-      ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+  // esc() lives in util.js — loaded before this file.
 
   const isOos = (val, field, entry) => {
     if (val === "" || val === undefined || val === null || val === PCS_NA) return false;

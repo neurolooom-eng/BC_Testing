@@ -5,11 +5,8 @@
 // horizontal rules and paragraphs. Deliberately small — no external
 // dependency for four internal docs.
 
-function mdEscape(text) {
-  return String(text).replace(/[&<>"']/g, (c) =>
-    ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c])
-  );
-}
+// esc() lives in util.js — loaded before this file.
+const mdEscape = esc;
 
 // Inline formatting, applied after escaping.
 function mdInline(text) {

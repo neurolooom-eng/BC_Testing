@@ -12,17 +12,9 @@ function tplCan(actionId) {
   return rbacCanDo(TPL_SESSION.userid, actionId);
 }
 
-function tplEscape(value) {
-  return String(value ?? "").replace(/[&<>"']/g, (c) =>
-    ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c])
-  );
-}
-
-function tplEl(html) {
-  const t = document.createElement("template");
-  t.innerHTML = html.trim();
-  return t.content.firstElementChild;
-}
+// esc() and el() live in util.js — loaded before this file.
+const tplEscape = esc;
+const tplEl = el;
 
 function tplFormatSize(bytes) {
   if (bytes < 1024) return `${bytes} B`;

@@ -28,7 +28,9 @@ behaviour independent of that mechanism.
 | REQ-AUTH-004 | The system shall accept User ID values that are not formatted as email addresses. | Plant accounts are short identifiers such as `msv`, not addresses. | Test | Implemented |
 | REQ-AUTH-005 | The system shall redirect an unauthenticated user to the sign-in page when any protected page is requested. | Prevent direct URL access to protected content. | Test | Implemented |
 | REQ-AUTH-006 | The system shall provide a sign-out control that terminates the session and returns the user to the sign-in page. | Allow shared-terminal users to end their session. | Demonstration | Implemented |
-| REQ-AUTH-007 | The system shall terminate the user session when the browser tab is closed. | Shop-floor terminals are shared between shifts. | Test | Implemented |
+| REQ-AUTH-007 | The system shall terminate the user session when the browser tab is closed, unless the user selected "Remember me" at sign-in. | Shop-floor terminals are shared between shifts; remembered sessions persist across tabs. | Test | Implemented |
+| REQ-AUTH-009 | The system shall expire the user session after 8 hours regardless of storage mode. | Unattended sessions must not remain valid indefinitely. | Test | Implemented |
+| REQ-AUTH-010 | The system shall provide a "Remember me" option at sign-in that persists the session across browser tabs. | A supervisor who reopens the browser should not have to sign in again within the session lifetime. | Test | Implemented |
 | REQ-AUTH-008 | The system shall verify credentials server-side such that authorisation cannot be bypassed by modifying client-side code. | Client-side checks are not a security boundary. | Inspection | Deferred |
 
 ## 2. Navigation and Application Shell (NAV)
@@ -230,12 +232,12 @@ deferred pending the backend — see the Backlog.
 
 | ID | Requirement | Rationale | Verification | Status |
 |---|---|---|---|---|
-| REQ-MST-001 | The system shall maintain a master of shifts, each defining a shift code, display name, start time, end time and sequence. | Shift timings are operational data and change without code changes. | Inspection | Deferred |
+| REQ-MST-001 | The system shall maintain a master of shifts, each defining a shift code, display name, start time, end time and sequence. | Shift timings are operational data and change without code changes. | Inspection | Partial |
 | REQ-MST-002 | The system shall determine the shift applicable to any recorded time from the Shift Master. | One definition of shift boundaries, used everywhere, rather than an assumption repeated per module. | Test | Deferred |
 | REQ-MST-003 | The system shall offer, wherever a shift is selected, only those shifts marked active in the Shift Master. | Retired shift patterns must not be selectable, while historic records referencing them remain readable. | Test | Deferred |
-| REQ-MST-004 | The system shall maintain masters for production line, furnace, alloy grade, machine, personnel, rotor size and acceptance limits. | The same values are referenced by several modules and must not diverge. | Inspection | Deferred |
-| REQ-MST-005 | The system shall apply a change made to a master to every module referencing that master, without modification to application code. | A maintained master that requires a redeployment to change is not a master. | Test | Deferred |
-| REQ-MST-006 | The system shall restrict maintenance of masters to authorised administrative users. | Controlled values govern acceptance of production data. | Test | Deferred |
+| REQ-MST-004 | The system shall maintain masters for production line, furnace, alloy grade, machine, personnel, rotor size and acceptance limits. | The same values are referenced by several modules and must not diverge. | Inspection | Implemented |
+| REQ-MST-005 | The system shall apply a change made to a master to every module referencing that master, without modification to application code. | A maintained master that requires a redeployment to change is not a master. | Test | Implemented |
+| REQ-MST-006 | The system shall restrict maintenance of masters to authorised administrative users. | Controlled values govern acceptance of production data. | Test | Implemented |
 | REQ-MST-007 | The system shall retain records that reference a master value after that value is deactivated. | Historic check sheets must remain complete and auditable. | Test | Deferred |
 
 ## 8. Test Fixtures (FIX)
@@ -343,3 +345,29 @@ describes — see the Backlog cleanup.
 | REQ-DEP-003 | The publication process shall incorporate the brand mark held at the repository root into the published site. | Root is the single source of truth for the asset. | Test | Implemented |
 | REQ-DEP-004 | The publication process shall complete successfully, emitting a warning, when the brand mark is absent. | A missing optional asset must not block release. | Test | Implemented |
 | REQ-DEP-005 | The system shall display a placeholder brand mark when the brand mark asset cannot be loaded. | The asset is supplied separately from the code, so its absence is a foreseeable state and must not present as a rendering fault. | Test | Implemented |
+| REQ-DEP-006 | The deployment process shall validate that every HTML file references only JS and CSS files that exist in the published directory. | Broken script/style references break pages silently. | Test | Implemented |
+
+## 17. Data Export / Import (DATA)
+
+| ID | Requirement | Rationale | Verification | Status |
+|---|---|---|---|---|
+| REQ-DATA-001 | The system shall provide a Data tab in Configuration to export all application data (localStorage and IndexedDB) as a JSON file. | Backup and portability of local data. | Test | Implemented |
+| REQ-DATA-002 | The system shall provide an import function that restores data from a previously exported JSON file. | Recovery and migration. | Test | Implemented |
+| REQ-DATA-003 | Export and import shall include file blobs from IndexedDB (templates and QMS documents). | File attachments are part of the data. | Test | Implemented |
+| REQ-DATA-004 | Import shall require user confirmation before overwriting existing data. | Destructive operation must be deliberate. | Test | Implemented |
+
+## 18. Error Handling (ERR)
+
+| ID | Requirement | Rationale | Verification | Status |
+|---|---|---|---|---|
+| REQ-ERR-001 | The system shall display a visible notification when an uncaught JavaScript error or unhandled promise rejection occurs. | Silent failures leave users unaware something went wrong. | Test | Implemented |
+| REQ-ERR-002 | The error notification shall be dismissible by the user. | The banner should not permanently obstruct the interface. | Test | Implemented |
+
+## 19. Accessibility (A11Y)
+
+| ID | Requirement | Rationale | Verification | Status |
+|---|---|---|---|---|
+| REQ-A11Y-001 | Every modal dialog shall have `role="dialog"` and `aria-modal="true"` attributes. | Screen readers must identify modal dialogs. | Inspection | Implemented |
+| REQ-A11Y-002 | When a modal opens, keyboard focus shall be trapped within the modal until it closes. | Focus escaping to content behind the modal breaks the interaction. | Test | Implemented |
+| REQ-A11Y-003 | When a modal closes, keyboard focus shall return to the element that was focused before the modal opened. | Restoring context for keyboard users. | Test | Implemented |
+| REQ-A11Y-004 | Pressing Escape shall close the active modal. | Standard keyboard shortcut for dismissing dialogs. | Test | Implemented |

@@ -4,6 +4,60 @@ Version numbers follow semver — see `VERSIONING.md` at the repo root.
 Build number and build date shown in the site footer are generated
 automatically per deploy and are not tracked here.
 
+## 2.2.0 — 2026-09-18
+
+**Codebase improvements — shared utilities, CSS refactor, accessibility, configurable masters, session management**
+
+### 1. Shared utility module (`util.js`)
+- Extracted `esc()` and `el()` helpers into a shared `util.js` loaded on
+  every page; removed duplicate definitions from config.js, pcs.js,
+  templates.js, qms.js, knowledge.js, md.js, and pcs-print.js
+
+### 2. Data export / import (Configuration)
+- New **Data** tab in Configuration to export all localStorage and IndexedDB
+  data as a JSON backup file, and import a previously exported file to restore
+- Includes template and QMS document file blobs via IndexedDB
+
+### 3. Shared form styles (`forms.css`)
+- Extracted shared form/table/tab/badge/modal/fieldset styles from `pcs.css`
+  into `forms.css`, loaded on all authenticated pages
+- `pcs.css` now contains only PCS-specific layout and component styles
+
+### 4. Auth page shared CSS (`auth.css`)
+- Consolidated ~250 lines of inline `<style>` blocks from login.html,
+  signup.html, and reset-password.html into a single `auth.css`
+
+### 5. Accessibility — modals and keyboard navigation
+- All modals now have `role="dialog"`, `aria-modal="true"`, and `aria-label`
+- Focus trapping via `trapFocus()`/`releaseFocus()` in `util.js` keeps Tab
+  cycling inside the active modal and restores focus on close
+- Escape key closes every modal
+
+### 6. Global error handler
+- New `error-handler.js` loaded on every page shows a fixed red banner on
+  uncaught errors (`window.onerror` and `unhandledrejection`)
+
+### 7. Split `pcs.js` into sub-modules
+- Extracted rendering logic from 1650-line `pcs.js` into four sub-modules:
+  `pcs-list.js`, `pcs-sheet.js`, `pcs-hourly.js`, `pcs-shift.js`
+- `pcs.js` now contains helpers, demo controls, and the router only
+
+### 8. Configurable masters (Configuration)
+- New **Masters** tab in Configuration to manage dropdown options (lines,
+  furnaces, metal grades, degassing gases, cooling times, rotor sizes,
+  shifts, supervisors, core pin cavities) without code changes
+- Stored in localStorage; blank values fall back to hardcoded defaults
+- `action.config.masters.edit` permission gates editing
+
+### 9. CI smoke tests
+- Deploy workflow now validates every HTML file before upload: checks for
+  `</html>` closing tag, verifies all referenced JS and CSS files exist
+
+### 10. Session timeout and "Remember me"
+- Sessions now expire after 8 hours of inactivity
+- Login page "Remember me" checkbox persists the session in localStorage
+  (survives tab close); unchecked uses sessionStorage (per-tab only)
+
 ## 2.1.1 — 2026-09-09
 
 **Bug fix — Tolerances tab empty on Configuration page**
