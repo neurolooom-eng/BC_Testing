@@ -28,6 +28,14 @@
 
 const OK_NOT_OK = ["OK", "NOT OK"];
 
+function _pcsGetMaster(key, fallback) {
+  try {
+    const saved = JSON.parse(localStorage.getItem("bestcast_masters") || "{}");
+    if (saved[key] && saved[key].length) return saved[key];
+  } catch {}
+  return fallback;
+}
+
 // --- Day sheet header (parent) ------------------------------------------
 const PCS_DAILY_FIELDS = [
   { key: "date", label: "Date", type: "date", required: true },
@@ -35,18 +43,18 @@ const PCS_DAILY_FIELDS = [
     key: "line",
     label: "Line — Mando Model Line",
     type: "select",
-    options: ["01", "02", "03", "06"],
+    options: _pcsGetMaster("lines", ["01", "02", "03", "06"]),
     required: true,
   },
-  { key: "metalGrade", label: "Metal Grade", type: "select", options: ["AC2A"], required: true },
+  { key: "metalGrade", label: "Metal Grade", type: "select", options: _pcsGetMaster("metalGrades", ["AC2A"]), required: true },
   {
     key: "furnaceNo",
     label: "Furnace No.",
     type: "select",
-    options: ["HF1", "HF2", "HF3", "HF4", "HF5", "HF6", "HF11", "HF12"],
+    options: _pcsGetMaster("furnaces", ["HF1", "HF2", "HF3", "HF4", "HF5", "HF6", "HF11", "HF12"]),
     required: true,
   },
-  { key: "degassingGas", label: "Degassing Gas", type: "select", options: ["N2"], required: true },
+  { key: "degassingGas", label: "Degassing Gas", type: "select", options: _pcsGetMaster("degassingGases", ["N2"]), required: true },
   {
     key: "diePreheatingAsPerSOP",
     label: "Die Pre Heating as per SOP",
@@ -101,7 +109,7 @@ const PCS_MACHINE_FIELDS = [
     label: "Cooling Time",
     short: "Cooling",
     type: "select",
-    options: ["120", "180"],
+    options: _pcsGetMaster("coolingTimes", ["120", "180"]),
     unit: "sec",
     required: true,
   },
@@ -211,7 +219,7 @@ const PCS_HOURLY_FIELDS = [
     label: "Rotor Size",
     short: "Rotor",
     type: "select",
-    options: ["100mm", "190mm"],
+    options: _pcsGetMaster("rotorSizes", ["100mm", "190mm"]),
     required: true,
     note: "Sets the valid RPM band: 100mm → 550–650, 190mm → 350–400.",
   },
@@ -271,8 +279,8 @@ const PCS_HOURLY_FIELDS = [
 ];
 
 // --- Shift sign-off (child of the day sheet) ----------------------------
-const PCS_SHIFTS = ["1st Shift", "2nd Shift", "3rd Shift"];
-const PCS_CORE_PIN_CAVITIES = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
+const PCS_SHIFTS = _pcsGetMaster("shifts", ["1st Shift", "2nd Shift", "3rd Shift"]);
+const PCS_CORE_PIN_CAVITIES = _pcsGetMaster("corePinCavities", ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10"]).map(Number);
 
 // A shift is one record, recorded in two parts at two points in the day:
 //
@@ -309,7 +317,7 @@ const PCS_SHIFT_SIGNOFF_FIELDS = [
     key: "shiftSupervisorSign",
     label: "Shift Supervisor Sign",
     type: "select",
-    options: ["VIMAL", "BHARATHI", "MOHAN", "NAVEEN", "ASHOK"],
+    options: _pcsGetMaster("supervisors", ["VIMAL", "BHARATHI", "MOHAN", "NAVEEN", "ASHOK"]),
     required: true,
   },
   { key: "signoffRemarks", label: "Remarks", type: "text" },
@@ -507,6 +515,22 @@ function pcsTolerableFields() {
     }
   }
   return result;
+}
+
+function pcsApplyMasters() {
+  const map = {
+    lines: { fields: PCS_DAILY_FIELDS, key: "line" },
+    metalGrades: { fields: PCS_DAILY_FIELDS, key: "metalGrade" },
+    furnaces: { fields: PCS_DAILY_FIELDS, key: "furnaceNo" },
+    degassingGases: { fields: PCS_DAILY_FIELDS, key: "degassingGas" },
+    coolingTimes: { fields: PCS_MACHINE_FIELDS, key: "coolingTime" },
+    rotorSizes: { fields: PCS_HOURLY_FIELDS, key: "rotorSize" },
+    supervisors: { fields: PCS_SHIFT_SIGNOFF_FIELDS, key: "shiftSupervisorSign" },
+  };
+  for (const [masterKey, target] of Object.entries(map)) {
+    const f = target.fields.find((x) => x.key === target.key);
+    if (f) f.options = _pcsGetMaster(masterKey, f.options);
+  }
 }
 
 // Human-readable spec hint for a field, e.g. "700–800 °C".

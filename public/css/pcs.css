@@ -1,21 +1,6 @@
-/* Process Check Sheet module styles. Layered on top of app.css. */
-
-/* min() keeps the track from forcing overflow once the viewport is
-   narrower than the stated minimum. */
-.field-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(min(230px, 100%), 1fr));
-  gap: 16px;
-}
-
-.field label {
-  display: block;
-  font-size: 11.5px;
-  letter-spacing: 0.8px;
-  text-transform: uppercase;
-  color: var(--content-mute);
-  margin-bottom: 6px;
-}
+/* Process Check Sheet module styles.
+   Shared form/table/modal/tab/badge styles are now in forms.css.
+   This file holds only PCS-specific layout and components. */
 
 .spec-hint {
   text-transform: none;
@@ -24,135 +9,6 @@
   color: var(--teal);
   margin-left: 4px;
 }
-
-.field input,
-.field select {
-  width: 100%;
-  padding: 10px 12px;
-  background: var(--input-bg);
-  border: 1px solid var(--input-border);
-  border-radius: 9px;
-  color: var(--content-fg);
-  font-size: 13.5px;
-  font-family: inherit;
-  outline: none;
-}
-
-.field input:focus,
-.field select:focus { border-color: var(--teal); }
-
-.field select option { background: var(--menu-bg); color: #f6f4ee; }
-body.light-theme .field select option { background: #ffffff; color: #000000; }
-
-.field-note {
-  font-size: 11px;
-  color: var(--content-mute);
-  margin-top: 5px;
-  line-height: 1.4;
-}
-
-.field-error {
-  font-size: 11px;
-  color: var(--danger);
-  margin-top: 4px;
-  min-height: 0;
-}
-
-.field.has-error input,
-.field.has-error select { border-color: var(--danger); }
-
-/* ---------- alerts ---------- */
-
-.alert {
-  margin-top: 18px;
-  padding: 14px 16px;
-  border-radius: 10px;
-  font-size: 13px;
-  line-height: 1.5;
-}
-
-.alert-danger {
-  background: rgba(232,83,79,0.12);
-  border: 1px solid var(--danger);
-  color: var(--content-fg);
-}
-
-.alert-danger ul { margin: 10px 0 0 18px; }
-.alert-danger li { margin-bottom: 4px; }
-
-.alert-ok {
-  background: rgba(47,167,135,0.14);
-  border: 1px solid var(--teal);
-  color: var(--content-fg);
-}
-
-.alert-note {
-  margin-top: 10px;
-  font-size: 11.5px;
-  color: var(--content-mute);
-}
-
-/* ---------- tables ---------- */
-
-.table-wrap {
-  overflow-x: auto;
-  border: 1px solid var(--card-border);
-  border-radius: 12px;
-}
-
-table {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 13px;
-}
-
-table.dense { font-size: 12px; white-space: nowrap; }
-
-th, td {
-  padding: 10px 12px;
-  text-align: left;
-  border-bottom: 1px solid var(--card-border);
-}
-
-th {
-  font-size: 11px;
-  text-transform: uppercase;
-  letter-spacing: 0.6px;
-  color: var(--content-mute);
-  font-weight: 600;
-  background: var(--card-bg);
-  position: sticky;
-  top: 0;
-}
-
-tbody tr:last-child td { border-bottom: none; }
-tbody tr:hover { background: var(--card-bg); }
-
-td a { color: var(--teal); text-decoration: none; font-weight: 600; }
-td a:hover { text-decoration: underline; }
-
-.cell-bad {
-  color: var(--danger);
-  font-weight: 700;
-  background: rgba(232,83,79,0.08);
-}
-
-/* ---------- badges ---------- */
-
-.flag-badge,
-.ok-badge {
-  display: inline-block;
-  padding: 3px 9px;
-  border-radius: 20px;
-  font-size: 11px;
-  font-weight: 600;
-  white-space: nowrap;
-}
-
-.flag-badge { background: rgba(232,83,79,0.16); color: var(--danger); border: 1px solid var(--danger); }
-.ok-badge { background: rgba(47,167,135,0.14); color: var(--teal); border: 1px solid var(--teal); }
-
-.muted-xs { font-size: 11.5px; color: var(--content-mute); }
 
 /* ---------- day sheet layout ---------- */
 
@@ -205,22 +61,6 @@ td a:hover { text-decoration: underline; }
 
 .sheet-block[open] > summary { margin-bottom: 16px; }
 
-.fieldset {
-  border: 1px solid var(--card-border);
-  border-radius: 12px;
-  padding: 16px;
-}
-
-.fieldset legend {
-  padding: 0 8px;
-  font-size: 11.5px;
-  text-transform: uppercase;
-  letter-spacing: 0.8px;
-  color: var(--content-mute);
-}
-
-.fieldset[disabled] { opacity: 0.65; }
-
 /* ---------- hourly view toggle ---------- */
 
 .view-toggle {
@@ -249,10 +89,7 @@ td a:hover { text-decoration: underline; }
   font-weight: 600;
 }
 
-/* ---------- test data controls (fixture) ----------
-   Deliberately set apart from the working controls, so nobody mistakes a
-   generator for part of the sheet. Removed with the rest of the test
-   scaffolding — see BACKLOG.md. */
+/* ---------- test data controls (fixture) ---------- */
 
 .demo-bar,
 .demo-controls {
@@ -374,13 +211,7 @@ input.cell-input.cell-bad { border-color: var(--danger); color: var(--danger); f
 
 .row-actions { white-space: nowrap; }
 
-/* ---------- out of spec (T6) ----------
-   The whole cell fills, and the fill is applied the moment the value is
-   entered rather than on save. Light and dark need separate pairs: the
-   light-mode red is too dark to read white text against on a dark ground,
-   and too light to carry as a fill on a pale one. The "!" marker means the
-   state survives greyscale printing and colour-blind viewing, where a fill
-   alone would not. */
+/* ---------- out of spec ---------- */
 
 :root {
   --oos-bg: #c62828;
@@ -412,8 +243,6 @@ select.cell-input.cell-oos {
 
 input.cell-input.cell-oos::placeholder { color: rgba(255,255,255,0.75); }
 
-/* Marks the containing cell so the fill covers the full cell, not just the
-   input sitting inside it. */
 td.has-oos {
   background: var(--oos-bg);
   box-shadow: inset 0 0 0 1px var(--oos-edge);
@@ -432,7 +261,6 @@ td.has-oos::after {
 
 td.has-oos { position: relative; }
 
-/* Field-level equivalent for the form view. */
 .field.oos input,
 .field.oos select {
   background: var(--oos-bg);
@@ -445,13 +273,9 @@ td.has-oos { position: relative; }
 body.light-theme .field.oos .field-error { color: var(--oos-edge); }
 
 .oos-summary { margin-top: 4px; }
-
 .oos-summary li { margin-bottom: 4px; }
 
-/* ---------- touch and tablet (T7) ----------
-   Line workers enter data on a tablet. Where the pointer is coarse, every
-   target grows to at least 44 px and the dense matrix relaxes — density is
-   worth less than being able to hit the right cell. */
+/* ---------- touch and tablet ---------- */
 
 @media (pointer: coarse) {
   .cell-input,
@@ -467,26 +291,6 @@ body.light-theme .field.oos .field-error { color: var(--oos-edge); }
 
   .matrix .sticky-col { min-width: 112px; }
 
-  .link-btn {
-    min-height: 44px;
-    padding: 10px 12px;
-    font-size: 14px;
-    display: inline-flex;
-    align-items: center;
-  }
-
-  .btn, .toggle-btn {
-    min-height: 44px;
-    padding: 12px 20px;
-    font-size: 14.5px;
-  }
-
-  .field input,
-  .field select {
-    min-height: 44px;
-    font-size: 15px;
-  }
-
   .pin-input select { min-height: 44px; font-size: 15px; }
 
   .pin {
@@ -497,10 +301,10 @@ body.light-theme .field.oos .field-error { color: var(--oos-edge); }
 
   .sheet-block > summary { padding: 6px 0; }
 
-  /* Hover-only affordances do not exist on touch, so nothing is hidden
-     behind them: row actions stay visible and spaced. */
   .row-actions { display: flex; gap: 6px; flex-wrap: wrap; }
 }
+
+/* ---------- PCS badges ---------- */
 
 .archived-badge {
   display: inline-block;
@@ -551,36 +355,6 @@ body.light-theme .field.oos .field-error { color: var(--oos-edge); }
 body.light-theme .pending-badge,
 body.light-theme .stopped-badge { color: #8a4a12; border-color: #8a4a12; }
 
-/* ---------- tabs ---------- */
-
-.tabs {
-  display: flex;
-  gap: 6px;
-  margin-bottom: 20px;
-  border-bottom: 1px solid var(--card-border);
-  flex-wrap: wrap;
-}
-
-.tab {
-  padding: 10px 18px;
-  border: none;
-  background: none;
-  color: var(--content-mute);
-  font-family: inherit;
-  font-size: 13.5px;
-  font-weight: 500;
-  cursor: pointer;
-  border-bottom: 2px solid transparent;
-  margin-bottom: -1px;
-}
-
-.tab:hover { color: var(--content-fg); }
-
-.tab.active {
-  color: var(--content-fg);
-  border-bottom-color: var(--teal);
-}
-
 /* ---------- shift cards ---------- */
 
 .kv-grid {
@@ -629,52 +403,3 @@ body.light-theme .stopped-badge { color: #8a4a12; border-color: #8a4a12; }
 
 .pin-input { display: flex; flex-direction: column; gap: 4px; }
 .pin-input > span { font-size: 11px; color: var(--content-mute); }
-
-/* ---------- modal ---------- */
-
-.modal-backdrop {
-  position: fixed;
-  inset: 0;
-  background: rgba(0,0,0,0.6);
-  display: flex;
-  align-items: flex-start;
-  justify-content: center;
-  padding: 40px 20px;
-  overflow-y: auto;
-  z-index: 100;
-}
-
-.modal {
-  background: var(--content-bg);
-  border: 1px solid var(--card-border);
-  border-radius: 16px;
-  padding: 26px;
-  width: 100%;
-  max-width: 880px;
-}
-
-@media (max-width: 640px) {
-  .modal-backdrop { padding: 16px 10px; }
-  .modal { padding: 18px 16px; border-radius: 12px; }
-  .tab { padding: 9px 12px; font-size: 12.5px; }
-  th, td { padding: 8px 9px; }
-}
-
-.modal h2 {
-  font-family: 'Fraunces', serif;
-  font-size: 20px;
-  margin-bottom: 18px;
-}
-
-.link-btn {
-  background: none;
-  border: none;
-  color: var(--teal);
-  font-family: inherit;
-  font-size: 12.5px;
-  cursor: pointer;
-  padding: 2px 6px;
-}
-
-.link-btn:hover { text-decoration: underline; }
-.link-btn.danger { color: var(--danger); }

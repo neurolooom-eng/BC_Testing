@@ -13,10 +13,8 @@ const QMS_CAT_LABELS = {
 
 let QMS_SESSION = null;
 
-function qmsEsc(v) {
-  return String(v ?? "").replace(/[&<>"']/g, (c) =>
-    ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
-}
+// esc() lives in util.js — loaded before this file.
+const qmsEsc = esc;
 
 function qmsCan(actionId) {
   return typeof rbacCanDo === "function" && rbacCanDo(QMS_SESSION.userid, actionId);

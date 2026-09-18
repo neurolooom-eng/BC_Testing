@@ -9,6 +9,8 @@
 //   #/variables
 //   #/matrix       roles × resources overview
 
+// esc() and el() live in util.js — loaded before this file.
+
 let CFG_SESSION = null;
 
 const CFG_TABS = [
@@ -21,6 +23,8 @@ const CFG_TABS = [
   { key: "exec-links", label: "Exec Links", type: "exec_link" },
   { key: "sheet-links", label: "Sheet Links", type: "sheet_link" },
   { key: "variables", label: "Variables", type: "variable" },
+  { key: "masters", label: "Masters" },
+  { key: "data", label: "Data" },
 ];
 
 // Fields shown when maintaining each kind of resource.
@@ -63,17 +67,7 @@ const CFG_RESOURCE_FIELDS = {
 
 // ---------- helpers -----------------------------------------------------
 
-function cfgEl(html) {
-  const t = document.createElement("template");
-  t.innerHTML = html.trim();
-  return t.content.firstElementChild;
-}
-
-function esc(value) {
-  return String(value ?? "").replace(/[&<>"']/g, (c) =>
-    ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c])
-  );
-}
+const cfgEl = el;
 
 function cfgActiveTab() {
   const key = (window.location.hash || "").replace("#/", "");
@@ -150,6 +144,8 @@ function cfgRender() {
   else if (tab === "roles") cfgRenderRoles(body, config);
   else if (tab === "matrix") cfgRenderMatrix(body, config);
   else if (tab === "tolerances") cfgRenderTolerances(body);
+  else if (tab === "masters") cfgRenderMasters(body);
+  else if (tab === "data") cfgRenderDataMgmt(body);
   else cfgRenderResources(body, config, meta.type, meta.label);
 }
 
@@ -879,7 +875,278 @@ function cfgRenderTolerances(body) {
   });
 }
 
+// ---------- masters (configurable dropdown options) ----------------------
+
+const MASTERS_STORAGE_KEY = "bestcast_masters";
+
+const MASTERS_DEFS = [
+  { key: "lines", label: "Lines", desc: "Production line numbers shown in the day sheet header." },
+  { key: "furnaces", label: "Furnace Numbers", desc: "Holding furnace IDs." },
+  { key: "metalGrades", label: "Metal Grades", desc: "Alloy grades (e.g. AC2A)." },
+  { key: "degassingGases", label: "Degassing Gases", desc: "Gas types used for degassing." },
+  { key: "coolingTimes", label: "Cooling Times (sec)", desc: "Allowed cooling time values." },
+  { key: "rotorSizes", label: "Rotor Sizes", desc: "Degassing rotor diameter options." },
+  { key: "shifts", label: "Shifts", desc: "Shift names for the day." },
+  { key: "supervisors", label: "Shift Supervisors", desc: "Names in the supervisor sign-off dropdown." },
+  { key: "corePinCavities", label: "Core Pin Cavities", desc: "Cavity numbers for core pin checks." },
+];
+
+function mastersLoad() {
+  try { return JSON.parse(localStorage.getItem(MASTERS_STORAGE_KEY) || "{}"); }
+  catch { return {}; }
+}
+
+function mastersSave(data) {
+  localStorage.setItem(MASTERS_STORAGE_KEY, JSON.stringify(data));
+}
+
+function mastersDefaults() {
+  return {
+    lines: ["01", "02", "03", "06"],
+    furnaces: ["HF1", "HF2", "HF3", "HF4", "HF5", "HF6", "HF11", "HF12"],
+    metalGrades: ["AC2A"],
+    degassingGases: ["N2"],
+    coolingTimes: ["120", "180"],
+    rotorSizes: ["100mm", "190mm"],
+    shifts: ["1st Shift", "2nd Shift", "3rd Shift"],
+    supervisors: ["VIMAL", "BHARATHI", "MOHAN", "NAVEEN", "ASHOK"],
+    corePinCavities: ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10"],
+  };
+}
+
+function mastersGet(key) {
+  const saved = mastersLoad();
+  if (saved[key] && saved[key].length) return saved[key];
+  return mastersDefaults()[key] || [];
+}
+
+function cfgRenderMasters(body) {
+  const canEdit = cfgCan("action.config.masters.edit");
+  const saved = mastersLoad();
+  const defaults = mastersDefaults();
+
+  const sections = MASTERS_DEFS.map((def) => {
+    const items = saved[def.key] && saved[def.key].length ? saved[def.key] : defaults[def.key];
+    const isOverridden = saved[def.key] && saved[def.key].length > 0;
+    return `
+      <div class="sheet-block" style="margin-bottom:14px;padding:14px 16px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:10px;">
+          <div>
+            <strong>${esc(def.label)}</strong>
+            ${isOverridden ? '<span class="pending-badge" style="margin-left:8px;">customised</span>' : ""}
+            <br><span class="muted-xs">${esc(def.desc)}</span>
+          </div>
+          <div style="display:flex;gap:6px;">
+            ${canEdit ? `<button class="link-btn" data-master-edit="${def.key}">Edit</button>` : ""}
+            ${canEdit && isOverridden ? `<button class="link-btn danger" data-master-reset="${def.key}">Reset</button>` : ""}
+          </div>
+        </div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap;">
+          ${items.map((v) => `<span class="role-chip">${esc(v)}</span>`).join("")}
+        </div>
+      </div>`;
+  }).join("");
+
+  body.innerHTML = `
+    ${canEdit ? "" : cfgDenied("You may view masters but not change them. 'Edit masters' permission is required.")}
+    <p class="subtitle" style="margin-bottom:14px;">
+      Dropdown options used across Process Check Sheet forms. Editing these changes
+      what operators can select. Blank values fall back to hardcoded defaults.
+    </p>
+    ${sections}`;
+
+  body.querySelectorAll("[data-master-edit]").forEach((b) =>
+    b.addEventListener("click", () => cfgMasterEditModal(b.dataset.masterEdit))
+  );
+  body.querySelectorAll("[data-master-reset]").forEach((b) =>
+    b.addEventListener("click", () => {
+      if (!confirm(`Reset "${MASTERS_DEFS.find((d) => d.key === b.dataset.masterReset)?.label}" to defaults?`)) return;
+      const data = mastersLoad();
+      delete data[b.dataset.masterReset];
+      mastersSave(data);
+      cfgReload();
+    })
+  );
+}
+
+function cfgMasterEditModal(key) {
+  const def = MASTERS_DEFS.find((d) => d.key === key);
+  const items = mastersGet(key);
+
+  const modal = cfgModal(
+    `Edit — ${def.label}`,
+    `<p class="muted-xs" style="margin-bottom:12px;">${esc(def.desc)} One value per line.</p>
+     <div class="field" style="grid-column:1/-1;">
+       <label>Values</label>
+       <textarea id="master-values" rows="10" style="width:100%;font-family:inherit;font-size:13px;padding:8px;background:var(--input-bg);border:1px solid var(--input-border);border-radius:6px;color:var(--content-fg);resize:vertical;">${esc(items.join("\n"))}</textarea>
+     </div>`,
+    (m) => {
+      const raw = m.querySelector("#master-values").value;
+      const values = raw.split("\n").map((s) => s.trim()).filter(Boolean);
+      if (!values.length) return cfgAlert(m, "At least one value is required.");
+      const data = mastersLoad();
+      data[key] = values;
+      mastersSave(data);
+      if (typeof pcsApplyMasters === "function") pcsApplyMasters();
+      cfgCloseModal(m);
+      cfgReload();
+    },
+    "480px"
+  );
+}
+
 // ---------- boot --------------------------------------------------------
+
+// ---------- data export / import -----------------------------------------
+
+const DATA_EXPORT_KEYS = [
+  { key: "bestcast_rbac_config", label: "Access Control (roles, users, permissions)" },
+  { key: "bestcast_pcs_records", label: "Process Check Sheet records" },
+  { key: "bestcast_templates", label: "Template metadata" },
+  { key: "bestcast_qms_docs", label: "QMS Document metadata" },
+  { key: "bestcast_tolerances", label: "Tolerance overrides" },
+  { key: "bestcast_masters", label: "Masters (dropdown options)" },
+];
+
+function cfgRenderDataMgmt(body) {
+  body.innerHTML = `
+    <div class="tol-header">
+      <p class="subtitle" style="margin-bottom:12px;">
+        Export all application data as a JSON file for backup, or import a previously
+        exported file to restore. File blobs (uploaded templates and QMS documents)
+        are included when available.
+      </p>
+    </div>
+    <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:24px;">
+      <button class="btn" id="data-export">Export all data</button>
+      <label class="btn btn-secondary" style="cursor:pointer;">
+        Import data&hellip;
+        <input type="file" accept=".json" id="data-import" style="display:none;">
+      </label>
+    </div>
+    <div id="data-status"></div>
+    <h2 style="font-size:15px;margin:20px 0 10px;">What is included</h2>
+    <div class="table-wrap">
+      <table class="cfg-table">
+        <thead><tr><th>Store</th><th>Key</th><th>Size</th></tr></thead>
+        <tbody>
+          ${DATA_EXPORT_KEYS.map((d) => {
+            const raw = localStorage.getItem(d.key);
+            const size = raw ? (raw.length / 1024).toFixed(1) + " KB" : "empty";
+            return `<tr><td>${esc(d.label)}</td><td class="mono">${esc(d.key)}</td><td>${size}</td></tr>`;
+          }).join("")}
+          <tr><td>Template file blobs</td><td class="mono">IndexedDB: bestcast_files</td><td>—</td></tr>
+          <tr><td>QMS document file blobs</td><td class="mono">IndexedDB: bestcast_qms_files</td><td>—</td></tr>
+        </tbody>
+      </table>
+    </div>`;
+
+  body.querySelector("#data-export").addEventListener("click", async () => {
+    const status = body.querySelector("#data-status");
+    status.innerHTML = '<p class="muted-xs">Exporting&hellip;</p>';
+    try {
+      const data = { _export: "bestcast", _version: window.BUILD_INFO?.version || "unknown", _date: new Date().toISOString() };
+      DATA_EXPORT_KEYS.forEach((d) => {
+        const raw = localStorage.getItem(d.key);
+        if (raw) data[d.key] = JSON.parse(raw);
+      });
+      data._blobs = {};
+      await cfgExportBlobs(data._blobs, "bestcast_files", "templates");
+      await cfgExportBlobs(data._blobs, "bestcast_qms_files", "documents");
+      const json = JSON.stringify(data, null, 2);
+      const blob = new Blob([json], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `bestcast-backup-${new Date().toISOString().slice(0, 10)}.json`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+      status.innerHTML = '<p class="alert alert-ok">Export complete.</p>';
+    } catch (err) {
+      status.innerHTML = `<p class="alert alert-danger">Export failed: ${esc(err.message)}</p>`;
+    }
+  });
+
+  body.querySelector("#data-import").addEventListener("change", async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const status = body.querySelector("#data-status");
+    if (!confirm("This will overwrite all existing data with the imported file. Continue?")) {
+      e.target.value = "";
+      return;
+    }
+    status.innerHTML = '<p class="muted-xs">Importing&hellip;</p>';
+    try {
+      const text = await file.text();
+      const data = JSON.parse(text);
+      if (data._export !== "bestcast") throw new Error("Not a Bestcast export file.");
+      let count = 0;
+      DATA_EXPORT_KEYS.forEach((d) => {
+        if (data[d.key] !== undefined) {
+          localStorage.setItem(d.key, JSON.stringify(data[d.key]));
+          count++;
+        }
+      });
+      if (data._blobs) {
+        await cfgImportBlobs(data._blobs, "bestcast_files", "templates");
+        await cfgImportBlobs(data._blobs, "bestcast_qms_files", "documents");
+      }
+      status.innerHTML = `<p class="alert alert-ok">Imported ${count} data stores from ${esc(data._version || "unknown")} (${esc(data._date || "")}).</p>`;
+      e.target.value = "";
+    } catch (err) {
+      status.innerHTML = `<p class="alert alert-danger">Import failed: ${esc(err.message)}</p>`;
+      e.target.value = "";
+    }
+  });
+}
+
+function cfgIdbOpen(dbName, storeName) {
+  return new Promise((resolve, reject) => {
+    const req = indexedDB.open(dbName, 1);
+    req.onupgradeneeded = () => { if (!req.result.objectStoreNames.contains(storeName)) req.result.createObjectStore(storeName); };
+    req.onsuccess = () => resolve(req.result);
+    req.onerror = () => reject(req.error);
+  });
+}
+
+async function cfgExportBlobs(target, dbName, storeName) {
+  try {
+    const db = await cfgIdbOpen(dbName, storeName);
+    const tx = db.transaction(storeName, "readonly");
+    const store = tx.objectStore(storeName);
+    const keys = await new Promise((res, rej) => { const r = store.getAllKeys(); r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error); });
+    for (const key of keys) {
+      const val = await new Promise((res, rej) => { const r = store.get(key); r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error); });
+      if (val instanceof ArrayBuffer) {
+        const bytes = new Uint8Array(val);
+        let binary = "";
+        for (let i = 0; i < bytes.length; i++) binary += String.fromCharCode(bytes[i]);
+        target[`${dbName}/${storeName}/${key}`] = btoa(binary);
+      }
+    }
+    db.close();
+  } catch { /* DB may not exist yet */ }
+}
+
+async function cfgImportBlobs(blobs, dbName, storeName) {
+  const prefix = `${dbName}/${storeName}/`;
+  const entries = Object.entries(blobs).filter(([k]) => k.startsWith(prefix));
+  if (!entries.length) return;
+  const db = await cfgIdbOpen(dbName, storeName);
+  const tx = db.transaction(storeName, "readwrite");
+  const store = tx.objectStore(storeName);
+  for (const [k, b64] of entries) {
+    const id = k.slice(prefix.length);
+    const binary = atob(b64);
+    const bytes = new Uint8Array(binary.length);
+    for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+    store.put(bytes.buffer, id);
+  }
+  await new Promise((res, rej) => { tx.oncomplete = res; tx.onerror = () => rej(tx.error); });
+  db.close();
+}
 
 document.addEventListener("DOMContentLoaded", () => {
   CFG_SESSION = renderTopbar("configuration");

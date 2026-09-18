@@ -45,7 +45,8 @@ function handleLogin(event) {
     return;
   }
 
-  tempSetSession(user);
+  var remember = document.getElementById("remember-me");
+  tempSetSession(user, remember && remember.checked);
   window.location.href = "dashboard.html";
 }
 
