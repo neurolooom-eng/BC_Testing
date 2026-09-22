@@ -275,6 +275,211 @@ body.light-theme .field.oos .field-error { color: var(--oos-edge); }
 .oos-summary { margin-top: 4px; }
 .oos-summary li { margin-bottom: 4px; }
 
+/* ---------- operator view ---------- */
+/* One slot at a time, big targets, no sideways scrolling. Built for a
+   tablet on the line rather than a desk. */
+
+.op-wrap { max-width: 860px; }
+
+.op-header {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 16px;
+  margin-bottom: 12px;
+  border: 1px solid var(--card-border);
+  border-radius: 14px;
+  background: var(--card-bg);
+}
+
+.op-slot { flex: 1; text-align: center; min-width: 0; }
+
+.op-slot-time {
+  display: block;
+  font-family: 'Fraunces', serif;
+  font-size: 30px;
+  font-weight: 600;
+  line-height: 1.1;
+}
+
+.op-slot-meta { display: block; font-size: 12.5px; color: var(--content-mute); margin-top: 3px; }
+
+.op-nav {
+  width: 56px;
+  height: 56px;
+  flex-shrink: 0;
+  border-radius: 14px;
+  border: 1px solid var(--card-border);
+  background: var(--input-bg);
+  color: var(--content-fg);
+  font-size: 30px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.op-nav:hover:not(:disabled) { border-color: var(--teal); }
+.op-nav:disabled { opacity: 0.3; cursor: default; }
+
+/* Every slot in the shift at a glance, and a way to jump straight to one. */
+.slot-strip {
+  display: flex;
+  gap: 6px;
+  overflow-x: auto;
+  padding-bottom: 8px;
+  margin-bottom: 16px;
+}
+
+.slot-chip {
+  flex: 0 0 auto;
+  min-width: 62px;
+  min-height: 40px;
+  padding: 6px 10px;
+  border-radius: 9px;
+  border: 1px solid var(--card-border);
+  background: none;
+  color: var(--content-mute);
+  font-family: inherit;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.slot-chip.done { border-color: var(--teal); color: var(--teal); background: rgba(47,167,135,0.12); }
+.slot-chip.current {
+  border-color: var(--teal);
+  background: var(--teal);
+  color: #07061f;
+  font-weight: 700;
+}
+
+.op-locked { margin: 0 0 16px; }
+
+.op-body { border: none; padding: 0; margin: 0; }
+.op-body[disabled] { opacity: 0.6; }
+
+.op-group { margin-bottom: 22px; }
+
+.op-group h3 {
+  font-size: 11.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.9px;
+  color: var(--teal);
+  margin-bottom: 10px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid var(--card-border);
+}
+
+.op-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(210px, 100%), 1fr));
+  gap: 14px;
+}
+
+.op-field label {
+  font-size: 12.5px;
+  text-transform: none;
+  letter-spacing: 0;
+  color: var(--content-fg);
+  font-weight: 600;
+  margin-bottom: 2px;
+}
+
+/* The acceptance band sits directly under the label, so the operator reads
+   the target before typing rather than finding out after saving. */
+.op-spec {
+  display: block;
+  font-size: 11.5px;
+  color: var(--teal);
+  margin-bottom: 6px;
+  font-weight: 600;
+}
+
+.op-input {
+  width: 100%;
+  min-height: 52px;
+  padding: 12px 14px;
+  background: var(--input-bg);
+  border: 1px solid var(--input-border);
+  border-radius: 10px;
+  color: var(--content-fg);
+  font-family: inherit;
+  font-size: 18px;
+  font-weight: 600;
+  outline: none;
+}
+
+/* Keeps a focused input clear of the sticky action bar when the browser
+   scrolls it into view. */
+.op-input { scroll-margin-bottom: 110px; scroll-margin-top: 110px; }
+.op-input:focus { border-color: var(--teal); box-shadow: 0 0 0 3px rgba(47,167,135,0.2); }
+.op-field.oos .op-input { background: var(--oos-bg); color: var(--oos-fg); border-color: var(--oos-edge); }
+.op-field.has-error .op-input { border-color: var(--danger); }
+.op-na .op-input { opacity: 0.5; }
+
+.op-actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  align-items: center;
+  position: sticky;
+  bottom: 0;
+  padding: 14px 0;
+  margin-top: 8px;
+  background: linear-gradient(to top, var(--content-bg) 70%, transparent);
+}
+
+.op-save {
+  flex: 1;
+  min-width: 190px;
+  min-height: 60px;
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.op-copy { min-height: 52px; }
+
+/* ---------- handoff summary ---------- */
+
+.handoff-modal { max-width: 640px; }
+
+.handoff-stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  margin: 18px 0;
+}
+
+.handoff-stat {
+  text-align: center;
+  padding: 14px 8px;
+  border-radius: 12px;
+  border: 1px solid var(--card-border);
+  background: var(--card-bg);
+}
+
+.handoff-num { display: block; font-size: 26px; font-weight: 700; line-height: 1.1; }
+.handoff-label { display: block; font-size: 11px; color: var(--content-mute); margin-top: 4px; }
+
+.handoff-stat.good { border-color: var(--teal); }
+.handoff-stat.good .handoff-num { color: var(--teal); }
+.handoff-stat.warn { border-color: var(--orange); }
+.handoff-stat.warn .handoff-num { color: var(--orange); }
+.handoff-stat.bad { border-color: var(--danger); }
+.handoff-stat.bad .handoff-num { color: var(--danger); }
+
+.handoff-sec { margin-bottom: 16px; }
+
+.handoff-sec h3 {
+  font-size: 11.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  color: var(--content-mute);
+  margin-bottom: 8px;
+}
+
+.handoff-list { margin: 0 0 0 18px; font-size: 13px; line-height: 1.6; }
+.handoff-slots { font-size: 13px; line-height: 1.7; color: var(--content-fg); }
+.handoff-actions { margin-top: 20px; }
+
 /* ---------- touch and tablet ---------- */
 
 @media (pointer: coarse) {
@@ -302,6 +507,38 @@ body.light-theme .field.oos .field-error { color: var(--oos-edge); }
   .sheet-block > summary { padding: 6px 0; }
 
   .row-actions { display: flex; gap: 6px; flex-wrap: wrap; }
+
+  /* Status controls are hit with a gloved or oily hand, so they get the
+     same 48px target as everything else rather than staying icon-sized. */
+  .lock-mark { font-size: 16px; }
+
+  .unlock-btn {
+    font-size: 16px;
+    min-width: 48px;
+    min-height: 48px;
+    padding: 8px;
+    opacity: 1;
+    justify-content: center;
+  }
+
+  .pin { width: 48px; height: 48px; font-size: 15px; }
+  .pin-input select { min-height: 48px; }
+
+  .op-input { min-height: 58px; font-size: 20px; }
+  .op-nav { width: 64px; height: 64px; font-size: 34px; }
+  .op-slot-time { font-size: 34px; }
+  .slot-chip { min-width: 74px; min-height: 48px; font-size: 13px; }
+  .op-save { min-height: 66px; font-size: 19px; }
+  .op-copy { min-height: 58px; font-size: 15px; }
+  .toggle-btn { min-height: 48px; }
+}
+
+@media (max-width: 640px) {
+  .op-header { padding: 10px 12px; gap: 10px; }
+  .op-slot-time { font-size: 26px; }
+  .handoff-stats { grid-template-columns: 1fr; }
+  .op-actions { flex-direction: column; align-items: stretch; }
+  .op-save, .op-copy { width: 100%; }
 }
 
 /* ---------- PCS badges ---------- */

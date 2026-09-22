@@ -15,6 +15,8 @@
     <h1>Welcome back</h1>
     <p class="subtitle" id="welcome">Loading your profile…</p>
 
+    <div class="cards" id="quick-mount" style="display:none;margin-bottom:18px;"></div>
+
     <div class="cards">
       <a class="card" href="production-records.html">
         <h2>Production Records</h2>
@@ -41,8 +43,11 @@
   <script src="js/footer.js"></script>
   <script src="js/brand.js"></script>
   <script src="js/error-handler.js"></script>
+  <script src="js/offline.js"></script>
   <script src="js/temp-local-auth.js"></script>
   <script src="js/rbac.js"></script>
+  <script src="js/util.js"></script>
+  <script src="js/quick-record.js"></script>
   <script src="js/topbar.js"></script>
   <script>
     // TEMPORARY: gated by the hardcoded local session, not Supabase.
@@ -53,6 +58,7 @@
       if (rbacCanViewPage(session.userid, "page.configuration")) {
         document.getElementById("config-card").style.display = "block";
       }
+      qrRenderCard(document.getElementById("quick-mount"), session);
     }
   </script>
 </body>

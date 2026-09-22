@@ -9,9 +9,10 @@ function renderHourlySection(panel, record) {
     <details class="sheet-block" open>
       <summary><h2>Hourly readings</h2><span class="muted-xs">${(record.hourly || []).length} recorded · nearest completed slot is ${escapeHtml(PCS_TIME_SLOTS[nearest])}</span></summary>
       <div class="view-toggle">
+        <button class="toggle-btn${PCS_HOURLY_MODE === "operator" ? " active" : ""}" data-mode="operator">Operator</button>
         <button class="toggle-btn${PCS_HOURLY_MODE === "matrix" ? " active" : ""}" data-mode="matrix">Matrix view</button>
         <button class="toggle-btn${PCS_HOURLY_MODE === "form" ? " active" : ""}" data-mode="form">Form view</button>
-        <span class="muted-xs">Two layouts for the same data — use whichever suits the line.</span>
+        <span class="muted-xs">Operator records one slot at a time; matrix compares the whole shift.</span>
       </div>
       ${pcsDemoModePicker()}
       <div id="hourly-body"></div>
@@ -28,7 +29,8 @@ function renderHourlySection(panel, record) {
   wireDemoControls(panel, record);
 
   const body = panel.querySelector("#hourly-body");
-  if (PCS_HOURLY_MODE === "matrix") renderHourlyMatrix(body, record, nearest);
+  if (PCS_HOURLY_MODE === "operator") renderHourlyOperator(body, record, nearest);
+  else if (PCS_HOURLY_MODE === "matrix") renderHourlyMatrix(body, record, nearest);
   else renderHourlyForm(body, record, nearest);
 }
 
@@ -197,11 +199,14 @@ function renderHourlyMatrix(body, record, nearest) {
   }
 
   body.querySelector("#save-matrix")?.addEventListener("click", () => {
-    if (!saveMatrix()) {
+    const saved = saveMatrix();
+    if (!saved) {
       body.querySelector("#matrix-alert").innerHTML =
         `<div class="alert alert-ok">Nothing to save — no values entered.</div>`;
+      showToast("Nothing to save — no values entered.", "warn");
       return;
     }
+    showToast(`${saved} slot${saved === 1 ? "" : "s"} saved.`);
     reload(record.id);
   });
 
@@ -256,47 +261,11 @@ function wireMatrixLiveValidation(body, record) {
   });
 }
 
+// The handoff summary is the confirmation: it shows what is missing, what
+// went out of spec and whether the sign-off is complete, then offers the
+// submit. A blocking alert() could not show any of that.
 function submitShiftForApproval(recordId, shiftName) {
-  const record = pcsGet(recordId);
-  const shiftRecord = pcsShiftRecordFor(record, shiftName);
-
-  if (!shiftRecord) {
-    alert(
-      `${shiftName} has not been opened yet.\n\n` +
-        "Open the shift under Shift details and complete its sign-off before sending it for approval — " +
-        "the sign-off carries the operator and supervisor names."
-    );
-    return;
-  }
-
-  const missingSignoff = PCS_SHIFT_SIGNOFF_FIELDS.filter((f) => f.required && !shiftRecord[f.key]);
-  if (missingSignoff.length) {
-    alert(
-      `${shiftName} cannot be sent for approval yet.\n\n` +
-        `Complete the sign-off first — missing: ${missingSignoff.map((f) => f.label).join(", ")}.`
-    );
-    return;
-  }
-
-  const missing = pcsMissingSlotsForShift(record, shiftName);
-  const oos = pcsOutOfSpecForShift(record, shiftName);
-
-  let message = `Send ${shiftName} for approval?\n\n`;
-  if (missing.length) {
-    message += `${missing.length} of 16 slots have no reading: ${missing
-      .slice(0, 6)
-      .map((i) => PCS_TIME_SLOTS[i])
-      .join(", ")}${missing.length > 6 ? "…" : ""}\n\n`;
-  }
-  if (oos.length) {
-    message += `${oos.length} out-of-spec reading${oos.length === 1 ? "" : "s"} will be signed for as they stand.\n\n`;
-  }
-  message += "The shift locks for editing once submitted.";
-
-  if (!confirm(message)) return;
-
-  pcsSubmitShift(recordId, shiftName, PCS_SESSION.userid);
-  reload(recordId);
+  pcsOpenHandoff(recordId, shiftName);
 }
 
 function renderHourlyForm(body, record, nearest) {
@@ -418,9 +387,13 @@ function renderHourlyForm(body, record, nearest) {
   const saveBtn = body.querySelector("#save-hourly");
   if (saveBtn && !locked) {
     saveBtn.addEventListener("click", () => {
-      if (!saveHourlyForm()) return;
+      if (!saveHourlyForm()) {
+        showToast("Not saved — some readings are blank.", "error");
+        return;
+      }
       PCS_FORM_SLOT = Math.min(slot + 1, PCS_TIME_SLOTS.length - 1);
       PCS_FORM_FLASH = `${PCS_TIME_SLOTS[slot]} saved.`;
+      showToast(`${PCS_TIME_SLOTS[slot]} saved.`);
       reload(record.id);
     });
   }

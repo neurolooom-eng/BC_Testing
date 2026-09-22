@@ -73,6 +73,22 @@ jobs:
               fi
             done
           done
+          # Every file the service worker precaches must exist, or the
+          # install stalls on a 404 and offline support silently dies.
+          for url in $(grep -oP '^\s*"\K[^"]+(?=",?$)' public/sw.js); do
+            if [ "$url" = "./" ]; then continue; fi
+            if [ ! -f "public/$url" ]; then
+              echo "::error file=public/sw.js::Precached file public/$url does not exist"
+              ERRORS=$((ERRORS + 1))
+            fi
+          done
+          # Every JS file must parse.
+          for js in public/js/*.js public/sw.js; do
+            if ! node --check "$js" 2>/dev/null; then
+              echo "::error file=$js::Syntax error"
+              ERRORS=$((ERRORS + 1))
+            fi
+          done
           if [ "$ERRORS" -gt 0 ]; then
             echo "::error::Smoke test failed with $ERRORS error(s)"
             exit 1
