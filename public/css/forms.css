@@ -237,6 +237,41 @@ td a:hover { text-decoration: underline; }
 .link-btn:hover { text-decoration: underline; }
 .link-btn.danger { color: var(--danger); }
 
+/* ---------- toast ---------- */
+/* Fixed to the bottom of the viewport and sized to be read at arm's length
+   from a tablet propped next to a machine. */
+
+/* Anchored to the top, clear of the sticky top bar: the operator view
+   parks its Save button at the bottom of the screen, and a toast landing
+   on top of it would hide the one control the operator needs next. */
+.app-toast {
+  position: fixed;
+  left: 50%;
+  top: 96px;
+  transform: translate(-50%, -160%);
+  width: min(680px, calc(100vw - 32px));
+  padding: 16px 22px;
+  border-radius: 12px;
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 1.4;
+  text-align: center;
+  box-shadow: 0 18px 40px -12px rgba(0,0,0,0.55);
+  transition: transform 220ms ease, opacity 220ms ease;
+  opacity: 0;
+  z-index: 200;
+}
+
+.app-toast.visible { transform: translate(-50%, 0); opacity: 1; }
+
+.toast-ok { background: #1c7a5e; color: #ffffff; border: 1px solid #2fa787; }
+.toast-warn { background: #9a5410; color: #ffffff; border: 1px solid #e8823a; }
+.toast-error { background: #a3231f; color: #ffffff; border: 1px solid #e8534f; }
+
+@media (pointer: coarse) {
+  .app-toast { font-size: 18px; padding: 20px 24px; }
+}
+
 /* ---------- touch targets ---------- */
 
 @media (pointer: coarse) {

@@ -371,3 +371,51 @@ describes — see the Backlog cleanup.
 | REQ-A11Y-002 | When a modal opens, keyboard focus shall be trapped within the modal until it closes. | Focus escaping to content behind the modal breaks the interaction. | Test | Implemented |
 | REQ-A11Y-003 | When a modal closes, keyboard focus shall return to the element that was focused before the modal opened. | Restoring context for keyboard users. | Test | Implemented |
 | REQ-A11Y-004 | Pressing Escape shall close the active modal. | Standard keyboard shortcut for dismissing dialogs. | Test | Implemented |
+
+## 20. Operator Experience (OPX)
+
+The people recording readings do so standing at a furnace, on a tablet,
+between machine cycles. These requirements exist so the record can be made
+in that setting rather than at a desk.
+
+| ID | Requirement | Rationale | Verification | Status |
+|---|---|---|---|---|
+| REQ-OPX-001 | The hourly readings section shall provide an Operator view that presents one time slot at a time as a single vertically scrolling form, with no horizontal scrolling. | The matrix is 16+ columns wide and unusable on a tablet held at a machine. | Test | Implemented |
+| REQ-OPX-002 | The Operator view shall be the default hourly layout on devices reporting a coarse pointer. | A touch device is a tablet on the line; it should open in the view built for that. | Test | Implemented |
+| REQ-OPX-003 | The Operator view shall group hourly readings under headings reflecting the order in which they are taken at the furnace. | Working down the screen should match working down the line. | Inspection | Implemented |
+| REQ-OPX-004 | The Operator view shall display each reading's acceptance range directly beneath its label, before any value is entered. | The operator must know the target before typing, not after saving. | Test | Implemented |
+| REQ-OPX-005 | The Operator view shall indicate a reading as out of specification as the value is typed, without waiting for a save. | Catching a mistake at entry is cheaper than correcting it at review. | Test | Implemented |
+| REQ-OPX-006 | The Operator view shall provide a control that pre-fills the current slot from the most recent earlier slot that has a reading. | Most furnace readings hold steady hour to hour; retyping sixteen unchanged values invites transcription error. | Test | Implemented |
+| REQ-OPX-007 | The Operator view shall display the slots of the current shift as a strip indicating which are recorded, which is current, and allowing direct selection of any of them. | Shift progress must be visible without opening the matrix. | Test | Implemented |
+| REQ-OPX-008 | On saving a reading, the Operator view shall advance to the next time slot. | The next action is almost always the next slot. | Test | Implemented |
+| REQ-OPX-009 | The system shall confirm a save with a notification legible at arm's length, stating the slot saved and the number of out-of-spec readings. | A tablet propped beside a machine is not read at desk distance. | Test | Implemented |
+| REQ-OPX-010 | The system shall refuse to save a slot with required readings blank, and shall state how many are blank. | A partial slot recorded as complete misrepresents the shift. | Test | Implemented |
+| REQ-OPX-011 | Pressing Enter in an Operator view reading shall move focus to the next reading. | A whole slot should be enterable from the keypad without reaching for the screen. | Test | Implemented |
+| REQ-OPX-012 | Interactive controls shall present a touch target of at least 48 × 48 CSS pixels on devices reporting a coarse pointer. | Targets are hit with a gloved or oily hand. | Inspection | Implemented |
+| REQ-OPX-013 | On signing in, a user who may record hourly readings but may not view Configuration shall be taken directly to the open day sheet for the current production day, where one exists. | An operator signs in to record a reading, not to navigate. | Test | Implemented |
+| REQ-OPX-014 | The dashboard shall present a Quick Record card linking directly to the open day sheet to any user who may record hourly readings. | The same shortcut, for users who are not redirected into it. | Test | Implemented |
+| REQ-OPX-015 | The production day for the purpose of REQ-OPX-013 and REQ-OPX-014 shall begin at 06:30 and run to 06:30 the following morning. | The third shift crosses midnight; the sheet being filled at 02:00 is the previous calendar day's. | Test | Implemented |
+| REQ-OPX-016 | On devices reporting a coarse pointer, the navigation bar shall collapse behind a menu control, and shall default to the light theme. | A wrapped nav costs a fifth of a tablet screen; plant lighting favours dark-on-light. | Test | Implemented |
+
+## 21. Shift Handoff (HAND)
+
+| ID | Requirement | Rationale | Verification | Status |
+|---|---|---|---|---|
+| REQ-HAND-001 | The system shall present a shift handoff summary stating the number of slots recorded, the number missed, and the number of out-of-spec readings for that shift. | The outgoing and incoming operators need one screen they can read together. | Test | Implemented |
+| REQ-HAND-002 | The handoff summary shall list the time slots with no reading recorded. | A missed slot is a fact about the shift, to be seen rather than discovered later. | Test | Implemented |
+| REQ-HAND-003 | The handoff summary shall list each out-of-spec reading with its time slot, label, value and the reason it is out of spec. | The supervisor signs for these specifically. | Test | Implemented |
+| REQ-HAND-004 | The handoff summary shall list machine changes occurring during the shift. | Machines starting or stopping mid-shift explain gaps in the Die Temp columns. | Test | Implemented |
+| REQ-HAND-005 | The handoff summary shall state whether the shift sign-off is complete and, where it is not, which fields are outstanding. | The shift cannot be submitted without it. | Test | Implemented |
+| REQ-HAND-006 | The handoff summary shall offer submission for approval only when the shift sign-off is complete and the shift is in draft status. | Submission without a sign-off carries no operator or supervisor name. | Test | Implemented |
+| REQ-HAND-007 | The handoff summary shall be reachable on demand from the shift sign-off section, in addition to being shown when the final reading of a shift is saved. | It is useful at any point in the shift, not only at its end. | Test | Implemented |
+
+## 22. Offline Operation (OFF)
+
+| ID | Requirement | Rationale | Verification | Status |
+|---|---|---|---|---|
+| REQ-OFF-001 | The system shall register a service worker that caches the application shell, so pages load when the network is unavailable. | Shop-floor wireless coverage is unreliable; a dropout must not stop recording. | Test | Implemented |
+| REQ-OFF-002 | The service worker shall attempt the network before the cache for every request, falling back to the cache only when the network fails. | A stale shell that never updates would be worse than an offline gap. | Test | Implemented |
+| REQ-OFF-003 | The system shall display an indicator in the navigation bar whenever the browser reports no network connection. | The operator must not be left wondering whether their readings are going anywhere. | Test | Implemented |
+| REQ-OFF-004 | The system shall notify the user when the connection is lost and when it is restored. | The transition is what matters, and it is silent otherwise. | Test | Implemented |
+| REQ-OFF-005 | Recording, saving and reading day sheet data shall function with no network connection. | Records are held in browser storage, which needs no network. | Test | Implemented |
+| REQ-OFF-006 | The deployment process shall verify that every file listed for precaching by the service worker exists. | A 404 during install stalls the worker and silently disables offline support. | Test | Implemented |

@@ -15,6 +15,7 @@ const NAV_ICONS = {
     '<svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.2"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0"/><path d="M16 8.2a3.2 3.2 0 1 1 3.2 3.2"/><path d="M15.5 14.2c2.7.3 4.9 2.4 5.4 5.6"/></svg>',
   config:
     '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1A1.7 1.7 0 0 0 8.9 19a1.7 1.7 0 0 0-1.9.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.9 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1A1.7 1.7 0 0 0 5 8.9a1.7 1.7 0 0 0-.3-1.9l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.9.3H9.5a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.9-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.9v.1a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1Z"/></svg>',
+  menu: '<svg viewBox="0 0 24 24"><path d="M3 6h18M3 12h18M3 18h18"/></svg>',
   templates:
     '<svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><path d="M14 2v6h6"/><path d="M10 13h4M10 17h4"/></svg>',
   knowledge:
@@ -67,7 +68,12 @@ function renderTopbar(activeKey) {
       <span class="brand-name">Bestcast</span>
     </a>
 
-    <nav class="main-nav">
+    <button class="nav-toggle" id="nav-toggle" type="button"
+            aria-label="Menu" aria-expanded="false" aria-controls="main-nav">
+      ${NAV_ICONS.menu}
+    </button>
+
+    <nav class="main-nav" id="main-nav">
       ${NAV_ITEMS.filter((item) => navCanView(session, item.page))
         .map((item) => {
           const icon = NAV_ICONS[item.icon];
@@ -94,6 +100,7 @@ function renderTopbar(activeKey) {
     </nav>
 
     <div class="header-actions">
+      <span class="offline-badge" id="offline-badge" role="status" hidden>Offline</span>
       <button class="theme-toggle" id="theme-toggle" type="button"
               title="Toggle light/dark theme" aria-label="Toggle light and dark theme">
         <svg id="icon-moon" viewBox="0 0 24 24"><path d="M21 12.5A8.5 8.5 0 1 1 11.5 3a7 7 0 0 0 9.5 9.5Z"/></svg>
@@ -167,9 +174,56 @@ function renderTopbar(activeKey) {
   window.addEventListener("scroll", closeAllMenus, { passive: true });
   header.querySelector(".main-nav").addEventListener("scroll", closeAllMenus, { passive: true });
 
+  // --- collapsed nav (tablet and below) ---
+  // Below 1024px the nav used to wrap onto two or three rows, taking a
+  // fifth of a tablet screen before any of the sheet was visible. It now
+  // folds behind this button; the page keeps the space.
+  const navToggle = document.getElementById("nav-toggle");
+  const mainNav = document.getElementById("main-nav");
+
+  navToggle.addEventListener("click", (e) => {
+    e.stopPropagation();
+    const open = mainNav.classList.toggle("open");
+    navToggle.setAttribute("aria-expanded", String(open));
+  });
+
+  // Tapping anywhere else closes it, as does following a link out of it.
+  document.addEventListener("click", (e) => {
+    if (mainNav.contains(e.target) && !e.target.closest(".nav-item-wrap")) return;
+    if (e.target === navToggle || navToggle.contains(e.target)) return;
+    mainNav.classList.remove("open");
+    navToggle.setAttribute("aria-expanded", "false");
+  });
+
+  document.addEventListener("keydown", (e) => {
+    if (e.key !== "Escape") return;
+    mainNav.classList.remove("open");
+    navToggle.setAttribute("aria-expanded", "false");
+    closeAllMenus();
+  });
+
   document.getElementById("logout").addEventListener("click", () => {
     tempClearSession();
     window.location.href = "login.html";
+  });
+
+  // --- connection state ---
+  // Shop-floor wifi drops. The badge says so plainly, rather than leaving
+  // the operator to wonder whether their readings are going anywhere.
+  const offlineBadge = document.getElementById("offline-badge");
+  function paintConnection() {
+    offlineBadge.hidden = navigator.onLine;
+  }
+  paintConnection();
+  window.addEventListener("online", () => {
+    paintConnection();
+    if (typeof showToast === "function") showToast("Back online.");
+  });
+  window.addEventListener("offline", () => {
+    paintConnection();
+    if (typeof showToast === "function") {
+      showToast("Offline — readings are saved on this tablet and stay there.", "warn");
+    }
   });
 
   // --- theme ---
@@ -183,7 +237,13 @@ function renderTopbar(activeKey) {
     iconSun.style.display = theme === "light" ? "block" : "none";
   }
 
-  applyTheme(localStorage.getItem(THEME_KEY) || "dark");
+  // A tablet on the shop floor is read under bright plant lighting, where
+  // dark-on-light wins; a desk browser keeps the dark default. Either way an
+  // explicit choice, once made, is what sticks.
+  const savedTheme = localStorage.getItem(THEME_KEY);
+  const defaultTheme =
+    window.matchMedia && window.matchMedia("(pointer: coarse)").matches ? "light" : "dark";
+  applyTheme(savedTheme || defaultTheme);
 
   document.getElementById("theme-toggle").addEventListener("click", () => {
     const next = document.body.classList.contains("light-theme") ? "dark" : "light";

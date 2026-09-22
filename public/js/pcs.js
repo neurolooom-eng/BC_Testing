@@ -15,10 +15,14 @@
 
 let PCS_SESSION = null;
 
-// Hourly entry offers two layouts so the better one can be chosen in use:
-// "matrix" edits many slots at once, "form" edits one slot at a time.
+// Hourly entry offers three layouts so the right one is at hand for the job:
+// "operator" records one slot at a time with large targets, "matrix" edits
+// many slots at once for review, "form" is the original single-slot layout.
+// A touch device is a tablet on the line, so it opens in the operator view.
 const PCS_HOURLY_MODE_KEY = "bestcast_pcs_hourly_mode";
-let PCS_HOURLY_MODE = localStorage.getItem(PCS_HOURLY_MODE_KEY) || "matrix";
+let PCS_HOURLY_MODE =
+  localStorage.getItem(PCS_HOURLY_MODE_KEY) ||
+  (window.matchMedia && window.matchMedia("(pointer: coarse)").matches ? "operator" : "matrix");
 let PCS_SHOW_ALL_SLOTS = false;
 let PCS_SHOW_ARCHIVED = false;
 // Which shift the matrix is scoped to; null follows the shift in progress.

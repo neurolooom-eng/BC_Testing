@@ -400,3 +400,53 @@ Configuration → Masters.
 | TC-A11Y-002 | REQ-A11Y-002 | Modal open | Press Tab repeatedly. | Focus cycles within the modal; does not escape to background content. | Not run |
 | TC-A11Y-003 | REQ-A11Y-003 | Modal opened from a specific button | Close the modal. | Focus returns to the button that opened it. | Not run |
 | TC-A11Y-004 | REQ-A11Y-004 | Modal open | Press Escape. | Modal closes. | Not run |
+
+## 20. Operator Experience
+
+| ID | Verifies | Preconditions | Steps | Expected result | Result |
+|---|---|---|---|---|---|
+| TC-OPX-001 | REQ-OPX-001 | Day sheet open on a tablet-width viewport | Open Hourly readings in the Operator view. | One time slot shown as a vertical form; the page scrolls only vertically. | Pass |
+| TC-OPX-002 | REQ-OPX-002 | Device reporting a coarse pointer, no stored view preference | Open a day sheet. | Operator is the active hourly view. | Pass |
+| TC-OPX-003 | REQ-OPX-003 | Operator view open | Read the section headings down the form. | Charge, Temperatures, Degassing, Gas check, Environment, Die temperature — in that order. | Pass |
+| TC-OPX-004 | REQ-OPX-004 | Operator view open, no values entered | Inspect Melting Metal Temp. | "700–800 °C" shown beneath the label. | Pass |
+| TC-OPX-005 | REQ-OPX-005 | Operator view open | Enter 950 into Melting Metal Temp. | Field turns red and reads "Out of spec — above spec (700–800 °C)" without saving. | Pass |
+| TC-OPX-006 | REQ-OPX-005 | Following TC-OPX-005 | Change the value to 750. | Out-of-spec styling and message clear. | Pass |
+| TC-OPX-007 | REQ-OPX-006 | An earlier slot has a complete reading | Open a later empty slot and press the Copy button. | Fields pre-filled from that earlier slot; validation repaints. | Pass |
+| TC-OPX-008 | REQ-OPX-007 | Operator view open, one slot recorded | Inspect the slot strip. | Recorded slot marked done, current slot highlighted; tapping another slot opens it. | Pass |
+| TC-OPX-009 | REQ-OPX-008, REQ-OPX-009 | All readings for a slot entered | Press Save & next. | Notification "6.30pm saved."; view advances to 7.00pm. | Pass |
+| TC-OPX-010 | REQ-OPX-009 | A slot containing out-of-spec readings | Save it. | Notification states the slot saved and the number of out-of-spec readings. | Pass |
+| TC-OPX-011 | REQ-OPX-010 | Operator view with blank required readings | Press Save & next. | Save refused; blank fields marked Required; notification "Not saved — some readings are blank." | Pass |
+| TC-OPX-012 | REQ-OPX-011 | Operator view open, focus in the first reading | Press Enter. | Focus moves to the next reading. | Pass |
+| TC-OPX-013 | REQ-OPX-012 | Coarse-pointer device | Measure the unlock, core pin and slot chip controls. | Each at least 48 × 48 CSS pixels. | Pass |
+| TC-OPX-014 | REQ-OPX-013 | User `operator`; an open day sheet exists for the current production day | Sign in. | Lands directly on that day sheet, not the dashboard. | Pass |
+| TC-OPX-015 | REQ-OPX-013 | User `administrator`; an open day sheet exists | Sign in. | Lands on the dashboard. | Pass |
+| TC-OPX-016 | REQ-OPX-013 | User `operator`; no day sheet exists | Sign in. | Lands on the dashboard. | Pass |
+| TC-OPX-017 | REQ-OPX-014 | Signed in as a user who may record readings; an open day sheet exists | Open the dashboard. | Quick Record card shown above the navigation cards, naming the date, line and furnace. | Pass |
+| TC-OPX-018 | REQ-OPX-015 | Current time 02:00; a sheet exists dated the previous calendar day | Sign in as `operator`. | That previous day's sheet is offered, not a new one. | Not run |
+| TC-OPX-019 | REQ-OPX-016 | Viewport at or below 1024px | Load any authenticated page. | Navigation hidden behind a menu button; opening the button reveals it; Escape closes it. | Pass |
+| TC-OPX-020 | REQ-OPX-016 | Coarse-pointer device, no stored theme preference | Load any authenticated page. | Light theme applied. | Pass |
+
+## 21. Shift Handoff
+
+| ID | Verifies | Preconditions | Steps | Expected result | Result |
+|---|---|---|---|---|---|
+| TC-HAND-001 | REQ-HAND-001 | Shift with 14 of 16 slots recorded and 3 out-of-spec readings | Open the handoff summary. | Tiles read 14/16 slots recorded, 2 missed, 3 out of spec. | Pass |
+| TC-HAND-002 | REQ-HAND-002 | As above | Inspect the summary. | The two unrecorded time slots listed by time. | Pass |
+| TC-HAND-003 | REQ-HAND-003 | As above | Inspect the out-of-spec section. | Each reading listed with time slot, label, value and reason. | Pass |
+| TC-HAND-004 | REQ-HAND-004 | A machine stopped mid-shift | Open the handoff summary. | Machine change listed with its time. | Not run |
+| TC-HAND-005 | REQ-HAND-005 | Shift sign-off incomplete | Open the handoff summary. | Outstanding sign-off fields named; no submit control offered. | Not run |
+| TC-HAND-006 | REQ-HAND-006 | Shift sign-off complete, shift in draft | Open the handoff summary and submit. | Shift status becomes pending. | Pass |
+| TC-HAND-007 | REQ-HAND-007 | Any opened shift | Shift sign-off section → Handoff summary. | Summary opens without saving a reading first. | Pass |
+| TC-HAND-008 | REQ-HAND-006 | Shift already submitted | Open the handoff summary. | Status reported as Pending approval; no submit control offered. | Not run |
+
+## 22. Offline Operation
+
+| ID | Verifies | Preconditions | Steps | Expected result | Result |
+|---|---|---|---|---|---|
+| TC-OFF-001 | REQ-OFF-001 | Site served over HTTPS or localhost | Load any page and inspect the service worker registration. | Worker registered and active; application shell cached. | Pass |
+| TC-OFF-002 | REQ-OFF-002 | Worker active; a file changed on the server | Reload with the network available. | The new version is served, not the cached one. | Not run |
+| TC-OFF-003 | REQ-OFF-001 | Worker active, pages visited once | Disconnect the network and reload the Process Check Sheet page. | Page loads from cache and renders. | Pass |
+| TC-OFF-004 | REQ-OFF-003 | Network disconnected | Inspect the navigation bar. | Offline indicator visible. | Pass |
+| TC-OFF-005 | REQ-OFF-004 | Page loaded, network available | Disconnect, then reconnect the network. | Notification on losing the connection, and again on its return. | Not run |
+| TC-OFF-006 | REQ-OFF-005 | Network disconnected, day sheet open | Enter and save a slot's readings. | Readings saved and readable after reload. | Not run |
+| TC-OFF-007 | REQ-OFF-006 | `sw.js` listing a file that does not exist | Run the deploy workflow. | Smoke test fails with an error naming the missing file. | Pass |

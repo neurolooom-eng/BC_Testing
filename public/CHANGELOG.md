@@ -4,6 +4,74 @@ Version numbers follow semver — see `VERSIONING.md` at the repo root.
 Build number and build date shown in the site footer are generated
 automatically per deploy and are not tracked here.
 
+## 2.3.0 — 2026-09-22
+
+**Operator experience — built for recording readings on a tablet at the machine**
+
+The people filling in this sheet do it standing at a furnace, on a tablet,
+between machine cycles. This release reworks the recording path for that
+setting rather than for a desk.
+
+### 1. Operator view (`pcs-operator.js`)
+- New third hourly layout alongside Matrix and Form: one time slot at a
+  time, as a single vertically scrolling form with no sideways scrolling
+- Readings grouped under Charge, Temperatures, Degassing, Gas check,
+  Environment and Die temperature — the order they are taken at the furnace
+- Each reading shows its acceptance range under the label, before anything
+  is typed; out-of-spec values are marked as they are entered
+- Large slot header with previous/next controls, and a strip of the shift's
+  slots showing which are recorded and allowing a jump to any of them
+- `Save & next` advances to the following slot; Enter moves between fields
+- Default hourly view on any device reporting a coarse pointer
+
+### 2. Copy previous slot
+- One control pre-fills the current slot from the most recent earlier slot
+  with a reading, so the operator confirms and corrects rather than
+  retyping sixteen values that have not moved
+
+### 3. Quick Record (`quick-record.js`)
+- A user who may record readings but may not open Configuration now lands
+  directly on the current day sheet when signing in, instead of navigating
+  Overview → Production Records → Process Check Sheet → pick the day
+- Dashboard shows a Quick Record card linking to the same sheet, for users
+  who are not redirected into it
+- The production day runs 06:30 to 06:30, so the third shift's sheet still
+  resolves correctly after midnight
+
+### 4. Save confirmation (`showToast` in `util.js`)
+- Saves, refusals and connection changes are confirmed by a notification
+  sized to be read at arm's length, replacing the small inline flash
+- A save is refused, with the count, when required readings are blank
+- Replaces the blocking `confirm()`/`alert()` dialogs on shift submission
+
+### 5. Shift handoff summary (`pcs-handoff.js`)
+- One screen the outgoing and incoming operators can read together: slots
+  recorded, slots missed, out-of-spec readings with times and reasons,
+  machine changes during the shift, and sign-off state
+- Shown when the last reading of a shift is saved, and reachable on demand
+  from the shift sign-off section
+- Submission for approval is offered from here, and only when the sign-off
+  is complete — this replaces the previous stack of alert dialogs
+
+### 6. Offline support (`sw.js`, `offline.js`)
+- Service worker caches the application shell so a wireless dropout does
+  not stop recording; records were already local and need no network
+- Network-first with cache fallback, so a deploy is never masked by a
+  stale cached shell
+- Offline indicator in the navigation bar, plus a notification when the
+  connection drops and when it returns
+
+### 7. Navigation and touch targets
+- Navigation collapses behind a menu button at 1024px and below, instead of
+  wrapping onto two or three rows and taking a fifth of a tablet screen
+- Unlock, core pin and slot controls raised to a 48px minimum target
+- Light theme is the default on coarse-pointer devices, which read better
+  under plant lighting; an explicit choice still wins
+
+### 8. CI
+- Smoke test now also checks that every file precached by the service
+  worker exists, and that every JS file parses
+
 ## 2.2.0 — 2026-09-18
 
 **Codebase improvements — shared utilities, CSS refactor, accessibility, configurable masters, session management**

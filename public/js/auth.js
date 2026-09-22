@@ -19,8 +19,9 @@ function setLoading(isLoading) {
 }
 
 function redirectIfAlreadySignedIn() {
-  if (tempGetSession()) {
-    window.location.href = "dashboard.html";
+  const session = tempGetSession();
+  if (session) {
+    window.location.href = qrLandingPage(session);
   }
 }
 
@@ -47,7 +48,9 @@ function handleLogin(event) {
 
   var remember = document.getElementById("remember-me");
   tempSetSession(user, remember && remember.checked);
-  window.location.href = "dashboard.html";
+  // A user whose job here is recording readings goes straight to the sheet
+  // rather than through the dashboard — see quick-record.js.
+  window.location.href = qrLandingPage(user);
 }
 
 function handleForgotPassword(event) {

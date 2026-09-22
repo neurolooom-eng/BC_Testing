@@ -248,6 +248,7 @@ function renderShiftSignoffSection(panel, record) {
 
           <div class="btn-row" style="margin-top:14px;">
             ${canSign ? `<button class="link-btn" data-edit-signoff="${e.id}">Complete sign-off</button>` : ""}
+            <button class="link-btn" data-handoff="${escapeHtml(e.shift)}">Handoff summary</button>
             ${
               status === PCS_SHIFT_STATUS.PENDING && pcsCan("action.pcs.approve")
                 ? `<button class="link-btn" data-approve="shifts:${e.id}">Approve shift</button>`
@@ -281,6 +282,9 @@ function renderShiftSignoffSection(panel, record) {
 
   panel.querySelectorAll("[data-edit-signoff]").forEach((b) =>
     b.addEventListener("click", () => openSignoffModal(record, b.dataset.editSignoff))
+  );
+  panel.querySelectorAll("[data-handoff]").forEach((b) =>
+    b.addEventListener("click", () => pcsOpenHandoff(record.id, b.dataset.handoff))
   );
   panel.querySelectorAll("[data-reopen-shift]").forEach((b) =>
     b.addEventListener("click", () => {

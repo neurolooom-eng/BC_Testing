@@ -235,6 +235,43 @@ button.nav-item {
 
 .nav-dropdown a:hover { background: rgba(246,244,238,0.08); }
 
+/* Hidden on desktop, where the nav sits in the bar. Revealed at 1024px,
+   where the nav folds behind it. */
+.nav-toggle {
+  display: none;
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  border: 1px solid rgba(246,244,238,0.18);
+  background: rgba(246,244,238,0.06);
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.nav-toggle svg {
+  width: 22px;
+  height: 22px;
+  stroke: #f6f4ee;
+  stroke-width: 2;
+  fill: none;
+}
+
+.nav-toggle:hover { background: rgba(246,244,238,0.12); }
+
+.offline-badge {
+  padding: 5px 11px;
+  border-radius: 20px;
+  font-size: 11.5px;
+  font-weight: 700;
+  letter-spacing: 0.4px;
+  background: rgba(232,130,58,0.2);
+  color: #ffce9e;
+  border: 1px solid var(--orange);
+  white-space: nowrap;
+}
+
 .header-actions {
   margin-left: auto;
   display: flex;
@@ -344,16 +381,29 @@ button.nav-item {
 
 /* --- Responsive: desktop → tablet → mobile ---------------------------- */
 
-/* Tablet and below: the nav drops onto its own full-width row beneath the
-   brand and user controls, then wraps within that row as needed. */
+/* Tablet and below: the nav folds behind the menu button. It still takes
+   its own full-width row, but only once opened — closed, the bar is one
+   row and the page keeps the height. */
 @media (max-width: 1024px) {
   .topbar { padding: 10px 20px; }
+  .nav-toggle { display: flex; }
   .main-nav {
+    display: none;
     order: 3;
     flex-basis: 100%;
     justify-content: flex-start;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 4px;
+    padding: 8px 0 4px;
+    border-top: 1px solid rgba(246,244,238,0.1);
+    margin-top: 6px;
   }
-  .nav-item { height: 48px; padding: 0 16px; }
+  .main-nav.open { display: flex; }
+  .nav-item { height: 52px; padding: 0 16px; width: 100%; border-radius: 12px; }
+  .nav-item.active::after { display: none; }
+  .nav-item-wrap { width: 100%; }
+  button.nav-item { justify-content: flex-start; }
 }
 
 @media (max-width: 640px) {
@@ -361,13 +411,13 @@ button.nav-item {
   .brand-logo { width: 34px; height: 34px; }
   .brand-name { font-size: 19px; }
   .nav-item {
-    height: 42px;
-    padding: 0 12px;
-    font-size: 13px;
-    gap: 7px;
+    height: 50px;
+    padding: 0 14px;
+    font-size: 14px;
+    gap: 10px;
     border-radius: 11px;
   }
-  .nav-item svg { width: 17px; height: 17px; }
+  .nav-item svg { width: 18px; height: 18px; }
   .user-name { display: none; }
   .header-actions { gap: 10px; }
 }
@@ -376,7 +426,7 @@ button.nav-item {
    gets the space. */
 @media (max-width: 400px) {
   .brand-name { display: none; }
-  .nav-item { padding: 0 10px; font-size: 12.5px; }
+  .nav-item { padding: 0 12px; }
 }
 
 /* ---------- Page content ---------- */
@@ -441,6 +491,45 @@ a.card:hover { border-color: var(--teal); }
 }
 
 .card p { font-size: 13px; color: var(--content-mute); }
+
+/* Quick Record — the resume-recording card at the top of the dashboard.
+   Deliberately louder than the navigation cards below it: for a line user
+   this is the only thing on the page they came for. */
+
+.quick-card {
+  grid-column: 1 / -1;
+  border-color: var(--teal);
+  background: linear-gradient(135deg, rgba(47,167,135,0.16), rgba(232,130,58,0.08));
+  padding: 24px;
+}
+
+.quick-tag {
+  display: inline-block;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.9px;
+  font-weight: 700;
+  color: var(--teal);
+  margin-bottom: 8px;
+}
+
+.quick-card h2 {
+  font-family: 'Fraunces', serif;
+  font-size: 24px;
+  text-transform: none;
+  letter-spacing: 0;
+  color: var(--content-fg);
+  margin-bottom: 6px;
+}
+
+.quick-line { font-size: 14px; color: var(--content-fg); }
+.quick-go { font-size: 13px; color: var(--teal); font-weight: 600; margin-top: 10px; }
+
+@media (pointer: coarse) {
+  .quick-card { padding: 28px 24px; }
+  .quick-card h2 { font-size: 27px; }
+  .quick-line { font-size: 15px; }
+}
 
 .build-footer {
   text-align: center;

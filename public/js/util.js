@@ -12,6 +12,38 @@ function el(html) {
   return t.content.firstElementChild;
 }
 
+// ---------- toast -------------------------------------------------------
+// A full-width confirmation bar, sized to be read at arm's length from a
+// tablet propped beside a machine rather than at a desk.
+
+var _toastTimer = null;
+
+function showToast(message, kind) {
+  var existing = document.getElementById("app-toast");
+  if (existing) existing.remove();
+  if (_toastTimer) clearTimeout(_toastTimer);
+
+  var toast = el(
+    '<div id="app-toast" class="app-toast toast-' +
+      (kind || "ok") +
+      '" role="status" aria-live="polite"><span class="toast-text"></span></div>'
+  );
+  toast.querySelector(".toast-text").textContent = message;
+  document.body.appendChild(toast);
+
+  // Next frame, so the entry transition actually runs.
+  requestAnimationFrame(function () {
+    toast.classList.add("visible");
+  });
+
+  _toastTimer = setTimeout(function () {
+    toast.classList.remove("visible");
+    setTimeout(function () {
+      toast.remove();
+    }, 250);
+  }, kind === "error" ? 5000 : 2600);
+}
+
 // ---------- modal accessibility -----------------------------------------
 // trapFocus(backdrop) keeps Tab cycling inside a modal and focuses the
 // first interactive element. releaseFocus() restores focus to wherever it
