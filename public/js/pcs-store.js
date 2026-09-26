@@ -215,6 +215,21 @@ function pcsSaveHourly(dailyId, slotIndex, entry) {
   });
 }
 
+// Empty slots that saving `slots` would lock (see pcsHourlyLocked): those
+// after the latest recorded reading and before the last slot being saved,
+// not counting slots in the same save. Slots at or before the latest
+// reading are already locked, so a save changes nothing for them.
+function pcsSlotsSkippedBySaving(record, slots) {
+  const saving = new Set([].concat(slots));
+  if (!saving.size) return [];
+  const last = Math.max(...saving);
+  const skipped = [];
+  for (let i = pcsLatestRecordedSlot(record) + 1; i < last; i++) {
+    if (!saving.has(i) && !pcsHourlyFor(record, i)) skipped.push(i);
+  }
+  return skipped;
+}
+
 // The latest slot for which anything has been recorded. Everything before
 // it is history.
 function pcsLatestRecordedSlot(record) {

@@ -436,6 +436,14 @@ Configuration → Masters.
 | TC-OPX-029 | REQ-OFF-010 | `QR_DAY_START_MIN` changed so it differs from `PCS_DAY_START_MIN` | Run the deploy smoke test. | Smoke test fails with an error naming both values. | Pass |
 | TC-OPX-030 | REQ-OPX-016 | Viewport at or below 1024px; menu open | Tap the menu's padding; then follow a link in it; then tap outside it. | Padding tap leaves it open; following a link closes it; tapping outside closes it. | Pass |
 | TC-OPX-031 | REQ-OPX-010 | Form view on the last slot of a shift, readings blank | Press "Save & Send". | Nothing saved; notification "Not saved — some readings are blank." | Pass |
+| TC-OPX-032 | REQ-OPX-017 | Form view; slot 0 recorded | Open slot 4, fill every reading, press Save reading. | Not saved; warning names the three empty slots and offers Go to, Cancel and Save anyway. | Pass |
+| TC-OPX-033 | REQ-OPX-017 | Following TC-OPX-032 | Press Cancel; then Save reading again and press Go to. | Cancel clears the warning with nothing saved; Go to opens slot 1. | Pass |
+| TC-OPX-034 | REQ-OPX-017 | Following TC-OPX-032 | Press Save anyway. | Slot 4 saved. | Pass |
+| TC-OPX-035 | REQ-OPX-017, REQ-OPX-010 | Form view; a later slot with readings blank | Press Save reading. | Blank-readings refusal shown; no gap warning. | Pass |
+| TC-OPX-036 | REQ-OPX-017 | Form view on the last slot of a shift; earlier slots empty | Fill every reading and press Save & Send. | Gap warning shown first; Save anyway saves the slot and then opens the handoff summary. | Pass |
+| TC-OPX-037 | REQ-OPX-017 | Matrix view on the 3rd shift; shifts 1 and 2 recorded | Fill slots 32 and 33 and press Save. | Both saved; no warning. | Pass |
+| TC-OPX-038 | REQ-OPX-017 | Following TC-OPX-037 | Fill slot 36 only and press Save; press Cancel; then fill 34 and 35 as well and press Save. | Warning names 34 and 35 with Cancel and Save anyway (no Go to); Cancel keeps the typed values; the second save saves 34–36 with no warning. | Pass |
+| TC-OPX-039 | REQ-OPX-017 | Following TC-OPX-038 | Fill slot 39 only, press Save, then Save anyway. | Slot 39 saved. | Pass |
 
 ## 21. Shift Handoff
 

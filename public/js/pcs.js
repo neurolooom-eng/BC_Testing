@@ -298,6 +298,31 @@ function pcsAutoFillMatrix(body) {
   return rows.size;
 }
 
+// Shown instead of saving when the save would lock empty earlier slots.
+// Names them and offers: go to the first (optional), save anyway, or cancel.
+// Used by all three hourly views so none of them locks a gap silently.
+function pcsShowSkipWarning(alertEl, skipped, savingLabel, { onConfirm, onGoto }) {
+  const n = skipped.length;
+  alertEl.innerHTML = `
+    <div class="alert alert-danger skip-warn">
+      <strong>${n} earlier slot${n === 1 ? " has" : "s have"} no reading:</strong>
+      ${escapeHtml(skipped.map((i) => PCS_TIME_SLOTS[i]).join(", "))}.
+      Saving ${escapeHtml(savingLabel)} locks ${n === 1 ? "it" : "them"} empty.
+      <div class="btn-row">
+        ${onGoto ? `<button type="button" class="btn btn-secondary" data-skip-goto>Go to ${escapeHtml(PCS_TIME_SLOTS[skipped[0]])}</button>` : ""}
+        <button type="button" class="btn btn-secondary" data-skip-cancel>Cancel</button>
+        <button type="button" class="btn" data-skip-confirm>Save anyway</button>
+      </div>
+    </div>`;
+  alertEl.querySelector("[data-skip-goto]")?.addEventListener("click", () => onGoto(skipped[0]));
+  alertEl.querySelector("[data-skip-cancel]").addEventListener("click", () => (alertEl.innerHTML = ""));
+  alertEl.querySelector("[data-skip-confirm]").addEventListener("click", () => {
+    alertEl.innerHTML = "";
+    onConfirm();
+  });
+  alertEl.scrollIntoView({ behavior: "smooth", block: "center" });
+}
+
 function pcsAutoFillButton(id, label = "Auto-fill") {
   if (!pcsCan("action.pcs.demo.fill")) return "";
   return `<button type="button" class="btn btn-secondary" data-autofill="${id}">

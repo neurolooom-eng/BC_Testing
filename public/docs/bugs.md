@@ -36,6 +36,7 @@ not deleted — the history is the point.
 | BUG-016 | Offline could serve files from two different deploys together | Minor | Fixed | 2.3.1 |
 | BUG-017 | Following a link in the collapsed menu left the menu open | Minor | Fixed | 2.3.1 |
 | BUG-018 | Form view "Save & Send" gave no feedback when readings were blank | Minor | Fixed | 2.3.1 |
+| BUG-019 | Matrix and Form views locked empty earlier slots without warning | Major | Fixed | 2.3.2 |
 
 No defects are currently open. BUG-006 is a deferred design decision and
 BUG-007 has been reclassified as an enhancement; both are tracked in the
@@ -479,3 +480,26 @@ handler but not to the "Save & Send" handler.
 
 **Correction.** "Save & Send" now shows the same notification when the save
 is refused.
+
+## BUG-019 — Matrix and Form views locked empty earlier slots without warning
+
+- **Severity:** Major
+- **Status:** Fixed
+- **Fixed in:** 2.3.2
+- **Affects:** REQ-OPX-017
+- **Covered by:** TC-OPX-032 – TC-OPX-039
+
+**Symptom.** In the Matrix and Form views, saving a slot later than the next
+one due locked every empty slot before it, with no warning. Only a user
+permitted to unlock for rework could reopen them. The Operator view had
+warned since 2.3.1 (BUG-013); the other two views had not.
+
+**Root cause.** BUG-013's correction was written into the Operator view
+only. The gap calculation and the warning lived in `pcs-operator.js`, and
+the Matrix and Form save handlers never called them.
+
+**Correction.** The gap calculation moved to `pcsSlotsSkippedBySaving()` in
+`pcs-store.js` and now accepts every slot in a save, so a Matrix save that
+fills a run of slots counts them all as filled. The warning moved to
+`pcsShowSkipWarning()` in `pcs.js`. All three views call both before saving,
+on both Save and "Save & Send".
