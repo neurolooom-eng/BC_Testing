@@ -418,13 +418,24 @@ Configuration → Masters.
 | TC-OPX-011 | REQ-OPX-010 | Operator view with blank required readings | Press Save & next. | Save refused; blank fields marked Required; notification "Not saved — some readings are blank." | Pass |
 | TC-OPX-012 | REQ-OPX-011 | Operator view open, focus in the first reading | Press Enter. | Focus moves to the next reading. | Pass |
 | TC-OPX-013 | REQ-OPX-012 | Coarse-pointer device | Measure the unlock, core pin and slot chip controls. | Each at least 48 × 48 CSS pixels. | Pass |
-| TC-OPX-014 | REQ-OPX-013 | User `operator`; an open day sheet exists for the current production day | Sign in. | Lands directly on that day sheet, not the dashboard. | Pass |
+| TC-OPX-014 | REQ-OPX-013 | User `operator`; exactly one open day sheet exists for the current production day | Sign in. | Lands directly on that day sheet, not the dashboard. | Pass |
 | TC-OPX-015 | REQ-OPX-013 | User `administrator`; an open day sheet exists | Sign in. | Lands on the dashboard. | Pass |
 | TC-OPX-016 | REQ-OPX-013 | User `operator`; no day sheet exists | Sign in. | Lands on the dashboard. | Pass |
-| TC-OPX-017 | REQ-OPX-014 | Signed in as a user who may record readings; an open day sheet exists | Open the dashboard. | Quick Record card shown above the navigation cards, naming the date, line and furnace. | Pass |
+| TC-OPX-017 | REQ-OPX-014 | Signed in as a user who may record readings; one open day sheet exists for today | Open the dashboard. | One Quick Record card tagged Today, above the navigation cards, naming the date, line and furnace. | Pass |
 | TC-OPX-018 | REQ-OPX-015 | Current time 02:00; a sheet exists dated the previous calendar day | Sign in as `operator`. | That previous day's sheet is offered, not a new one. | Not run |
 | TC-OPX-019 | REQ-OPX-016 | Viewport at or below 1024px | Load any authenticated page. | Navigation hidden behind a menu button; opening the button reveals it; Escape closes it. | Pass |
 | TC-OPX-020 | REQ-OPX-016 | Coarse-pointer device, no stored theme preference | Load any authenticated page. | Light theme applied. | Pass |
+| TC-OPX-021 | REQ-OPX-013 | User `operator`; two open day sheets for the current production day (different lines) | Sign in. | Lands on the dashboard, not on either sheet. | Pass |
+| TC-OPX-022 | REQ-OPX-013 | User `operator`; the only open sheet is dated three days ago | Sign in. | Lands on the dashboard. | Pass |
+| TC-OPX-023 | REQ-OPX-014 | As TC-OPX-021 | Inspect the dashboard. | Two Quick Record cards tagged Today, one per sheet, each naming its line and furnace. | Pass |
+| TC-OPX-024 | REQ-OPX-014 | As TC-OPX-022 | Inspect the dashboard. | One Quick Record card tagged Most recent. | Pass |
+| TC-OPX-025 | REQ-OPX-017 | Operator view; slots 0 and 1 recorded | Open slot 5, fill every reading, press Save & next. | Not saved; warning names the three empty slots between and offers "Go to" the first and "Save anyway". | Pass |
+| TC-OPX-026 | REQ-OPX-017 | Following TC-OPX-025 | Press "Go to". | Opens the first empty slot (slot 2). | Pass |
+| TC-OPX-027 | REQ-OPX-017 | Following TC-OPX-025 | Press "Save anyway". | Slot 5 saved. | Pass |
+| TC-OPX-028 | REQ-OPX-017 | Operator view; slot 0 recorded | Fill slot 1 and press Save & next. | Saved with no warning. | Pass |
+| TC-OPX-029 | REQ-OFF-010 | `QR_DAY_START_MIN` changed so it differs from `PCS_DAY_START_MIN` | Run the deploy smoke test. | Smoke test fails with an error naming both values. | Pass |
+| TC-OPX-030 | REQ-OPX-016 | Viewport at or below 1024px; menu open | Tap the menu's padding; then follow a link in it; then tap outside it. | Padding tap leaves it open; following a link closes it; tapping outside closes it. | Pass |
+| TC-OPX-031 | REQ-OPX-010 | Form view on the last slot of a shift, readings blank | Press "Save & Send". | Nothing saved; notification "Not saved — some readings are blank." | Pass |
 
 ## 21. Shift Handoff
 
@@ -450,3 +461,6 @@ Configuration → Masters.
 | TC-OFF-005 | REQ-OFF-004 | Page loaded, network available | Disconnect, then reconnect the network. | Notification on losing the connection, and again on its return. | Not run |
 | TC-OFF-006 | REQ-OFF-005 | Network disconnected, day sheet open | Enter and save a slot's readings. | Readings saved and readable after reload. | Not run |
 | TC-OFF-007 | REQ-OFF-006 | `sw.js` listing a file that does not exist | Run the deploy workflow. | Smoke test fails with an error naming the missing file. | Pass |
+| TC-OFF-008 | REQ-OFF-007 | Worker active; a page cached; network connected but not answering | Reload the page. | Cached page served after about 4 seconds, not left loading. | Not run |
+| TC-OFF-009 | REQ-OFF-008 | Worker active; Knowledge Base never opened on this device | Take the server offline and open `knowledge.html`. | "You are offline" notice naming knowledge.html; its button opens the cached Process Check Sheet. | Pass |
+| TC-OFF-010 | REQ-OFF-009 | A deploy completed after the worker was installed | Reload any page online, then inspect Cache Storage. | One cache, named for the new build number; the previous build's cache removed. | Not run |

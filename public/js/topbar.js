@@ -188,9 +188,11 @@ function renderTopbar(activeKey) {
   });
 
   // Tapping anywhere else closes it, as does following a link out of it.
+  // A tap inside the nav that is not on a link (padding, the Team menu
+  // trigger) leaves it open.
   document.addEventListener("click", (e) => {
-    if (mainNav.contains(e.target) && !e.target.closest(".nav-item-wrap")) return;
-    if (e.target === navToggle || navToggle.contains(e.target)) return;
+    if (navToggle.contains(e.target)) return;
+    if (mainNav.contains(e.target) && !e.target.closest("a")) return;
     mainNav.classList.remove("open");
     navToggle.setAttribute("aria-expanded", "false");
   });

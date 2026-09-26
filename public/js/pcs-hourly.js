@@ -399,7 +399,10 @@ function renderHourlyForm(body, record, nearest) {
   }
 
   body.querySelector("#save-send-hourly")?.addEventListener("click", () => {
-    if (!saveHourlyForm()) return;
+    if (!saveHourlyForm()) {
+      showToast("Not saved — some readings are blank.", "error");
+      return;
+    }
     submitShiftForApproval(record.id, pcsShiftForSlotIndex(slot));
   });
 

@@ -29,6 +29,13 @@ not deleted — the history is the point.
 | BUG-009 | Saving an hourly reading appeared to do nothing | Major | Fixed | 1.7.1 |
 | BUG-010 | Stated Rotor RPM limits did not follow the selected rotor size | Major | Fixed | 1.7.1 |
 | BUG-011 | Test data and auto-fill buttons missing on devices with stored config from before v1.8.0 | Major | Fixed | 1.9.1 |
+| BUG-012 | Sign-in could land an operator on the wrong furnace's day sheet | Major | Fixed | 2.3.1 |
+| BUG-013 | One tap on a later slot in the Operator view could lock earlier empty slots | Major | Fixed | 2.3.1 |
+| BUG-014 | Offline fallback hung on a connected-but-dead network | Major | Fixed | 2.3.1 |
+| BUG-015 | Offline, an uncached page was replaced by the check sheet under its address | Minor | Fixed | 2.3.1 |
+| BUG-016 | Offline could serve files from two different deploys together | Minor | Fixed | 2.3.1 |
+| BUG-017 | Following a link in the collapsed menu left the menu open | Minor | Fixed | 2.3.1 |
+| BUG-018 | Form view "Save & Send" gave no feedback when readings were blank | Minor | Fixed | 2.3.1 |
 
 No defects are currently open. BUG-006 is a deferred design decision and
 BUG-007 has been reclassified as an enhancement; both are tracked in the
@@ -329,3 +336,146 @@ absent from the stored config, and copies the matching role grants from the
 seed so the resource is reachable by the roles that should hold it. Existing
 entries and grants are left alone, preserving any reassignments made in
 Configuration.
+
+## BUG-012 — Sign-in could land an operator on the wrong furnace's day sheet
+
+- **Severity:** Major
+- **Status:** Fixed
+- **Fixed in:** 2.3.1
+- **Affects:** REQ-OPX-013, REQ-OPX-014
+- **Covered by:** TC-OPX-014, TC-OPX-017, TC-OPX-021 – TC-OPX-024
+
+**Symptom.** On a tablet holding open day sheets for more than one line or
+furnace on the same production day, signing in as a line user opened one of
+them directly, with nothing asking which. With no sheet for today, it
+opened the most recent older sheet, however old, again without saying so.
+
+**Root cause.** `qrFindSheet()` in `quick-record.js` returned the last of
+today's sheets in storage order, or failing that the latest-dated sheet,
+and `qrLandingPage()` redirected to whatever it returned. Neither looked at
+line or furnace, or at how many candidates there were.
+
+**Correction.** `qrLandingPage()` redirects only when exactly one open
+sheet exists for the current production day; otherwise the user lands on
+the dashboard. The dashboard shows one Quick Record card per open sheet for
+today, each naming its line and furnace, and falls back to a single "Most
+recent" card only when nothing is open for today.
+
+## BUG-013 — One tap on a later slot in the Operator view could lock earlier empty slots
+
+- **Severity:** Major
+- **Status:** Fixed
+- **Fixed in:** 2.3.1
+- **Affects:** REQ-OPX-007, REQ-OPX-017
+- **Covered by:** TC-OPX-025 – TC-OPX-028
+
+**Symptom.** In the Operator view, tapping a later chip on the slot strip
+(or pressing › past the current slot) and saving locked every empty slot
+before it. Only a user permitted to unlock for rework could reopen them.
+
+**Root cause.** `pcsHourlyLocked()` locks every slot earlier than the latest
+recorded one — intended, so a reading cannot be changed after the operator
+has moved on. The Operator view made any slot one tap away and saved with
+no check on what the save would lock.
+
+**Correction.** Before saving, the Operator view lists the empty slots
+between the latest recorded reading and the slot being saved. If there are
+any, it names them, says they will lock, and offers "Go to" the first one
+or "Save anyway"; the save goes ahead only on the latter. Matrix and Form
+views are unchanged.
+
+## BUG-014 — Offline fallback hung on a connected-but-dead network
+
+- **Severity:** Major
+- **Status:** Fixed
+- **Fixed in:** 2.3.1
+- **Affects:** REQ-OFF-001, REQ-OFF-007
+- **Covered by:** TC-OFF-008
+
+**Symptom.** With the tablet connected to wifi that was passing no traffic,
+pages and files were left loading rather than served from the cache.
+
+**Root cause.** The service worker fell back to the cache only when `fetch`
+rejected. A connection that is up but not answering does not reject
+promptly, so the cache was never consulted while the request hung.
+
+**Correction.** The service worker serves the cached copy of a request if
+the network has not answered within 4 seconds. The network request carries
+on and refreshes the cache if it answers later. Where nothing is cached for
+the request, it keeps waiting for the network as before.
+
+## BUG-015 — Offline, an uncached page was replaced by the check sheet under its address
+
+- **Severity:** Minor
+- **Status:** Fixed
+- **Fixed in:** 2.3.1
+- **Affects:** REQ-OFF-001, REQ-OFF-008
+- **Covered by:** TC-OFF-009
+
+**Symptom.** Offline, opening a page that had never been cached (for
+example `knowledge.html`) displayed the Process Check Sheet while the
+address bar still showed the page asked for.
+
+**Root cause.** The service worker's fallback for any uncached navigation
+was `process-check-sheet.html`, whatever page had been requested.
+
+**Correction.** An uncached navigation now receives a short offline notice
+naming the page requested, with a button to the Process Check Sheet.
+
+## BUG-016 — Offline could serve files from two different deploys together
+
+- **Severity:** Minor
+- **Status:** Fixed
+- **Fixed in:** 2.3.1
+- **Affects:** REQ-OFF-001, REQ-OFF-009
+- **Covered by:** TC-OFF-010
+
+**Symptom.** No observed failure; found in review. Offline, a page could be
+served from files cached at different times — HTML from one deploy and a
+script from an earlier one.
+
+**Root cause.** The cache name was fixed (`bestcast-shell-v1`), so a deploy
+never changed the service worker and the shell was never replaced as a
+whole. Files were refreshed one at a time, only when fetched online.
+
+**Correction.** The deploy workflow stamps the build number into the cache
+name. Each deploy therefore changes `sw.js`, the browser installs the new
+worker, which precaches the full shell (bypassing the HTTP cache), and the
+previous build's cache is deleted on activation.
+
+## BUG-017 — Following a link in the collapsed menu left the menu open
+
+- **Severity:** Minor
+- **Status:** Fixed
+- **Fixed in:** 2.3.1
+- **Affects:** REQ-OPX-016
+- **Covered by:** TC-OPX-030
+
+**Symptom.** Following a link in the collapsed tablet navigation left the
+menu open. The page navigated away, so this was visible only when returning
+to the page from the browser's back/forward cache.
+
+**Root cause.** The document click handler in `topbar.js` kept the menu
+open for any click inside the nav outside the Team menu — the reverse of
+its comment, which said following a link closes it.
+
+**Correction.** A click on a link inside the nav now closes it; clicks
+elsewhere inside the nav leave it open.
+
+## BUG-018 — Form view "Save & Send" gave no feedback when readings were blank
+
+- **Severity:** Minor
+- **Status:** Fixed
+- **Fixed in:** 2.3.1
+- **Affects:** REQ-OPX-010
+- **Covered by:** TC-OPX-031
+
+**Symptom.** In the Form view, pressing "Save & Send" with required readings
+blank did nothing visible beyond marking the fields, while the ordinary Save
+button showed a "Not saved" notification.
+
+**Root cause.** v2.3.0 added the refusal notification to the Save button's
+handler but not to the "Save & Send" handler.
+
+**Correction.** "Save & Send" now shows the same notification when the save
+is refused.
