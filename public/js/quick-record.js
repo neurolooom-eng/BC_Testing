@@ -13,6 +13,9 @@ var QR_RECORDS_KEY = "bestcast_pcs_records";
 
 // The production day starts at 6:30am and runs to 6:00am the next morning,
 // so before 6:30 the sheet still being filled is yesterday's.
+// Mirrors PCS_DAY_START_MIN in pcs-spec.js, which this module cannot use:
+// login.html and dashboard.html do not load pcs-spec.js. The deploy smoke
+// test fails if the two drift apart.
 var QR_DAY_START_MIN = 6 * 60 + 30;
 
 function qrProductionDate(now) {

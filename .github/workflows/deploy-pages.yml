@@ -49,6 +49,10 @@ jobs:
           cat > public/js/build-info.js <<EOF
           window.BUILD_INFO = { version: "${VERSION}", buildNumber: ${BUILD_NUMBER}, buildDate: "${BUILD_DATE}" };
           EOF
+          # A new cache name per deploy makes browsers install the new
+          # service worker and replace the whole cached shell at once.
+          sed -i "s/bestcast-shell-dev/bestcast-shell-${BUILD_NUMBER}/" public/sw.js
+          grep -q "bestcast-shell-${BUILD_NUMBER}" public/sw.js
       - name: Smoke test — validate HTML and JS references
         run: |
           ERRORS=0
@@ -82,6 +86,14 @@ jobs:
               ERRORS=$((ERRORS + 1))
             fi
           done
+          # quick-record.js copies the production-day start from pcs-spec.js;
+          # the two must agree or sign-in resolves the wrong day's sheet.
+          QR=$(grep -oP 'var QR_DAY_START_MIN = \K[^;]+' public/js/quick-record.js)
+          PCS=$(grep -oP 'const PCS_DAY_START_MIN = \K[^;]+' public/js/pcs-spec.js)
+          if [ -z "$QR" ] || [ "$QR" != "$PCS" ]; then
+            echo "::error file=public/js/quick-record.js::QR_DAY_START_MIN ($QR) does not match PCS_DAY_START_MIN ($PCS)"
+            ERRORS=$((ERRORS + 1))
+          fi
           # Every JS file must parse.
           for js in public/js/*.js public/sw.js; do
             if ! node --check "$js" 2>/dev/null; then

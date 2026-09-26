@@ -6,7 +6,7 @@ automatically per deploy and are not tracked here.
 
 ## 2.3.1 — 2026-09-26
 
-**Fixes to the v2.3.0 operator path — wrong-sheet landing, empty slots locked by a jump, offline hang**
+**Fixes to the v2.3.0 operator path — wrong-sheet landing, empty slots locked by a jump, offline hang, and four smaller defects**
 
 ### 1. Quick Record no longer guesses between sheets (BUG-012)
 - Signing in as a line user now lands directly on the day sheet only when
@@ -30,6 +30,30 @@ automatically per deploy and are not tracked here.
   refreshes the cache if it eventually answers
 - With nothing cached for the request it keeps waiting for the network, as
   before
+
+### 4. Offline notice instead of the wrong page (BUG-015)
+- Opening a page offline that has never been cached now shows a short
+  "You are offline" notice naming that page, with a button to the Process
+  Check Sheet. Previously the check sheet itself was served under the other
+  page's address
+
+### 5. Offline shell refreshed on every deploy (BUG-016)
+- The deploy stamps the build number into the service worker's cache name,
+  so each deploy installs a fresh, complete copy of the app shell and
+  removes the previous one. Precaching bypasses the browser's HTTP cache
+- Offline can no longer serve a mix of files from two different deploys
+
+### 6. Menu closes when a link in it is followed (BUG-017)
+- On tablets, following a link in the collapsed navigation now closes it,
+  as intended. A tap on the menu's padding still leaves it open
+
+### 7. Form view "Save & Send" confirms a refused save (BUG-018)
+- Pressing "Save & Send" with readings blank now shows the same
+  "Not saved" notification as the ordinary Save button
+
+### 8. CI
+- The deploy smoke test now fails if the production-day start in
+  `quick-record.js` drifts from `PCS_DAY_START_MIN` in `pcs-spec.js`
 
 ## 2.3.0 — 2026-09-22
 

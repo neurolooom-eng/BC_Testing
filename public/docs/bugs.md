@@ -32,6 +32,10 @@ not deleted — the history is the point.
 | BUG-012 | Sign-in could land an operator on the wrong furnace's day sheet | Major | Fixed | 2.3.1 |
 | BUG-013 | One tap on a later slot in the Operator view could lock earlier empty slots | Major | Fixed | 2.3.1 |
 | BUG-014 | Offline fallback hung on a connected-but-dead network | Major | Fixed | 2.3.1 |
+| BUG-015 | Offline, an uncached page was replaced by the check sheet under its address | Minor | Fixed | 2.3.1 |
+| BUG-016 | Offline could serve files from two different deploys together | Minor | Fixed | 2.3.1 |
+| BUG-017 | Following a link in the collapsed menu left the menu open | Minor | Fixed | 2.3.1 |
+| BUG-018 | Form view "Save & Send" gave no feedback when readings were blank | Minor | Fixed | 2.3.1 |
 
 No defects are currently open. BUG-006 is a deferred design decision and
 BUG-007 has been reclassified as an enhancement; both are tracked in the
@@ -399,3 +403,79 @@ promptly, so the cache was never consulted while the request hung.
 the network has not answered within 4 seconds. The network request carries
 on and refreshes the cache if it answers later. Where nothing is cached for
 the request, it keeps waiting for the network as before.
+
+## BUG-015 — Offline, an uncached page was replaced by the check sheet under its address
+
+- **Severity:** Minor
+- **Status:** Fixed
+- **Fixed in:** 2.3.1
+- **Affects:** REQ-OFF-001, REQ-OFF-008
+- **Covered by:** TC-OFF-009
+
+**Symptom.** Offline, opening a page that had never been cached (for
+example `knowledge.html`) displayed the Process Check Sheet while the
+address bar still showed the page asked for.
+
+**Root cause.** The service worker's fallback for any uncached navigation
+was `process-check-sheet.html`, whatever page had been requested.
+
+**Correction.** An uncached navigation now receives a short offline notice
+naming the page requested, with a button to the Process Check Sheet.
+
+## BUG-016 — Offline could serve files from two different deploys together
+
+- **Severity:** Minor
+- **Status:** Fixed
+- **Fixed in:** 2.3.1
+- **Affects:** REQ-OFF-001, REQ-OFF-009
+- **Covered by:** TC-OFF-010
+
+**Symptom.** No observed failure; found in review. Offline, a page could be
+served from files cached at different times — HTML from one deploy and a
+script from an earlier one.
+
+**Root cause.** The cache name was fixed (`bestcast-shell-v1`), so a deploy
+never changed the service worker and the shell was never replaced as a
+whole. Files were refreshed one at a time, only when fetched online.
+
+**Correction.** The deploy workflow stamps the build number into the cache
+name. Each deploy therefore changes `sw.js`, the browser installs the new
+worker, which precaches the full shell (bypassing the HTTP cache), and the
+previous build's cache is deleted on activation.
+
+## BUG-017 — Following a link in the collapsed menu left the menu open
+
+- **Severity:** Minor
+- **Status:** Fixed
+- **Fixed in:** 2.3.1
+- **Affects:** REQ-OPX-016
+- **Covered by:** TC-OPX-030
+
+**Symptom.** Following a link in the collapsed tablet navigation left the
+menu open. The page navigated away, so this was visible only when returning
+to the page from the browser's back/forward cache.
+
+**Root cause.** The document click handler in `topbar.js` kept the menu
+open for any click inside the nav outside the Team menu — the reverse of
+its comment, which said following a link closes it.
+
+**Correction.** A click on a link inside the nav now closes it; clicks
+elsewhere inside the nav leave it open.
+
+## BUG-018 — Form view "Save & Send" gave no feedback when readings were blank
+
+- **Severity:** Minor
+- **Status:** Fixed
+- **Fixed in:** 2.3.1
+- **Affects:** REQ-OPX-010
+- **Covered by:** TC-OPX-031
+
+**Symptom.** In the Form view, pressing "Save & Send" with required readings
+blank did nothing visible beyond marking the fields, while the ordinary Save
+button showed a "Not saved" notification.
+
+**Root cause.** v2.3.0 added the refusal notification to the Save button's
+handler but not to the "Save & Send" handler.
+
+**Correction.** "Save & Send" now shows the same notification when the save
+is refused.

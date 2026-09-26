@@ -7,7 +7,11 @@
 // network cannot. Records themselves live in localStorage, which needs no
 // network at all — this covers the HTML, CSS and JS around them.
 
-const CACHE = "bestcast-shell-v1";
+// The deploy workflow replaces "dev" with the build number, so every deploy
+// changes this file. The browser then installs the new worker, which
+// precaches a fresh, consistent shell and deletes the previous build's
+// cache — so offline never serves a mix of two deploys' files.
+const CACHE = "bestcast-shell-dev";
 
 // The pages an operator can plausibly be on when the connection goes, plus
 // everything needed to render them.
@@ -52,7 +56,9 @@ self.addEventListener("install", (event) => {
       // One missing file must not fail the whole install, so each is added
       // on its own and a failure is skipped.
       Promise.all(
-        SHELL.map((url) => cache.add(url).catch(() => null))
+        // cache: "reload" skips the browser's HTTP cache, so a new deploy
+        // precaches the files just published rather than older copies.
+        SHELL.map((url) => cache.add(new Request(url, { cache: "reload" })).catch(() => null))
       )
     ).then(() => self.skipWaiting())
   );
@@ -66,6 +72,22 @@ self.addEventListener("activate", (event) => {
       .then(() => self.clients.claim())
   );
 });
+
+function offlinePage(url) {
+  const name = url.pathname.split("/").pop() || "This page";
+  const safe = name.replace(/[^\w.-]/g, "");
+  // Resolved against the worker's scope, so the link works from any path.
+  const sheet = new URL("process-check-sheet.html", self.registration.scope).href;
+  const html = `<!doctype html><html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1"><title>Offline</title>
+<style>body{font-family:system-ui,sans-serif;background:#f6f4ee;color:#1f2937;margin:0;padding:48px 20px;text-align:center}
+h1{font-size:24px;margin:0 0 12px}p{font-size:17px;line-height:1.5;margin:0 auto 24px;max-width:420px}
+a{display:inline-block;background:#1f3a8a;color:#fff;text-decoration:none;padding:14px 22px;border-radius:10px;font-size:17px;min-height:48px}</style>
+</head><body><h1>You are offline</h1>
+<p>${safe} has not been opened on this tablet before, so it is not available without a connection. Readings already on the tablet are safe.</p>
+<a href="${sheet}">Open the Process Check Sheet</a></body></html>`;
+  return new Response(html, { status: 503, headers: { "Content-Type": "text/html; charset=utf-8" } });
+}
 
 // How long the network gets before a cached copy is served instead. A
 // dropped connection fails fast, but a connected-yet-dead one (wifi up, no
@@ -113,12 +135,10 @@ self.addEventListener("fetch", (event) => {
       network.then(answer, () =>
         caches.match(request).then((cached) => {
           if (cached) return answer(cached);
-          // A navigation with nothing cached for that exact URL still gets
-          // the shell, so the tablet shows the app rather than a browser
-          // error page.
-          if (request.mode === "navigate") {
-            return caches.match("process-check-sheet.html").then((shell) => answer(shell || Response.error()));
-          }
+          // A navigation with nothing cached for that exact URL gets a
+          // short page saying so, with a way back to the check sheet —
+          // rather than a browser error, or another page under this URL.
+          if (request.mode === "navigate") return answer(offlinePage(url));
           answer(Response.error());
         })
       );
