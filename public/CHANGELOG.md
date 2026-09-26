@@ -4,6 +4,24 @@ Version numbers follow semver — see `VERSIONING.md` at the repo root.
 Build number and build date shown in the site footer are generated
 automatically per deploy and are not tracked here.
 
+## 2.3.2 — 2026-09-26
+
+**Empty-slot warning in the Matrix and Form views (BUG-019)**
+
+- The warning added to the Operator view in 2.3.1 now applies to every way
+  of saving hourly readings. Before a save that would lock earlier slots
+  with no reading in them, the Matrix and Form views name those slots and
+  ask first — including "Save & Send", before the handoff summary opens
+- Form view offers Go to the first empty slot, Cancel, or Save anyway; the
+  Matrix view, which already shows the whole shift, offers Cancel or Save
+  anyway. Cancel keeps what was typed
+- In the Matrix view, slots filled in the same save count as filled, so
+  entering a run of consecutive slots at once does not warn
+- Every view now also offers Cancel, which the Operator view previously
+  lacked
+- The Form view now checks for blank readings before the gap warning, as
+  the Operator view does
+
 ## 2.3.1 — 2026-09-26
 
 **Fixes to the v2.3.0 operator path — wrong-sheet landing, empty slots locked by a jump, offline hang, and four smaller defects**

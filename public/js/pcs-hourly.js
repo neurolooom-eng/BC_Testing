@@ -167,6 +167,27 @@ function renderHourlyMatrix(body, record, nearest) {
     if (!filled) alert("No editable rows on screen to fill.");
   });
 
+  // Slot indices the matrix would save: those with at least one value typed.
+  function matrixSlotsToSave() {
+    const slots = new Set();
+    body.querySelectorAll(".cell-input").forEach((input) => {
+      if (input.value.trim() !== "") slots.add(Number(input.dataset.slot));
+    });
+    return [...slots];
+  }
+
+  // As in the Operator and Form views: a save that would lock empty earlier
+  // slots names them and asks first. The matrix already shows every slot,
+  // so the choices are Save anyway or Cancel.
+  function guardedMatrixSave(doSave) {
+    const skipped = pcsSlotsSkippedBySaving(record, matrixSlotsToSave());
+    if (!skipped.length) return doSave();
+    const last = Math.max(...matrixSlotsToSave());
+    pcsShowSkipWarning(body.querySelector("#matrix-alert"), skipped, `up to ${PCS_TIME_SLOTS[last]}`, {
+      onConfirm: doSave,
+    });
+  }
+
   function saveMatrix() {
     const bySlot = {};
     body.querySelectorAll(".cell-input").forEach((input) => {
@@ -198,22 +219,26 @@ function renderHourlyMatrix(body, record, nearest) {
     return saved;
   }
 
-  body.querySelector("#save-matrix")?.addEventListener("click", () => {
-    const saved = saveMatrix();
-    if (!saved) {
-      body.querySelector("#matrix-alert").innerHTML =
-        `<div class="alert alert-ok">Nothing to save — no values entered.</div>`;
-      showToast("Nothing to save — no values entered.", "warn");
-      return;
-    }
-    showToast(`${saved} slot${saved === 1 ? "" : "s"} saved.`);
-    reload(record.id);
-  });
+  body.querySelector("#save-matrix")?.addEventListener("click", () =>
+    guardedMatrixSave(() => {
+      const saved = saveMatrix();
+      if (!saved) {
+        body.querySelector("#matrix-alert").innerHTML =
+          `<div class="alert alert-ok">Nothing to save — no values entered.</div>`;
+        showToast("Nothing to save — no values entered.", "warn");
+        return;
+      }
+      showToast(`${saved} slot${saved === 1 ? "" : "s"} saved.`);
+      reload(record.id);
+    })
+  );
 
-  body.querySelector("#save-send-matrix")?.addEventListener("click", () => {
-    saveMatrix();
-    submitShiftForApproval(record.id, submitTarget.shift);
-  });
+  body.querySelector("#save-send-matrix")?.addEventListener("click", () =>
+    guardedMatrixSave(() => {
+      saveMatrix();
+      submitShiftForApproval(record.id, submitTarget.shift);
+    })
+  );
 
   wireApprovalButtons(body, record);
 }
@@ -367,12 +392,16 @@ function renderHourlyForm(body, record, nearest) {
     pcsAutoFillDieTemps(body);
   });
 
-  function saveHourlyForm() {
+  // Checks the readings without saving; the save itself happens only
+  // once any gap warning has been answered.
+  function validateHourlyForm() {
     const data = readForm(form, PCS_HOURLY_FIELDS);
     const result = paintValidation(form, data, PCS_HOURLY_FIELDS);
     body.querySelector("#form-alert").innerHTML = outOfSpecBanner(result.outOfSpec);
-    if (result.missing.length) return false;
+    return result.missing.length ? null : data;
+  }
 
+  function saveHourlyForm(data) {
     const dieTemps = { ...(entry.dieTemps || {}) };
     body.querySelectorAll("[data-die]").forEach((input) => {
       const v = input.value.trim();
@@ -381,30 +410,46 @@ function renderHourlyForm(body, record, nearest) {
     });
 
     pcsSaveHourly(record.id, slot, { ...data, dieTemps });
-    return true;
+  }
+
+  // Blank readings refuse the save; then, as in the Operator view, a save
+  // that would lock empty earlier slots names them and asks first.
+  function guardedSave(afterSave) {
+    const data = validateHourlyForm();
+    if (!data) {
+      showToast("Not saved — some readings are blank.", "error");
+      return;
+    }
+    const doSave = () => {
+      saveHourlyForm(data);
+      afterSave();
+    };
+    const skipped = pcsSlotsSkippedBySaving(record, slot);
+    if (!skipped.length) return doSave();
+    pcsShowSkipWarning(body.querySelector("#form-alert"), skipped, PCS_TIME_SLOTS[slot], {
+      onGoto: (first) => {
+        PCS_FORM_SLOT = first;
+        reload(record.id);
+      },
+      onConfirm: doSave,
+    });
   }
 
   const saveBtn = body.querySelector("#save-hourly");
   if (saveBtn && !locked) {
-    saveBtn.addEventListener("click", () => {
-      if (!saveHourlyForm()) {
-        showToast("Not saved — some readings are blank.", "error");
-        return;
-      }
-      PCS_FORM_SLOT = Math.min(slot + 1, PCS_TIME_SLOTS.length - 1);
-      PCS_FORM_FLASH = `${PCS_TIME_SLOTS[slot]} saved.`;
-      showToast(`${PCS_TIME_SLOTS[slot]} saved.`);
-      reload(record.id);
-    });
+    saveBtn.addEventListener("click", () =>
+      guardedSave(() => {
+        PCS_FORM_SLOT = Math.min(slot + 1, PCS_TIME_SLOTS.length - 1);
+        PCS_FORM_FLASH = `${PCS_TIME_SLOTS[slot]} saved.`;
+        showToast(`${PCS_TIME_SLOTS[slot]} saved.`);
+        reload(record.id);
+      })
+    );
   }
 
-  body.querySelector("#save-send-hourly")?.addEventListener("click", () => {
-    if (!saveHourlyForm()) {
-      showToast("Not saved — some readings are blank.", "error");
-      return;
-    }
-    submitShiftForApproval(record.id, pcsShiftForSlotIndex(slot));
-  });
+  body.querySelector("#save-send-hourly")?.addEventListener("click", () =>
+    guardedSave(() => submitShiftForApproval(record.id, pcsShiftForSlotIndex(slot)))
+  );
 
   wireApprovalButtons(body, record);
 }

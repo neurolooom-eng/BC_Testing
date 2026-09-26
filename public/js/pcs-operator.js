@@ -205,7 +205,7 @@ function renderHourlyOperator(body, record, nearest) {
   // Saving this slot locks every earlier slot (see pcsHourlyLocked). Any
   // empty slots between the latest reading and this one would lock with
   // nothing in them — easy to do by accident from the slot strip — so the
-  // first save asks, naming them, and a second press confirms.
+  // save asks first, naming them.
   const skipped = pcsSlotsSkippedBySaving(record, slot);
   let skipConfirmed = false;
 
@@ -224,23 +224,13 @@ function renderHourlyOperator(body, record, nearest) {
     }
 
     if (skipped.length && !skipConfirmed) {
-      const first = skipped[0];
-      body.querySelector("#op-alert").innerHTML = `
-        <div class="alert alert-danger op-skip-warn">
-          <strong>${skipped.length} earlier slot${skipped.length === 1 ? " has" : "s have"} no reading:</strong>
-          ${escapeHtml(skipped.map((i) => PCS_TIME_SLOTS[i]).join(", "))}.
-          Saving ${escapeHtml(PCS_TIME_SLOTS[slot])} locks ${skipped.length === 1 ? "it" : "them"} empty.
-          <div class="btn-row">
-            <button type="button" class="btn btn-secondary" id="op-goto-skipped">Go to ${escapeHtml(PCS_TIME_SLOTS[first])}</button>
-            <button type="button" class="btn" id="op-save-anyway">Save anyway</button>
-          </div>
-        </div>`;
-      body.querySelector("#op-goto-skipped").addEventListener("click", () => pcsOperatorGoto(record, first));
-      body.querySelector("#op-save-anyway").addEventListener("click", () => {
-        skipConfirmed = true;
-        body.querySelector("#op-save").click();
+      pcsShowSkipWarning(body.querySelector("#op-alert"), skipped, PCS_TIME_SLOTS[slot], {
+        onGoto: (first) => pcsOperatorGoto(record, first),
+        onConfirm: () => {
+          skipConfirmed = true;
+          body.querySelector("#op-save").click();
+        },
       });
-      body.querySelector("#op-alert").scrollIntoView({ behavior: "smooth", block: "center" });
       return;
     }
 
@@ -270,17 +260,6 @@ function renderHourlyOperator(body, record, nearest) {
   });
 
   wireApprovalButtons(body, record);
-}
-
-// Empty slots that saving `slot` would lock: those after the latest
-// recorded reading and before `slot`. Slots at or before the latest reading
-// are already locked, so saving here changes nothing for them.
-function pcsSlotsSkippedBySaving(record, slot) {
-  const skipped = [];
-  for (let i = pcsLatestRecordedSlot(record) + 1; i < slot; i++) {
-    if (!pcsHourlyFor(record, i)) skipped.push(i);
-  }
-  return skipped;
 }
 
 function pcsOperatorGoto(record, slot) {
