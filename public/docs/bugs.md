@@ -29,6 +29,9 @@ not deleted — the history is the point.
 | BUG-009 | Saving an hourly reading appeared to do nothing | Major | Fixed | 1.7.1 |
 | BUG-010 | Stated Rotor RPM limits did not follow the selected rotor size | Major | Fixed | 1.7.1 |
 | BUG-011 | Test data and auto-fill buttons missing on devices with stored config from before v1.8.0 | Major | Fixed | 1.9.1 |
+| BUG-012 | Sign-in could land an operator on the wrong furnace's day sheet | Major | Fixed | 2.3.1 |
+| BUG-013 | One tap on a later slot in the Operator view could lock earlier empty slots | Major | Fixed | 2.3.1 |
+| BUG-014 | Offline fallback hung on a connected-but-dead network | Major | Fixed | 2.3.1 |
 
 No defects are currently open. BUG-006 is a deferred design decision and
 BUG-007 has been reclassified as an enhancement; both are tracked in the
@@ -329,3 +332,70 @@ absent from the stored config, and copies the matching role grants from the
 seed so the resource is reachable by the roles that should hold it. Existing
 entries and grants are left alone, preserving any reassignments made in
 Configuration.
+
+## BUG-012 — Sign-in could land an operator on the wrong furnace's day sheet
+
+- **Severity:** Major
+- **Status:** Fixed
+- **Fixed in:** 2.3.1
+- **Affects:** REQ-OPX-013, REQ-OPX-014
+- **Covered by:** TC-OPX-014, TC-OPX-017, TC-OPX-021 – TC-OPX-024
+
+**Symptom.** On a tablet holding open day sheets for more than one line or
+furnace on the same production day, signing in as a line user opened one of
+them directly, with nothing asking which. With no sheet for today, it
+opened the most recent older sheet, however old, again without saying so.
+
+**Root cause.** `qrFindSheet()` in `quick-record.js` returned the last of
+today's sheets in storage order, or failing that the latest-dated sheet,
+and `qrLandingPage()` redirected to whatever it returned. Neither looked at
+line or furnace, or at how many candidates there were.
+
+**Correction.** `qrLandingPage()` redirects only when exactly one open
+sheet exists for the current production day; otherwise the user lands on
+the dashboard. The dashboard shows one Quick Record card per open sheet for
+today, each naming its line and furnace, and falls back to a single "Most
+recent" card only when nothing is open for today.
+
+## BUG-013 — One tap on a later slot in the Operator view could lock earlier empty slots
+
+- **Severity:** Major
+- **Status:** Fixed
+- **Fixed in:** 2.3.1
+- **Affects:** REQ-OPX-007, REQ-OPX-017
+- **Covered by:** TC-OPX-025 – TC-OPX-028
+
+**Symptom.** In the Operator view, tapping a later chip on the slot strip
+(or pressing › past the current slot) and saving locked every empty slot
+before it. Only a user permitted to unlock for rework could reopen them.
+
+**Root cause.** `pcsHourlyLocked()` locks every slot earlier than the latest
+recorded one — intended, so a reading cannot be changed after the operator
+has moved on. The Operator view made any slot one tap away and saved with
+no check on what the save would lock.
+
+**Correction.** Before saving, the Operator view lists the empty slots
+between the latest recorded reading and the slot being saved. If there are
+any, it names them, says they will lock, and offers "Go to" the first one
+or "Save anyway"; the save goes ahead only on the latter. Matrix and Form
+views are unchanged.
+
+## BUG-014 — Offline fallback hung on a connected-but-dead network
+
+- **Severity:** Major
+- **Status:** Fixed
+- **Fixed in:** 2.3.1
+- **Affects:** REQ-OFF-001, REQ-OFF-007
+- **Covered by:** TC-OFF-008
+
+**Symptom.** With the tablet connected to wifi that was passing no traffic,
+pages and files were left loading rather than served from the cache.
+
+**Root cause.** The service worker fell back to the cache only when `fetch`
+rejected. A connection that is up but not answering does not reject
+promptly, so the cache was never consulted while the request hung.
+
+**Correction.** The service worker serves the cached copy of a request if
+the network has not answered within 4 seconds. The network request carries
+on and refreshes the cache if it answers later. Where nothing is cached for
+the request, it keeps waiting for the network as before.

@@ -34,20 +34,27 @@ function qrLoadRecords() {
   }
 }
 
-// The sheet to offer: today's production day if one is open, otherwise the
-// most recent open sheet, so a day that rolled over still resumes.
-function qrFindSheet() {
-  var records = qrLoadRecords().filter(function (r) {
+function qrOpenRecords() {
+  return qrLoadRecords().filter(function (r) {
     return r && r.id && !r.archivedAt;
   });
-  if (!records.length) return null;
+}
 
+// Every open sheet for the current production day. A tablet can hold more
+// than one — one per line or furnace — so callers must not assume a single
+// answer.
+function qrTodaysSheets() {
   var today = qrProductionDate();
-  var todays = records.filter(function (r) {
+  return qrOpenRecords().filter(function (r) {
     return r.date === today;
   });
-  if (todays.length) return todays[todays.length - 1];
+}
 
+// The most recent open sheet on any day, offered on the dashboard when
+// nothing is open for today so a day that rolled over can still resume.
+function qrMostRecentSheet() {
+  var records = qrOpenRecords();
+  if (!records.length) return null;
   records.sort(function (a, b) {
     return String(a.date || "").localeCompare(String(b.date || ""));
   });
@@ -70,31 +77,25 @@ function qrIsLineUser(session) {
 }
 
 // Called right after a successful sign-in. Returns the page to land on.
+//
+// Only an unambiguous sheet is worth skipping the dashboard for: exactly one
+// open sheet for today. With two or more (different lines or furnaces), a
+// silent pick could put readings on the wrong furnace's sheet; with none,
+// an older sheet is not "the current one" either. Both go to the dashboard,
+// where the cards name the line and furnace and the operator chooses.
 function qrLandingPage(session) {
   if (!qrIsLineUser(session)) return "dashboard.html";
-  var record = qrFindSheet();
-  return record ? qrSheetHref(record) : "dashboard.html";
+  var todays = qrTodaysSheets();
+  return todays.length === 1 ? qrSheetHref(todays[0]) : "dashboard.html";
 }
 
-// Renders the resume card at the top of the dashboard. Shown to everyone
-// who can record — a supervisor wants the same shortcut, they just are not
-// redirected into it.
-function qrRenderCard(mount, session) {
-  if (!mount) return;
-  if (typeof rbacCanDo === "function" && !rbacCanDo(session.userid, "action.pcs.hourly.record")) return;
-
-  var record = qrFindSheet();
-  if (!record) return;
-
-  var today = qrProductionDate();
-  var isToday = record.date === today;
-
+function qrCard(record, tag) {
   var card = document.createElement("a");
   card.className = "card quick-card";
   card.href = qrSheetHref(record);
   card.innerHTML =
     '<span class="quick-tag">' +
-    (isToday ? "Today" : "Most recent") +
+    esc(tag) +
     "</span>" +
     "<h2>Record readings</h2>" +
     '<p class="quick-line">' +
@@ -105,7 +106,28 @@ function qrRenderCard(mount, session) {
     esc(record.furnaceNo || "—") +
     "</p>" +
     '<p class="quick-go">Open the day sheet →</p>';
+  return card;
+}
 
-  mount.appendChild(card);
-  mount.style.display = "block";
+// Renders the resume cards at the top of the dashboard. Shown to everyone
+// who can record — a supervisor wants the same shortcut, they just are not
+// redirected into it. One card per open sheet today, so the line and
+// furnace are always chosen, never guessed; otherwise the most recent sheet.
+function qrRenderCard(mount, session) {
+  if (!mount) return;
+  if (typeof rbacCanDo === "function" && !rbacCanDo(session.userid, "action.pcs.hourly.record")) return;
+
+  var todays = qrTodaysSheets();
+  if (todays.length) {
+    todays.forEach(function (r) {
+      mount.appendChild(qrCard(r, "Today"));
+    });
+  } else {
+    var recent = qrMostRecentSheet();
+    if (!recent) return;
+    mount.appendChild(qrCard(recent, "Most recent"));
+  }
+
+  // Clear the inline display:none so the .cards grid layout applies.
+  mount.style.display = "";
 }

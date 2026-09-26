@@ -4,6 +4,33 @@ Version numbers follow semver — see `VERSIONING.md` at the repo root.
 Build number and build date shown in the site footer are generated
 automatically per deploy and are not tracked here.
 
+## 2.3.1 — 2026-09-26
+
+**Fixes to the v2.3.0 operator path — wrong-sheet landing, empty slots locked by a jump, offline hang**
+
+### 1. Quick Record no longer guesses between sheets (BUG-012)
+- Signing in as a line user now lands directly on the day sheet only when
+  exactly one open sheet exists for the current production day. With two or
+  more (different lines or furnaces), or with none for today, the user lands
+  on the dashboard instead of on a sheet picked from storage order
+- The dashboard shows one Quick Record card per open sheet for today, each
+  naming its line and furnace; the "Most recent" card appears only when
+  nothing is open for today
+
+### 2. Warning before a save locks empty slots (BUG-013)
+- In the Operator view, saving a slot when earlier slots since the latest
+  reading are still empty now stops and names those slots first. The
+  operator can go to the first of them, or press "Save anyway"
+- Sequential recording (Save & next) is unaffected — nothing is skipped, so
+  nothing is asked
+
+### 3. Offline fallback no longer hangs on a dead connection (BUG-014)
+- The service worker now serves the cached copy of a request if the network
+  has not answered within 4 seconds. The network request continues and
+  refreshes the cache if it eventually answers
+- With nothing cached for the request it keeps waiting for the network, as
+  before
+
 ## 2.3.0 — 2026-09-22
 
 **Operator experience — built for recording readings on a tablet at the machine**

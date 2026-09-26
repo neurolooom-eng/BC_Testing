@@ -67,6 +67,13 @@ self.addEventListener("activate", (event) => {
   );
 });
 
+// How long the network gets before a cached copy is served instead. A
+// dropped connection fails fast, but a connected-yet-dead one (wifi up, no
+// route) can leave fetch hanging for far longer than an operator will wait.
+// The network request carries on regardless and refreshes the cache if it
+// eventually answers.
+const NETWORK_TIMEOUT_MS = 4000;
+
 self.addEventListener("fetch", (event) => {
   const request = event.request;
   if (request.method !== "GET") return;
@@ -74,24 +81,47 @@ self.addEventListener("fetch", (event) => {
   const url = new URL(request.url);
   if (url.origin !== self.location.origin) return;
 
+  const network = fetch(request).then((response) => {
+    if (response && response.ok) {
+      const copy = response.clone();
+      event.waitUntil(caches.open(CACHE).then((cache) => cache.put(request, copy)));
+    }
+    return response;
+  });
+  // Keep the worker alive until the network settles, even when the cache
+  // has already answered, so a late response still refreshes the cache.
+  event.waitUntil(network.catch(() => null));
+
   event.respondWith(
-    fetch(request)
-      .then((response) => {
-        if (response && response.ok) {
-          const copy = response.clone();
-          caches.open(CACHE).then((cache) => cache.put(request, copy));
-        }
-        return response;
-      })
-      .catch(() =>
+    new Promise((resolve) => {
+      let settled = false;
+      const answer = (response) => {
+        if (settled) return;
+        settled = true;
+        clearTimeout(timer);
+        resolve(response);
+      };
+
+      // Slow network: answer from the cache if it has this exact request.
+      // Otherwise keep waiting — a slow page beats no page.
+      const timer = setTimeout(() => {
         caches.match(request).then((cached) => {
-          if (cached) return cached;
+          if (cached) answer(cached);
+        });
+      }, NETWORK_TIMEOUT_MS);
+
+      network.then(answer, () =>
+        caches.match(request).then((cached) => {
+          if (cached) return answer(cached);
           // A navigation with nothing cached for that exact URL still gets
           // the shell, so the tablet shows the app rather than a browser
           // error page.
-          if (request.mode === "navigate") return caches.match("process-check-sheet.html");
-          return Response.error();
+          if (request.mode === "navigate") {
+            return caches.match("process-check-sheet.html").then((shell) => answer(shell || Response.error()));
+          }
+          answer(Response.error());
         })
-      )
+      );
+    })
   );
 });
